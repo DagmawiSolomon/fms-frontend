@@ -71,13 +71,13 @@ export default function ExpensesPage() {
     <DashboardShell
       title="Expenses"
       description="Record expenditures and verify receipts"
-    >
-      <div className="flex justify-start mb-4">
+      actions={
         <Button onClick={() => setDialogOpen(true)}>
           <PlusIcon />
           Add expense
         </Button>
-      </div>
+      }
+    >
 
       <Card className="">
         <CardHeader>

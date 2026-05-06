@@ -58,18 +58,8 @@ export default function DashboardPage() {
   return (
     <DashboardShell
       title="Dashboard"
-
-
+      description={`${getGreeting()} ${session.data?.name ?? "John"}`}
     >
-      <div className="mb-6">
-        <div className="flex flex-col gap-1">
-
-          <h2 className="text-2xl tracking-tight">
-            {getGreeting()} {session.data?.name ?? "John"}
-          </h2>
-        </div>
-      </div>
-
       <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
