@@ -4,6 +4,7 @@ import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { Toaster } from "@/components/ui/sonner"
+import { RoleProvider } from "@/components/role-provider"
 
 export function AppProviders({
   children,
@@ -27,8 +28,10 @@ export function AppProviders({
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster richColors closeButton />
+      <RoleProvider>
+        {children}
+        <Toaster richColors closeButton />
+      </RoleProvider>
     </QueryClientProvider>
   )
 }

@@ -29,9 +29,10 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { clearAuthToken, normalizeRole } from "@/lib/auth"
+import { clearAuthToken } from "@/lib/auth"
 import { useSession } from "@/hooks/use-session"
 import { cn } from "@/lib/utils"
+import { useRole } from "@/components/role-provider"
 
 const navItems = [
   {
@@ -59,17 +60,34 @@ const navItems = [
     url: "/reports",
     icon: <ChartColumnBigIcon />,
   },
+  {
+    title: "Users",
+    url: "/users",
+    icon: <User />,
+  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const session = useSession()
   const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
-  const role = normalizeRole(session.data?.role ?? null)
+  const { role } = useRole()
 
-  const visibleItems = navItems.filter(
-    (item) => item.title !== "Users" || role === "admin"
-  )
+  const visibleItems = navItems.filter((item) => {
+    if (role === "employee") {
+      return ["Dashboard", "Cash Requests", "Expenses"].includes(item.title)
+    }
+    if (role === "manager") {
+      return ["Dashboard", "Budgets", "Cash Requests"].includes(item.title)
+    }
+    if (role === "finance") {
+      return ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports"].includes(item.title)
+    }
+    if (role === "admin") {
+      return ["Dashboard", "Users", "Budgets", "Reports"].includes(item.title)
+    }
+    return true
+  })
 
   const themeLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode"
   const ThemeIcon = resolvedTheme === "dark" ? SunIcon : MoonIcon
