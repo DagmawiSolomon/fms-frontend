@@ -4,16 +4,15 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
 import {
   CheckIcon,
   PlusIcon,
-  RotateCcwIcon,
   XIcon,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -47,15 +46,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useSession } from "@/hooks/use-session"
-import {
-  fmsApi,
-  normalizeBudgets,
-  type FmsBudget,
-  type FmsBudgetStatus,
-} from "@/lib/fms"
-import { normalizeRole } from "@/lib/auth"
+import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
+import type { FmsBudget, FmsBudgetStatus } from "@/lib/fms"
+
+const mockBudgetsData: FmsBudget[] = [
+  { id: "BUD-01", name: "Q1 Engineering Operations", department: "Engineering", amount: 150000, spent: 45000, status: "approved", owner: "Sarah Jenkins", period: "FY2026/Q1" },
+  { id: "BUD-02", name: "Global Marketing Campaign", department: "Marketing", amount: 200000, spent: 85000, status: "approved", owner: "Marcus Webb", period: "FY2026/Q1" },
+  { id: "BUD-03", name: "Office IT Expansion", department: "IT", amount: 75000, spent: 12000, status: "pending", owner: "Alex Torres", period: "FY2026/Q2" },
+  { id: "BUD-04", name: "Executive Offsite", department: "HR", amount: 35000, spent: 35000, status: "approved", owner: "Diana Prince", period: "FY2026/Q1" },
+  { id: "BUD-05", name: "Legacy System Decommission", department: "Engineering", amount: 50000, spent: 0, status: "rejected", owner: "Sarah Jenkins", period: "FY2026/Q2" },
+]
 
 const budgetSchema = z.object({
   name: z.string().min(2, "Budget name is required"),
@@ -70,64 +71,16 @@ const budgetSchema = z.object({
 type BudgetFormValues = z.infer<typeof budgetSchema>
 
 export default function BudgetsPage() {
-  const session = useSession()
-  const role = normalizeRole(session.data?.role ?? null)
-  const canManageBudgets = role !== "user"
-  const queryClient = useQueryClient()
+  const { role } = useRole()
+  
+  const canCreateBudgets = role === "finance" || role === "admin"
+  const canUpdateBudgets = role === "finance" || role === "admin" || role === "manager"
+  const canApproveBudgets = role === "manager" || role === "admin"
+
+  const [budgets, setBudgets] = React.useState<FmsBudget[]>(mockBudgetsData)
   const [dialogOpen, setDialogOpen] = React.useState(false)
-  const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(
-    null
-  )
+  const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
 
-  const budgetsQuery = useQuery({
-    queryKey: ["budgets"],
-    queryFn: async () => normalizeBudgets(await fmsApi.getBudgets()),
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (values: BudgetFormValues) =>
-      fmsApi.createBudget({
-        ...values,
-        notes: values.notes || undefined,
-      }),
-    onSuccess: async () => {
-      toast.success("Budget created")
-      await queryClient.invalidateQueries({ queryKey: ["budgets"] })
-      setDialogOpen(false)
-    },
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      values,
-    }: {
-      id: FmsBudget["id"]
-      values: Partial<BudgetFormValues>
-    }) => fmsApi.updateBudget(id, values),
-    onSuccess: async () => {
-      toast.success("Budget updated")
-      await queryClient.invalidateQueries({ queryKey: ["budgets"] })
-      setDialogOpen(false)
-      setEditingBudget(null)
-    },
-  })
-
-  const statusMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-    }: {
-      id: FmsBudget["id"]
-      status: FmsBudgetStatus
-    }) => fmsApi.setBudgetStatus(id, status),
-    onSuccess: async (_, variables) => {
-      toast.success(`Budget ${variables.status}`)
-      await queryClient.invalidateQueries({ queryKey: ["budgets"] })
-    },
-  })
-
-  const budgets = budgetsQuery.data ?? []
   const totals = budgets.reduce(
     (acc, budget) => {
       acc.amount += budget.amount
@@ -137,6 +90,36 @@ export default function BudgetsPage() {
     },
     { amount: 0, spent: 0, remaining: 0 }
   )
+
+  const handleCreate = (values: BudgetFormValues) => {
+    const newBudget: FmsBudget = {
+      id: `BUD-${Math.floor(Math.random() * 1000)}`,
+      name: values.name,
+      department: values.department,
+      amount: values.amount,
+      spent: values.spent,
+      period: values.period,
+      status: values.status as FmsBudgetStatus,
+      owner: "Current User",
+      notes: values.notes,
+    }
+    setBudgets([newBudget, ...budgets])
+    toast.success("Budget created successfully")
+    setDialogOpen(false)
+  }
+
+  const handleUpdate = (values: BudgetFormValues) => {
+    if (!editingBudget) return
+    setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...b, ...values, status: values.status as FmsBudgetStatus } : b))
+    toast.success("Budget updated successfully")
+    setDialogOpen(false)
+    setEditingBudget(null)
+  }
+
+  const handleStatusChange = (id: string | number, status: FmsBudgetStatus) => {
+    setBudgets(budgets.map(b => b.id === id ? { ...b, status } : b))
+    toast.success(`Budget marked as ${status}`)
+  }
 
   const openCreateDialog = () => {
     setEditingBudget(null)
@@ -153,19 +136,20 @@ export default function BudgetsPage() {
       title="Budgets"
       description="Create, review, approve, and track budget lines"
       actions={
-        canManageBudgets ? (
+        canCreateBudgets ? (
           <Button onClick={openCreateDialog}>
-            <PlusIcon />
+            <PlusIcon className="mr-2 size-4" />
             New budget
           </Button>
         ) : null
       }
     >
-      <div className="grid gap-0 md:grid-cols-3">
+      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
         <SummaryCard
           label="Budget total"
           value={totals.amount}
           description="Total funds allocated across all departments"
+          isFirst
         />
         <SummaryCard
           label="Spent total"
@@ -179,25 +163,17 @@ export default function BudgetsPage() {
         />
       </div>
 
-      <Card className="">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
+      <Card className="rounded-none overflow-hidden border shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
             <CardTitle>Budget ledger</CardTitle>
             <CardDescription>
               Detailed record of all department budget lines
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => budgetsQuery.refetch()}
-          >
-            <RotateCcwIcon />
-            Refresh
-          </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-hidden rounded-none border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -211,13 +187,7 @@ export default function BudgetsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgetsQuery.isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      Loading budgets...
-                    </TableCell>
-                  </TableRow>
-                ) : budgets.length ? (
+                {budgets.length ? (
                   budgets.map((budget) => (
                     <TableRow key={budget.id}>
                       <TableCell>
@@ -239,46 +209,37 @@ export default function BudgetsPage() {
                       <TableCell>{budget.owner || "System"}</TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!canManageBudgets}
-                            onClick={() => openEditDialog(budget)}
-                          >
-                            Update
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={
-                              !canManageBudgets || budget.status === "approved"
-                            }
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: budget.id,
-                                status: "approved",
-                              })
-                            }
-                          >
-                            <CheckIcon />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={
-                              !canManageBudgets || budget.status === "rejected"
-                            }
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: budget.id,
-                                status: "rejected",
-                              })
-                            }
-                          >
-                            <XIcon />
-                            Reject
-                          </Button>
+                          {canUpdateBudgets && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(budget)}
+                            >
+                              Update
+                            </Button>
+                          )}
+                          {canApproveBudgets && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={budget.status === "approved"}
+                                onClick={() => handleStatusChange(budget.id, "approved")}
+                              >
+                                <CheckIcon className="size-4" />
+                                <span className="sr-only">Approve</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={budget.status === "rejected"}
+                                onClick={() => handleStatusChange(budget.id, "rejected")}
+                              >
+                                <XIcon className="size-4" />
+                                <span className="sr-only">Reject</span>
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -307,12 +268,11 @@ export default function BudgetsPage() {
         }}
         onSubmit={(values) => {
           if (editingBudget) {
-            updateMutation.mutate({ id: editingBudget.id, values })
+            handleUpdate(values)
           } else {
-            createMutation.mutate(values)
+            handleCreate(values)
           }
         }}
-        isSaving={createMutation.isPending || updateMutation.isPending}
       />
     </DashboardShell>
   )
@@ -323,13 +283,11 @@ function BudgetDialog({
   budget,
   onOpenChange,
   onSubmit,
-  isSaving,
 }: {
   open: boolean
   budget: FmsBudget | null
   onOpenChange: (open: boolean) => void
   onSubmit: (values: BudgetFormValues) => void
-  isSaving: boolean
 }) {
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetSchema) as Resolver<BudgetFormValues>,
@@ -476,8 +434,8 @@ function BudgetDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? "Saving..." : budget ? "Update budget" : "Create budget"}
+            <Button type="submit">
+              {budget ? "Update budget" : "Create budget"}
             </Button>
           </DialogFooter>
         </form>
@@ -508,13 +466,18 @@ function SummaryCard({
   label,
   value,
   description,
+  isFirst,
 }: {
   label: string
   value: number
   description: string
+  isFirst?: boolean
 }) {
   return (
-    <Card className="@container/card">
+    <Card className={cn(
+      "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+      !isFirst && "border-l"
+    )}>
       <CardHeader>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl font-medium tabular-nums @[250px]/card:text-3xl">

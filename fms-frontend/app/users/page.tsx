@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ShieldAlertIcon } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -29,40 +28,39 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useSession } from "@/hooks/use-session"
-import { clearAuthToken, normalizeRole } from "@/lib/auth"
-import { fmsApi } from "@/lib/fms"
+import { clearAuthToken } from "@/lib/auth"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useRole } from "@/components/role-provider"
 
 type UserRow = {
-  id: string | number
+  id: string
   name: string
   email: string
-  role: "admin" | "Finance Team" | "user"
+  role: "admin" | "finance" | "manager" | "employee"
 }
 
+const mockUsers: UserRow[] = [
+  { id: "USR-001", name: "System Administrator", email: "admin@fms.inc", role: "admin" },
+  { id: "USR-002", name: "Sarah Jenkins", email: "s.jenkins@fms.inc", role: "finance" },
+  { id: "USR-003", name: "Marcus Webb", email: "m.webb@fms.inc", role: "manager" },
+  { id: "USR-004", name: "Alex Torres", email: "a.torres@fms.inc", role: "employee" },
+  { id: "USR-005", name: "Diana Prince", email: "d.prince@fms.inc", role: "manager" },
+  { id: "USR-006", name: "Chris Evans", email: "c.evans@fms.inc", role: "employee" },
+  { id: "USR-007", name: "Natasha Romanoff", email: "n.romanoff@fms.inc", role: "finance" },
+]
+
 export default function UsersPage() {
-  const session = useSession()
-  const role = normalizeRole(session.data?.role ?? null)
   const router = useRouter()
-  const queryClient = useQueryClient()
-
-  const usersQuery = useQuery({
-    queryKey: ["users"],
-    queryFn: async () => normalizeUsers(await fmsApi.getUsers()),
-  })
-
-  const roleMutation = useMutation({
-    mutationFn: ({ id, role }: { id: UserRow["id"]; role: UserRow["role"] }) =>
-      fmsApi.updateUserRole(id, role),
-    onSuccess: async () => {
-      toast.success("User role updated")
-      await queryClient.invalidateQueries({ queryKey: ["users"] })
-    },
-  })
-
+  const { role } = useRole()
+  
+  const [users, setUsers] = React.useState<UserRow[]>(mockUsers)
   const canManage = role === "admin"
+
+  const handleRoleChange = (id: string, newRole: UserRow["role"]) => {
+    setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u))
+    toast.success("User role updated successfully")
+  }
 
   return (
     <DashboardShell
@@ -70,7 +68,7 @@ export default function UsersPage() {
       description="Administrative user management and role control"
     >
       {!canManage ? (
-        <Card className="mx-4 lg:mx-6">
+        <Card className="rounded-none overflow-hidden border shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldAlertIcon className="size-4" />
@@ -93,13 +91,13 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="mx-4 lg:mx-6">
+        <Card className="rounded-none overflow-hidden border shadow-none">
           <CardHeader>
             <CardTitle>All users</CardTitle>
             <CardDescription>Change roles and review the active account list</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden rounded-lg border">
+            <div className="overflow-hidden rounded-none border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -110,37 +108,27 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usersQuery.isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
-                        Loading users...
-                      </TableCell>
-                    </TableRow>
-                  ) : usersQuery.data?.length ? (
-                    usersQuery.data.map((user) => (
+                  {users.length ? (
+                    users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{user.role}</Badge>
+                          <Badge variant="outline" className="capitalize">{user.role}</Badge>
                         </TableCell>
-                      <TableCell className="text-right">
+                        <TableCell className="text-right">
                           <Select
                             value={user.role}
-                            onValueChange={(value) =>
-                              roleMutation.mutate({
-                                id: user.id,
-                                role: value as UserRow["role"],
-                              })
-                            }
+                            onValueChange={(value) => handleRoleChange(user.id, value as UserRow["role"])}
                           >
                             <SelectTrigger className="ml-auto w-40">
                               <SelectValue placeholder="Change role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">admin</SelectItem>
-                              <SelectItem value="Finance Team">Finance Team</SelectItem>
-                              <SelectItem value="user">user</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="finance">Finance</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                              <SelectItem value="employee">Employee</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -161,33 +149,4 @@ export default function UsersPage() {
       )}
     </DashboardShell>
   )
-}
-
-function normalizeUsers(payload: unknown): UserRow[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : (payload as { data?: unknown[]; items?: unknown[] } | null)?.data ??
-      (payload as { data?: unknown[]; items?: unknown[] } | null)?.items ??
-      []
-
-  return list.map((item, index) => {
-    const user = item as Record<string, unknown>
-    return {
-      id: normalizeIdentifier(user.id ?? user._id, index),
-      name: (user.name ?? user.fullName ?? "User") as string,
-      email: (user.email ?? "user@example.com") as string,
-      role: normalizeRole(user.role as string | null | undefined),
-    }
-  })
-}
-
-function normalizeIdentifier(
-  value: unknown,
-  fallback: string | number
-): string | number {
-  if (typeof value === "string" || typeof value === "number") {
-    return value
-  }
-
-  return fallback
 }

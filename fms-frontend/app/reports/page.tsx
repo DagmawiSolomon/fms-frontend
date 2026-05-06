@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { useQuery } from "@tanstack/react-query"
+import { Area, AreaChart, CartesianGrid, XAxis, Legend } from "recharts"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,98 +11,89 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { Skeleton } from "@/components/ui/skeleton"
-import { fmsApi, normalizeReportPoints, normalizeSummary } from "@/lib/fms"
+
+// --- Mock Data ---
+const summary = {
+  totalBudget: 1500000,
+  totalSpent: 425000,
+  activeBudgets: 12,
+  pendingApprovals: 3,
+  remainingBudget: 1075000,
+}
+
+const mockPoints = [
+  { label: "Jan", budgeted: 100000, spent: 45000 },
+  { label: "Feb", budgeted: 250000, spent: 120000 },
+  { label: "Mar", budgeted: 400000, spent: 180000 },
+  { label: "Apr", budgeted: 550000, spent: 260000 },
+  { label: "May", budgeted: 800000, spent: 340000 },
+  { label: "Jun", budgeted: 1200000, spent: 390000 },
+  { label: "Jul", budgeted: 1500000, spent: 425000 },
+]
 
 const chartConfig = {
   budgeted: {
     label: "Budgeted",
-    color: "var(--primary)",
+    color: "#3b82f6", // blue-500
   },
   spent: {
     label: "Spent",
-    color: "var(--chart-4)",
+    color: "#10b981", // emerald-500
   },
 } satisfies ChartConfig
 
 export default function ReportsPage() {
-  const overviewQuery = useQuery({
-    queryKey: ["reports", "overview"],
-    queryFn: async () => {
-      const [summary, overview] = await Promise.all([
-        fmsApi.getBudgetSummary(),
-        fmsApi.getReportOverview(),
-      ])
-
-      return {
-        summary: normalizeSummary(summary),
-        points: normalizeReportPoints(overview),
-      }
-    },
-  })
-
-  const summary = overviewQuery.data?.summary ?? {
-    totalBudget: 0,
-    totalSpent: 0,
-    activeBudgets: 0,
-    pendingApprovals: 0,
-    remainingBudget: 0,
-  }
-
   return (
     <DashboardShell
       title="Reports"
       description="Overview charts and financial reporting snapshots"
     >
-      <div className="grid gap-4 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-4">
-        <ReportCard label="Budgeted" value={summary.totalBudget} loading={overviewQuery.isLoading} />
-        <ReportCard label="Spent" value={summary.totalSpent} loading={overviewQuery.isLoading} />
-        <ReportCard label="Remaining" value={summary.remainingBudget} loading={overviewQuery.isLoading} />
-        <ReportCard label="Pending approvals" value={summary.pendingApprovals} loading={overviewQuery.isLoading} />
+      <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+        <ReportCard label="Budgeted" value={summary.totalBudget} />
+        <ReportCard label="Spent" value={summary.totalSpent} />
+        <ReportCard label="Remaining" value={summary.remainingBudget} />
+        <ReportCard label="Pending approvals" value={summary.pendingApprovals} />
       </div>
 
-      <Card className="mx-4 lg:mx-6">
-          <CardHeader>
-            <CardTitle>Budget and spend trend</CardTitle>
-            <CardDescription>Analytics across budget and spend trends</CardDescription>
-          </CardHeader>
+      <Card className="rounded-none overflow-hidden border shadow-none">
+        <CardHeader>
+          <CardTitle>Budget and spend trend</CardTitle>
+          <CardDescription>Analytics across budget and spend trends</CardDescription>
+        </CardHeader>
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-          {overviewQuery.isLoading ? (
-            <Skeleton className="h-[320px] w-full" />
-          ) : (
-            <ChartContainer config={chartConfig} className="h-[320px] w-full">
-              <AreaChart data={overviewQuery.data?.points ?? []}>
-                <defs>
-                  <linearGradient id="reportBudgeted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-budgeted)" stopOpacity={0.9} />
-                    <stop offset="95%" stopColor="var(--color-budgeted)" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="reportSpent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-spent)" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="var(--color-spent)" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Area
-                  dataKey="spent"
-                  type="natural"
-                  fill="url(#reportSpent)"
-                  stroke="var(--color-spent)"
-                />
-                <Area
-                  dataKey="budgeted"
-                  type="natural"
-                  fill="url(#reportBudgeted)"
-                  stroke="var(--color-budgeted)"
-                />
-              </AreaChart>
-            </ChartContainer>
-          )}
+          <ChartContainer config={chartConfig} className="h-[360px] w-full">
+            <AreaChart data={mockPoints} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="reportBudgeted" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="reportSpent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />}
+              />
+              <Legend verticalAlign="bottom" height={36} />
+              <Area
+                dataKey="spent"
+                type="natural"
+                fill="url(#reportSpent)"
+                stroke="#10b981"
+              />
+              <Area
+                dataKey="budgeted"
+                type="natural"
+                fill="url(#reportBudgeted)"
+                stroke="#3b82f6"
+              />
+            </AreaChart>
+          </ChartContainer>
         </CardContent>
       </Card>
     </DashboardShell>
@@ -113,18 +103,16 @@ export default function ReportsPage() {
 function ReportCard({
   label,
   value,
-  loading,
 }: {
   label: string
   value: number
-  loading?: boolean
 }) {
   return (
-    <Card className="@container/card">
+    <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card first:border-l-0 border-l border-border/50">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          {loading ? <Skeleton className="h-8 w-24" /> : formatMoney(value)}
+          {formatMoney(value)}
         </CardTitle>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">

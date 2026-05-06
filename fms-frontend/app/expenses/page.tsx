@@ -4,14 +4,24 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
-import { PlusIcon } from "lucide-react"
+import {
+  CheckIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  XIcon,
+} from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -21,117 +31,165 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { fmsApi, normalizeExpenses } from "@/lib/fms"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
+import type { FmsExpense } from "@/lib/fms"
+
+const mockExpensesData: FmsExpense[] = [
+  { id: "EXP-01", merchant: "Amazon Web Services", category: "Software", amount: 450.00, date: "2026-05-01", status: "verified", submitter: "Alex Torres", receiptUrl: "receipt-1.pdf" },
+  { id: "EXP-02", merchant: "Delta Airlines", category: "Travel", amount: 850.50, date: "2026-05-03", status: "approved", submitter: "Marcus Webb", receiptUrl: "receipt-2.pdf" },
+  { id: "EXP-03", merchant: "Whole Foods", category: "Meals", amount: 125.75, date: "2026-05-04", status: "pending", submitter: "Sarah Jenkins" },
+  { id: "EXP-04", merchant: "Apple Store", category: "Hardware", amount: 2400.00, date: "2026-04-28", status: "rejected", submitter: "Diana Prince", receiptUrl: "receipt-4.pdf" },
+  { id: "EXP-05", merchant: "Uber", category: "Travel", amount: 45.20, date: "2026-05-05", status: "verified", submitter: "Chris Evans", receiptUrl: "receipt-5.pdf" },
+]
 
 const expenseSchema = z.object({
-  title: z.string().min(2, "Title is required"),
-  amount: z.coerce.number().positive("Amount must be greater than zero"),
+  merchant: z.string().min(2, "Merchant name is required"),
   category: z.string().min(2, "Category is required"),
-  notes: z.string().optional(),
+  amount: z.coerce.number().positive("Amount must be greater than zero"),
+  date: z.string().min(8, "Date is required"),
 })
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>
 
 export default function ExpensesPage() {
-  const queryClient = useQueryClient()
+  const { role } = useRole()
+  
+  const canCreateExpense = role !== "reports"
+  const canApproveExpense = role === "manager" || role === "admin"
+  const canVerifyExpense = role === "finance" || role === "admin"
+
+  const [expenses, setExpenses] = React.useState<FmsExpense[]>(mockExpensesData)
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
-  const expensesQuery = useQuery({
-    queryKey: ["expenses"],
-    queryFn: async () => normalizeExpenses(await fmsApi.getExpenses()),
-  })
+  const handleCreate = (values: ExpenseFormValues) => {
+    const newExp: FmsExpense = {
+      id: `EXP-${Math.floor(Math.random() * 1000)}`,
+      merchant: values.merchant,
+      category: values.category,
+      amount: values.amount,
+      date: values.date,
+      status: "pending",
+      submitter: "Current User",
+    }
+    setExpenses([newExp, ...expenses])
+    toast.success("Expense submitted successfully")
+    setDialogOpen(false)
+  }
 
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
-    defaultValues: { title: "", amount: 0, category: "", notes: "" },
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (values: ExpenseFormValues) => fmsApi.createExpense(values),
-    onSuccess: async () => {
-      toast.success("Expense created")
-      form.reset()
-      setDialogOpen(false)
-      await queryClient.invalidateQueries({ queryKey: ["expenses"] })
-    },
-  })
-
-  const verifyMutation = useMutation({
-    mutationFn: (id: string | number) => fmsApi.verifyExpense(id),
-    onSuccess: async () => {
-      toast.success("Expense verified")
-      await queryClient.invalidateQueries({ queryKey: ["expenses"] })
-    },
-  })
+  const handleStatusChange = (id: string | number, status: FmsExpense["status"]) => {
+    setExpenses(expenses.map(e => e.id === id ? { ...e, status } : e))
+    toast.success(`Expense marked as ${status}`)
+  }
 
   return (
     <DashboardShell
       title="Expenses"
-      description="Record expenditures and verify receipts"
+      description="Track and manage individual expenditure"
       actions={
-        <Button onClick={() => setDialogOpen(true)}>
-          <PlusIcon />
-          Add expense
-        </Button>
+        canCreateExpense ? (
+          <Button onClick={() => setDialogOpen(true)}>
+            <PlusIcon className="mr-2 size-4" />
+            Submit expense
+          </Button>
+        ) : null
       }
     >
-
-      <Card className="">
-        <CardHeader>
-          <CardTitle>Expense ledger</CardTitle>
-          <CardDescription>All recorded expenditures and their current verification status</CardDescription>
+      <Card className="rounded-none overflow-hidden border shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle>Expense reports</CardTitle>
+            <CardDescription>Review itemized expenses submitted by staff</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-hidden rounded-none border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
+                  <TableHead>Merchant</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Submitter</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expensesQuery.isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      Loading expenses...
-                    </TableCell>
-                  </TableRow>
-                ) : expensesQuery.data?.length ? (
-                  expensesQuery.data.map((expense) => (
+                {expenses.length ? (
+                  expenses.map((expense) => (
                     <TableRow key={expense.id}>
-                      <TableCell>
-                        <div className="font-medium">{expense.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {expense.category || "General"}
-                        </div>
+                      <TableCell className="font-medium">
+                        {expense.merchant}
+                        {expense.receiptUrl && (
+                          <span className="ml-2 text-xs text-muted-foreground">(Receipt attached)</span>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>{expense.category}</TableCell>
+                      <TableCell>{expense.date}</TableCell>
+                      <TableCell>{expense.submitter || "Unknown"}</TableCell>
+                      <TableCell className="text-right font-medium">
                         {formatMoney(expense.amount)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={expense.status === "verified"}
-                          onClick={() => verifyMutation.mutate(expense.id)}
-                        >
-                          Verify
-                        </Button>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          {canApproveExpense && expense.status === "pending" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(expense.id, "approved")}
+                              >
+                                <CheckIcon className="size-4" />
+                                <span className="sr-only">Approve</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(expense.id, "rejected")}
+                              >
+                                <XIcon className="size-4" />
+                                <span className="sr-only">Reject</span>
+                              </Button>
+                            </>
+                          )}
+                          {canVerifyExpense && expense.status === "approved" && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => handleStatusChange(expense.id, "verified")}
+                            >
+                              <ShieldCheckIcon className="mr-2 size-4" />
+                              Verify
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
@@ -142,64 +200,160 @@ export default function ExpensesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add expense</DialogTitle>
-            <DialogDescription>
-              Submit a new expense line with category and notes
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="grid gap-4"
-            onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
-          >
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Title</div>
-              <Input placeholder="Team Lunch" {...form.register("title")} />
-            </div>
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Amount</div>
-              <Input
-                placeholder="0.00"
-                type="number"
-                min="0"
-                step="0.01"
-                {...form.register("amount")}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Category</div>
-              <Input placeholder="Meals & Entertainment" {...form.register("category")} />
-            </div>
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Notes</div>
-              <Textarea placeholder="Optional details..." {...form.register("notes")} />
-            </div>
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Receipt</div>
-              <Input type="file" />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Saving..." : "Add expense"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ExpenseDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSubmit={handleCreate}
+      />
     </DashboardShell>
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function ExpenseDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (values: ExpenseFormValues) => void
+}) {
+  const form = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
+    defaultValues: {
+      merchant: "",
+      category: "",
+      amount: 0,
+      date: new Date().toISOString().split("T")[0],
+    },
+  })
+
+  React.useEffect(() => {
+    if (!open) {
+      form.reset({
+        merchant: "",
+        category: "",
+        amount: 0,
+        date: new Date().toISOString().split("T")[0],
+      })
+    }
+  }, [form, open])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Submit expense</DialogTitle>
+          <DialogDescription>
+            Record an out-of-pocket or corporate card expense
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          className="grid gap-4"
+          onSubmit={form.handleSubmit((values) =>
+            onSubmit(values as ExpenseFormValues)
+          )}
+        >
+          <Field
+            label="Merchant"
+            error={form.formState.errors.merchant?.message}
+            control={
+              <Input placeholder="Amazon, Delta, etc." {...form.register("merchant")} />
+            }
+          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Amount"
+              error={form.formState.errors.amount?.message}
+              control={
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...form.register("amount", { valueAsNumber: true })}
+                />
+              }
+            />
+            <Field
+              label="Date"
+              error={form.formState.errors.date?.message}
+              control={
+                <Input
+                  type="date"
+                  {...form.register("date")}
+                />
+              }
+            />
+          </div>
+          <Field
+            label="Category"
+            error={form.formState.errors.category?.message}
+            control={
+              <Select
+                value={form.watch("category")}
+                onValueChange={(value) =>
+                  form.setValue("category", value, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Travel">Travel</SelectItem>
+                  <SelectItem value="Meals">Meals</SelectItem>
+                  <SelectItem value="Software">Software</SelectItem>
+                  <SelectItem value="Hardware">Hardware</SelectItem>
+                  <SelectItem value="Office">Office Supplies</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            }
+          />
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Submit expense</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function Field({
+  label,
+  error,
+  control,
+}: {
+  label: string
+  error?: string
+  control: React.ReactNode
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="text-sm font-medium">{label}</div>
+      {control}
+      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+    </div>
+  )
+}
+
+function StatusBadge({ status }: { status: FmsExpense["status"] }) {
   const tone =
     status === "verified"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-      : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+      ? "border-blue-500/30 bg-blue-500/10 text-blue-700"
+      : status === "approved"
+        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+        : status === "rejected"
+          ? "border-rose-500/30 bg-rose-500/10 text-rose-700"
+          : "border-amber-500/30 bg-amber-500/10 text-amber-700"
 
   return (
     <Badge variant="outline" className={tone}>
@@ -212,6 +366,5 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
   }).format(value)
 }
