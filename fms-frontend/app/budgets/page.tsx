@@ -162,9 +162,21 @@ export default function BudgetsPage() {
       }
     >
       <div className="grid gap-0 md:grid-cols-3">
-        <SummaryCard label="Budget total" value={totals.amount} />
-        <SummaryCard label="Spent total" value={totals.spent} />
-        <SummaryCard label="Remaining total" value={totals.remaining} />
+        <SummaryCard
+          label="Budget total"
+          value={totals.amount}
+          description="Total funds allocated across all departments"
+        />
+        <SummaryCard
+          label="Spent total"
+          value={totals.spent}
+          description="Total actual spending recorded to date"
+        />
+        <SummaryCard
+          label="Remaining total"
+          value={totals.remaining}
+          description="Total unspent funds across all budget lines"
+        />
       </div>
 
       <Card className="">
@@ -172,7 +184,7 @@ export default function BudgetsPage() {
           <div>
             <CardTitle>Budget ledger</CardTitle>
             <CardDescription>
-              Status changes are reflected in the ledger immediately
+              Detailed record of all department budget lines
             </CardDescription>
           </div>
           <Button
@@ -365,7 +377,7 @@ function BudgetDialog({
         <DialogHeader>
           <DialogTitle>{budget ? "Update budget" : "Create budget"}</DialogTitle>
           <DialogDescription>
-            Keep budget details organized and easy to review.
+            Enter funding details and department allocation
           </DialogDescription>
         </DialogHeader>
 
@@ -492,7 +504,15 @@ function Field({
   )
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  value,
+  description,
+}: {
+  label: string
+  value: number
+  description: string
+}) {
   return (
     <Card className="@container/card">
       <CardHeader>
@@ -502,7 +522,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
-        Updated from the latest budget records
+        {description}
       </CardContent>
     </Card>
   )

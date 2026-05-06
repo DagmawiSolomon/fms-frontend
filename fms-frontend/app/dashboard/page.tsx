@@ -75,22 +75,22 @@ export default function DashboardPage() {
           {
             label: "Total budget",
             value: summary.totalBudget,
-            helper: "Allocated across active departments",
+            helper: "Total allocated funds",
           },
           {
             label: "Spent",
             value: summary.totalSpent,
-            helper: "Reported actual spend",
+            helper: "Total expenditures",
           },
           {
             label: "Remaining",
             value: summary.remainingBudget,
-            helper: "Available for the current period",
+            helper: "Available funds",
           },
           {
             label: "Pending approvals",
             value: summary.pendingApprovals,
-            helper: "Waiting on finance review",
+            helper: "Requests awaiting review",
           },
         ].map((item) => (
           <Card key={item.label} className="@container/card">
@@ -114,8 +114,8 @@ export default function DashboardPage() {
       <div className="grid gap-0 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="@container/card">
           <CardHeader>
-            <CardTitle>Budget activity</CardTitle>
-            <CardDescription>Budgeted versus spent over the latest activity window</CardDescription>
+            <CardTitle>Budget utilization</CardTitle>
+            <CardDescription>Comparison of allocated versus actual spending</CardDescription>
           </CardHeader>
           <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
             <ChartContainer config={chartConfig} className="h-[320px] w-full">
@@ -162,8 +162,8 @@ export default function DashboardPage() {
 
         <Card className="@container/card">
           <CardHeader>
-            <CardTitle>At a glance</CardTitle>
-            <CardDescription>Latest figures across your account</CardDescription>
+            <CardTitle>Summary</CardTitle>
+            <CardDescription>Current account standing</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Metric label="Active budgets" value={summary.activeBudgets} />
