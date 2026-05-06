@@ -70,7 +70,7 @@ export function SiteHeader({
 
         <div className="flex min-w-0 items-center gap-2">
 
-          <span className="text-sm font-semibold flex items-center gap-1 ">
+          <span className="text-sm font-medium flex items-center gap-1 ">
             <Handshake className="size-4 shrink-0 text-sidebar-foreground" />
             <span>FMS</span>
           </span>

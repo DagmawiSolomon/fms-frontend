@@ -44,7 +44,7 @@ export function DashboardShell({
             >
               <div className="mb-8 flex items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+                  <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
                   {description && (
                     <p className="text-muted-foreground max-w-[75ch]">
                       {description}

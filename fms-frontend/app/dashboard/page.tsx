@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <Card key={item.label} className="@container/card">
             <CardHeader>
               <CardDescription>{item.label}</CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              <CardTitle className="text-2xl font-medium tabular-nums @[250px]/card:text-3xl">
                 {summaryQuery.isLoading ? (
                   <Skeleton className="h-8 w-24" />
                 ) : (

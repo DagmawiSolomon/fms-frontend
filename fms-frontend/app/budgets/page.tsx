@@ -517,7 +517,7 @@ function SummaryCard({
     <Card className="@container/card">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+        <CardTitle className="text-2xl font-medium tabular-nums @[250px]/card:text-3xl">
           {formatMoney(value)}
         </CardTitle>
       </CardHeader>

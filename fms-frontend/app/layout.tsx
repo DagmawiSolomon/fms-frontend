@@ -1,13 +1,12 @@
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AppProviders } from "@/app/providers"
-import { Geist_Mono, Poppins } from "next/font/google"
+import { Geist_Mono, Geist } from "next/font/google"
 import { cn } from "@/lib/utils"
 
-const poppins = Poppins({
+const geist = Geist({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
 })
 
 const geistMono = Geist_Mono({
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", geistMono.variable, poppins.variable, "font-sans")}
+      className={cn("antialiased", geistMono.variable, geist.variable, "font-sans")}
     >
       <body>
         <ThemeProvider>
