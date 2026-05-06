@@ -59,31 +59,18 @@ export default function DashboardPage() {
     <DashboardShell
       title="Dashboard"
 
-      actions={
-        < Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            summaryQuery.refetch()
-            overviewQuery.refetch()
-          }
-          }
-        >
-          <RefreshCcwIcon />
-          Refresh
-        </Button >
-      }
+
     >
-      <div className="px-4 lg:px-6">
+      <div className="px-4">
         <div className="flex flex-col gap-1">
 
-          <h2 className="text-2xl font-semibold tracking-tight">
-            {getGreeting()} {session.data?.name ?? "John Doe"}
+          <h2 className="text-2xl tracking-tight">
+            {getGreeting()} {session.data?.name ?? "John"}
           </h2>
         </div>
       </div>
 
-      <div className="grid gap-4 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 px-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: "Total budget",
@@ -124,7 +111,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 px-4 lg:px-6 xl:grid-cols-[1.4fr_0.6fr]">
+      <div className="grid gap-4 px-4 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="@container/card">
           <CardHeader>
             <CardTitle>Budget activity</CardTitle>
@@ -220,12 +207,12 @@ function getGreeting() {
   const hour = new Date().getHours()
 
   if (hour < 12) {
-    return "Good Morning"
+    return "Good morning, "
   }
 
   if (hour < 18) {
-    return "Good Afternoon"
+    return "Good afternoon, "
   }
 
-  return "Good Evening"
+  return "Good evening, "
 }
