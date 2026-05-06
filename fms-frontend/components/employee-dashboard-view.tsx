@@ -81,10 +81,10 @@ export function EmployeeDashboardView() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={spendingChartConfig} className="h-[300px] w-full">
-              <LineChart data={spendingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={spendingData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val}`} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                 <Legend verticalAlign="bottom" height={36} />
                 <Line type="monotone" dataKey="amount" stroke="var(--color-amount)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
