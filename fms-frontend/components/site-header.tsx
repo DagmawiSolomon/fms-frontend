@@ -24,6 +24,14 @@ import {
 import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
+import { useRole, type Role } from "@/components/role-provider"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 function formatHeaderDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -55,6 +63,7 @@ export function SiteHeader({
   const [dateLabel, setDateLabel] = React.useState(() =>
     formatHeaderDate(new Date())
   )
+  const { role, setRole } = useRole()
 
   React.useEffect(() => {
     const update = () => setDateLabel(formatHeaderDate(new Date()))
@@ -83,6 +92,23 @@ export function SiteHeader({
         <div className="ml-auto flex min-w-0 items-center gap-2 text-xs text-sidebar-foreground/75">
           <CalendarDaysIcon className="size-4 shrink-0 text-sidebar-foreground/55" />
           <span className="truncate">{dateLabel}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-sidebar-foreground/70 hidden sm:inline-block">
+            View as:
+          </span>
+          <Select value={role} onValueChange={(value) => setRole(value as Role)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs bg-sidebar-accent/20 border-sidebar-border/50">
+              <SelectValue placeholder="Select Role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="finance">Finance Team</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="employee">Employee</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>{actions}</div>
