@@ -161,13 +161,13 @@ export default function BudgetsPage() {
         ) : null
       }
     >
-      <div className="grid gap-4 px-4 md:grid-cols-3">
+      <div className="grid gap-0 md:grid-cols-3">
         <SummaryCard label="Budget total" value={totals.amount} />
         <SummaryCard label="Spent total" value={totals.spent} />
         <SummaryCard label="Remaining total" value={totals.remaining} />
       </div>
 
-      <Card className="mx-4">
+      <Card className="">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
             <CardTitle>Budget ledger</CardTitle>

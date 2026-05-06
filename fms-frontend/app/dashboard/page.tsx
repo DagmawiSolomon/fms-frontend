@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
 
     >
-      <div className="px-4">
+      <div className="mb-6">
         <div className="flex flex-col gap-1">
 
           <h2 className="text-2xl tracking-tight">
@@ -70,7 +70,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 px-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: "Total budget",
@@ -111,7 +111,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 px-4 xl:grid-cols-[1.4fr_0.6fr]">
+      <div className="grid gap-0 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="@container/card">
           <CardHeader>
             <CardTitle>Budget activity</CardTitle>
