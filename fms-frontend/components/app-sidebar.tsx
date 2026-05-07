@@ -34,60 +34,17 @@ import { useSession } from "@/hooks/use-session"
 import { cn } from "@/lib/utils"
 import { useRole } from "@/components/role-provider"
 
-const navItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: <HomeIcon />,
-  },
-  {
-    title: "Budgets",
-    url: "/budgets",
-    icon: <HandCoins />,
-  },
-  {
-    title: "Cash Requests",
-    url: "/cash-requests",
-    icon: <ReceiptTextIcon />,
-  },
-  {
-    title: "Expenses",
-    url: "/expenses",
-    icon: <WalletIcon />,
-  },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: <ChartColumnBigIcon />,
-  },
-  {
-    title: "Users",
-    url: "/users",
-    icon: <User />,
-  },
-]
+import { ALL_NAV_ITEMS, ROLE_CONFIGS } from "@/lib/roles"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const session = useSession()
   const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
-  const { role } = useRole()
+  const { role, config } = useRole()
 
-  const visibleItems = navItems.filter((item) => {
-    if (role === "employee") {
-      return ["Dashboard", "Cash Requests", "Expenses"].includes(item.title)
-    }
-    if (role === "manager") {
-      return ["Dashboard", "Budgets", "Cash Requests"].includes(item.title)
-    }
-    if (role === "finance") {
-      return ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports"].includes(item.title)
-    }
-    if (role === "admin") {
-      return ["Dashboard", "Users", "Budgets", "Reports"].includes(item.title)
-    }
-    return true
-  })
+  const visibleItems = ALL_NAV_ITEMS.filter((item) => 
+    config.navigation.includes(item.title)
+  )
 
   const themeLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode"
   const ThemeIcon = resolvedTheme === "dark" ? SunIcon : MoonIcon
@@ -118,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarSeparator />
         <NavMain
           label="Settings"
-          items={[{ title: "Profile", url: "/profile", icon: <User /> }]}
+          items={[{ title: "Profile", url: "/profile", icon: User }]}
         />
 
 

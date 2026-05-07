@@ -4,6 +4,7 @@ import * as React from "react"
 import { useSession } from "@/hooks/use-session"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,10 +95,19 @@ export function SiteHeader({
           <span className="truncate">{dateLabel}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-sidebar-foreground/70 hidden sm:inline-block">
-            View as:
-          </span>
+        <div className="flex items-center gap-3">
+          <Badge 
+            variant="outline" 
+            className={cn(
+              "text-[10px] uppercase tracking-wider px-1.5 h-5 rounded-sm border-opacity-50",
+              role === "admin" && "border-rose-500 text-rose-500 bg-rose-500/5",
+              role === "finance" && "border-emerald-500 text-emerald-500 bg-emerald-500/5",
+              role === "manager" && "border-amber-500 text-amber-500 bg-amber-500/5",
+              role === "employee" && "border-blue-500 text-blue-500 bg-blue-500/5",
+            )}
+          >
+            {role}
+          </Badge>
           <Select value={role} onValueChange={(value) => setRole(value as Role)}>
             <SelectTrigger className="w-[140px] h-8 text-xs bg-sidebar-accent/20 border-sidebar-border/50">
               <SelectValue placeholder="Select Role" />
@@ -119,9 +129,9 @@ export function SiteHeader({
               variant="ghost"
               className="h-10 gap-2 rounded-[4px] px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
             >
-              <Avatar className="size-7 rounded-lg grayscale">
+              <Avatar className="size-7 rounded-[4px] grayscale">
                 <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                <AvatarFallback className="rounded-lg">
+                <AvatarFallback className="rounded-[4px]">
                   {user.name
                     .split(" ")
                     .map((part) => part[0])
@@ -143,9 +153,9 @@ export function SiteHeader({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-2 py-2">
-                <Avatar className="size-8 rounded-lg grayscale">
+                <Avatar className="size-8 rounded-[4px] grayscale">
                   <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
+                  <AvatarFallback className="rounded-[4px]">
                     {user.name
                       .split(" ")
                       .map((part) => part[0])

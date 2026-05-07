@@ -21,7 +21,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: ReactNode
+    icon?: any
     isVisible?: boolean
   }[]
   label?: string
@@ -35,23 +35,26 @@ export function NavMain({
         <SidebarMenu className="gap-2">
           {items
             .filter((item) => item.isVisible !== false)
-            .map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  tooltip={item.title}
-                  isActive={pathname === item.url}
-                  className="gap-3 group-data-[collapsible=icon]:justify-center"
-                >
-                  <Link href={item.url} className={cn("flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center")}>
-                    <span className="flex size-4 items-center justify-center shrink-0 rounded-xl [&_svg]:size-4 [&_svg]:shrink-0">
-                      {item.icon}
-                    </span>
-                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            .map((item) => {
+              const Icon = item.icon
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={pathname === item.url}
+                    className="gap-3 group-data-[collapsible=icon]:justify-center"
+                  >
+                    <Link href={item.url} className={cn("flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center")}>
+                      <span className="flex size-4 items-center justify-center shrink-0 rounded-xl [&_svg]:size-4 [&_svg]:shrink-0">
+                        {Icon && <Icon />}
+                      </span>
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
