@@ -117,6 +117,8 @@ export default function ExpensesPage() {
     toast.success(`Expense marked as ${status}`)
   }
 
+  const showActions = canApproveExpense || canVerifyExpense
+
   return (
     <DashboardShell
       title="Expenses"
@@ -187,13 +189,13 @@ export default function ExpensesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Merchant</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Submitter</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Merchant</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Category</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Submitter</TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Status</TableHead>
+                  {showActions && <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -215,46 +217,48 @@ export default function ExpensesPage() {
                       <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          {canApproveExpense && expense.status === "pending" && (
-                            <>
+                      {showActions && (
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            {canApproveExpense && expense.status === "pending" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStatusChange(expense.id, "approved")}
+                                >
+                                  <CheckIcon className="size-4" />
+                                  <span className="sr-only">Approve</span>
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStatusChange(expense.id, "rejected")}
+                                >
+                                  <XIcon className="size-4" />
+                                  <span className="sr-only">Reject</span>
+                                </Button>
+                              </>
+                            )}
+                            {canVerifyExpense && expense.status === "approved" && (
                               <Button
-                                variant="outline"
+                                variant="default"
                                 size="sm"
-                                onClick={() => handleStatusChange(expense.id, "approved")}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={() => handleStatusChange(expense.id, "verified")}
                               >
-                                <CheckIcon className="size-4" />
-                                <span className="sr-only">Approve</span>
+                                <ShieldCheckIcon className="mr-2 size-4" />
+                                Verify
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStatusChange(expense.id, "rejected")}
-                              >
-                                <XIcon className="size-4" />
-                                <span className="sr-only">Reject</span>
-                              </Button>
-                            </>
-                          )}
-                          {canVerifyExpense && expense.status === "approved" && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                              onClick={() => handleStatusChange(expense.id, "verified")}
-                            >
-                              <ShieldCheckIcon className="mr-2 size-4" />
-                              Verify
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 7 : 6} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
@@ -402,10 +406,10 @@ function Field({
   control: React.ReactNode
 }) {
   return (
-    <div className="grid gap-2">
-      <div className="text-sm">{label}</div>
+    <div className="grid gap-1.5">
+      <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">{label}</div>
       {control}
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {error ? <div className="text-xs text-destructive">{error}</div> : null}
     </div>
   )
 }
@@ -421,7 +425,7 @@ function StatusBadge({ status }: { status: FmsExpense["status"] }) {
           : "border-amber-500/30 bg-amber-500/10 text-amber-700"
 
   return (
-    <Badge variant="outline" className={tone}>
+    <Badge variant="outline" className={cn(tone, "rounded-[4px] capitalize")}>
       {status}
     </Badge>
   )
@@ -458,8 +462,8 @@ function SummaryCard({
       !isFirst && "border-l"
     )}>
       <CardHeader className="pb-2">
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
+        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">{label}</div>
+        <CardTitle className="text-2xl tabular-nums tracking-tight text-foreground @[250px]/card:text-3xl">
           {formatMoney(value)}
         </CardTitle>
         {trend && (
@@ -472,14 +476,14 @@ function SummaryCard({
               {trend.value}
             </span>
             {trendLabel && (
-              <span className="text-[10px] text-muted-foreground uppercase">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 {trendLabel}
               </span>
             )}
           </div>
         )}
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
+      <CardContent className="text-xs text-muted-foreground">
         {description}
       </CardContent>
     </Card>

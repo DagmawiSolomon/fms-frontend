@@ -115,6 +115,8 @@ export default function CashRequestsPage() {
     toast.success(`Request marked as ${status}`)
   }
 
+  const showActions = canApproveRequest || canDisburseRequest
+
   return (
     <DashboardShell
       title="Cash requests"
@@ -185,69 +187,71 @@ export default function CashRequestsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Request</TableHead>
-                  <TableHead>Purpose</TableHead>
-                  <TableHead>Requested By</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Request</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Purpose</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Requested By</TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Status</TableHead>
+                  {showActions && <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRequests.length ? (
                   filteredRequests.map((req) => (
                     <TableRow key={req.id}>
-                      <TableCell className="font-medium">{req.title}</TableCell>
+                      <TableCell className="text-sm font-normal text-foreground">{req.title}</TableCell>
                       <TableCell className="max-w-[250px] truncate text-muted-foreground">
                         {req.purpose || "No details"}
                       </TableCell>
                       <TableCell>{req.requestedBy || "Unknown"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right tabular-nums">
                         {formatMoney(req.amount)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          {canApproveRequest && req.status === "pending" && (
-                            <>
+                      {showActions && (
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            {canApproveRequest && req.status === "pending" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStatusChange(req.id, "approved")}
+                                >
+                                  <CheckIcon className="size-4" />
+                                  <span className="sr-only">Approve</span>
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStatusChange(req.id, "rejected")}
+                                >
+                                  <XIcon className="size-4" />
+                                  <span className="sr-only">Reject</span>
+                                </Button>
+                              </>
+                            )}
+                            {canDisburseRequest && req.status === "approved" && (
                               <Button
-                                variant="outline"
+                                variant="default"
                                 size="sm"
-                                onClick={() => handleStatusChange(req.id, "approved")}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                onClick={() => handleStatusChange(req.id, "disbursed")}
                               >
-                                <CheckIcon className="size-4" />
-                                <span className="sr-only">Approve</span>
+                                <BanknoteIcon className="mr-2 size-4" />
+                                Disburse
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStatusChange(req.id, "rejected")}
-                              >
-                                <XIcon className="size-4" />
-                                <span className="sr-only">Reject</span>
-                              </Button>
-                            </>
-                          )}
-                          {canDisburseRequest && req.status === "approved" && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleStatusChange(req.id, "disbursed")}
-                            >
-                              <BanknoteIcon className="mr-2 size-4" />
-                              Disburse
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
                       No cash requests found.
                     </TableCell>
                   </TableRow>
@@ -363,10 +367,10 @@ function Field({
   control: React.ReactNode
 }) {
   return (
-    <div className="grid gap-2">
-      <div className="text-sm font-medium">{label}</div>
+    <div className="grid gap-1.5">
+      <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">{label}</div>
       {control}
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {error ? <div className="text-xs text-destructive">{error}</div> : null}
     </div>
   )
 }
@@ -382,7 +386,7 @@ function StatusBadge({ status }: { status: FmsCashRequest["status"] }) {
           : "border-amber-500/30 bg-amber-500/10 text-amber-700"
 
   return (
-    <Badge variant="outline" className={tone}>
+    <Badge variant="outline" className={cn(tone, "rounded-[4px] capitalize")}>
       {status}
     </Badge>
   )
@@ -420,8 +424,8 @@ function SummaryCard({
       !isFirst && "border-l"
     )}>
       <CardHeader className="pb-2">
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
+        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">{label}</div>
+        <CardTitle className="text-2xl tabular-nums tracking-tight text-foreground @[250px]/card:text-3xl">
           {formatMoney(value)}
         </CardTitle>
         {trend && (
@@ -434,14 +438,14 @@ function SummaryCard({
               {trend.value}
             </span>
             {trendLabel && (
-              <span className="text-[10px] text-muted-foreground uppercase">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 {trendLabel}
               </span>
             )}
           </div>
         )}
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
+      <CardContent className="text-xs text-muted-foreground">
         {description}
       </CardContent>
     </Card>
