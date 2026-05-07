@@ -4,6 +4,7 @@ import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 
 // --- Mock Data ---
 const stats = {
@@ -11,6 +12,12 @@ const stats = {
   pendingCashRequests: 12,
   totalPendingAmount: 45000,
   remainingBudget: 120000,
+  trends: {
+    budgets: "+1",
+    requests: "+4",
+    amount: "+$8,500",
+    remaining: "-$2,100"
+  }
 }
 
 const approvalPipelineData = [
@@ -51,6 +58,12 @@ export function ManagerDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{stats.pendingBudgetApprovals}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.budgets}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Awaiting your approval</CardContent>
         </Card>
@@ -58,6 +71,12 @@ export function ManagerDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{stats.pendingCashRequests}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.requests}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">new today</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Cash requests awaiting review</CardContent>
         </Card>
@@ -65,6 +84,12 @@ export function ManagerDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Total Pending Amount</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalPendingAmount)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.amount}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">total volume</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of pending items</CardContent>
         </Card>
@@ -72,6 +97,12 @@ export function ManagerDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Remaining Budget</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowDownIcon className="size-3" /> {stats.trends.remaining}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs last month</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Across your departments</CardContent>
         </Card>

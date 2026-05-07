@@ -5,14 +5,23 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell, Line, 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+
 // --- Mock Data ---
 const stats = {
-  totalBudgetAllocated: 1200000,
-  totalBudgetUsed: 450000,
-  remainingBudget: 750000,
-  pendingCashRequestsCount: 24,
-  pendingCashRequestsAmount: 85000,
-  pendingExpenseVerifications: 15,
+  totalBudgetAllocated: 850000,
+  totalBudgetUsed: 540000,
+  remainingBudget: 310000,
+  pendingCashRequestsCount: 8,
+  pendingCashRequestsAmount: 24500,
+  pendingExpenseVerifications: 12,
+  trends: {
+    allocated: "+2.5%",
+    used: "+12.1%",
+    remaining: "-4.3%",
+    requests: "+5",
+    verifications: "-2"
+  }
 }
 
 const budgetByDeptData = [
@@ -73,18 +82,36 @@ export function FinanceDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Allocated Budget</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.allocated}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+            </div>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Budget Used</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.used}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs previous</span>
+            </div>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowDownIcon className="size-3" /> {stats.trends.remaining}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+            </div>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
@@ -93,12 +120,24 @@ export function FinanceDashboardView() {
             <CardTitle className="text-2xl tabular-nums">
               {stats.pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(stats.pendingCashRequestsAmount)})</span>
             </CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.requests}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">new requests</span>
+            </div>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Verifications</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{stats.pendingExpenseVerifications}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowDownIcon className="size-3" /> {stats.trends.verifications}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
+            </div>
           </CardHeader>
         </Card>
       </div>

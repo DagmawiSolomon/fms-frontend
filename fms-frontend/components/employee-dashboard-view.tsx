@@ -4,12 +4,18 @@ import * as React from "react"
 import { Line, LineChart, Pie, PieChart, XAxis, CartesianGrid, Tooltip, Cell, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 
 // --- Mock Data ---
 const stats = {
   totalExpenses: 28,
   totalSpent: 4250.75,
   remainingFunds: 1749.25,
+  trends: {
+    expenses: "+3",
+    spent: "+12%",
+    remaining: "-8%"
+  }
 }
 
 const spendingData = [
@@ -54,6 +60,12 @@ export function EmployeeDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Total Expenses</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{stats.totalExpenses}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.expenses}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">since last week</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Expenses submitted to date</CardContent>
         </Card>
@@ -61,6 +73,12 @@ export function EmployeeDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Total Spent</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalSpent)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.spent}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+            </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of all approved expenses</CardContent>
         </Card>
@@ -68,8 +86,14 @@ export function EmployeeDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Remaining Funds</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingFunds)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowDownIcon className="size-3" /> {stats.trends.remaining}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+            </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Available from approved requests</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Available balance this period</CardContent>
         </Card>
       </div>
 
