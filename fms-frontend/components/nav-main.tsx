@@ -47,7 +47,7 @@ export function NavMain({
                     <span className="flex size-4 items-center justify-center shrink-0 rounded-xl [&_svg]:size-4 [&_svg]:shrink-0">
                       {item.icon}
                     </span>
-                    <span className="group-data-[collapsible=icon]:hidden font-medium">{item.title}</span>
+                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

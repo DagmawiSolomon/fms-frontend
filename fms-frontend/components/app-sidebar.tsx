@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     >
       <SidebarHeader>
         <div className="flex items-center justify-start px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <SidebarTrigger className="rounded-none text-sidebar-foreground hover:bg-sidebar-accent/50" />
+          <SidebarTrigger className="rounded-[4px] text-sidebar-foreground hover:bg-sidebar-accent/50" />
         </div>
       </SidebarHeader>
 

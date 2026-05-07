@@ -53,21 +53,21 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Expenses</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{stats.totalExpenses}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{stats.totalExpenses}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Expenses submitted to date</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Spent</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{formatMoney(stats.totalSpent)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalSpent)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of all approved expenses</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Funds</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{formatMoney(stats.remainingFunds)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingFunds)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Available from approved requests</CardContent>
         </Card>
@@ -105,7 +105,7 @@ export function EmployeeDashboardView() {
                   <div key={entry.category} className="flex items-center gap-2">
                     <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
                     <span className="text-xs text-muted-foreground min-w-[70px]">{entry.category}</span>
-                    <span className="text-xs font-medium tabular-nums">{formatMoney(entry.amount)}</span>
+                    <span className="text-xs tabular-nums">{formatMoney(entry.amount)}</span>
                   </div>
                 ))}
               </div>

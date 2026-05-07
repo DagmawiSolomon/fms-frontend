@@ -50,28 +50,28 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{stats.pendingBudgetApprovals}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{stats.pendingBudgetApprovals}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Awaiting your approval</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{stats.pendingCashRequests}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{stats.pendingCashRequests}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Cash requests awaiting review</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Pending Amount</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{formatMoney(stats.totalPendingAmount)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalPendingAmount)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of pending items</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Budget</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Across your departments</CardContent>
         </Card>

@@ -129,7 +129,7 @@ export default function ExpensesPage() {
                 {expenses.length ? (
                   expenses.map((expense) => (
                     <TableRow key={expense.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="">
                         {expense.merchant}
                         {expense.receiptUrl && (
                           <span className="ml-2 text-xs text-muted-foreground">(Receipt attached)</span>
@@ -138,7 +138,7 @@ export default function ExpensesPage() {
                       <TableCell>{expense.category}</TableCell>
                       <TableCell>{expense.date}</TableCell>
                       <TableCell>{expense.submitter || "Unknown"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right">
                         {formatMoney(expense.amount)}
                       </TableCell>
                       <TableCell>
@@ -332,7 +332,7 @@ function Field({
 }) {
   return (
     <div className="grid gap-2">
-      <div className="text-sm font-medium">{label}</div>
+      <div className="text-sm">{label}</div>
       {control}
       {error ? <div className="text-sm text-destructive">{error}</div> : null}
     </div>

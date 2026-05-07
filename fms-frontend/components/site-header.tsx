@@ -79,7 +79,7 @@ export function SiteHeader({
 
         <div className="flex min-w-0 items-center gap-2">
 
-          <span className="text-sm font-medium flex items-center gap-1 ">
+          <span className="text-sm flex items-center gap-1 ">
             <Handshake className="size-4 shrink-0 text-sidebar-foreground" />
             <span>FMS</span>
           </span>
@@ -95,7 +95,7 @@ export function SiteHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-sidebar-foreground/70 hidden sm:inline-block">
+          <span className="text-xs text-sidebar-foreground/70 hidden sm:inline-block">
             View as:
           </span>
           <Select value={role} onValueChange={(value) => setRole(value as Role)}>
@@ -117,7 +117,7 @@ export function SiteHeader({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="h-10 gap-2 rounded-none px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
+              className="h-10 gap-2 rounded-[4px] px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
             >
               <Avatar className="size-7 rounded-lg grayscale">
                 <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
@@ -130,7 +130,7 @@ export function SiteHeader({
                     .toUpperCase() || "FT"}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden max-w-32 truncate text-sm font-medium sm:block">
+              <span className="hidden max-w-32 truncate text-sm sm:block">
                 {user.name}
               </span>
               <ChevronDownIcon className="size-4 opacity-70" />
@@ -155,7 +155,7 @@ export function SiteHeader({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{user.name}</p>
+                  <p className="truncate text-sm">{user.name}</p>
                   <p className="truncate text-xs text-sidebar-foreground/55">
                     {user.email}
                   </p>

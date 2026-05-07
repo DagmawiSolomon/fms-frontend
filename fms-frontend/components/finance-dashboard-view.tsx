@@ -72,25 +72,25 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Allocated Budget</CardDescription>
-            <CardTitle className="text-2xl font-medium tabular-nums">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
+            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Budget Used</CardDescription>
-            <CardTitle className="text-2xl font-medium tabular-nums">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
+            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining</CardDescription>
-            <CardTitle className="text-2xl font-medium tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-2xl font-medium tabular-nums">
+            <CardTitle className="text-2xl tabular-nums">
               {stats.pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(stats.pendingCashRequestsAmount)})</span>
             </CardTitle>
           </CardHeader>
@@ -98,7 +98,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Verifications</CardDescription>
-            <CardTitle className="text-2xl font-medium tabular-nums">{stats.pendingExpenseVerifications}</CardTitle>
+            <CardTitle className="text-2xl tabular-nums">{stats.pendingExpenseVerifications}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -156,7 +156,7 @@ export function FinanceDashboardView() {
                   <div key={entry.category} className="flex items-center gap-2">
                     <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
                     <span className="text-xs text-muted-foreground min-w-[80px]">{entry.category}</span>
-                    <span className="text-xs font-medium tabular-nums">{formatMoney(entry.amount)}</span>
+                    <span className="text-xs tabular-nums">{formatMoney(entry.amount)}</span>
                   </div>
                 ))}
               </div>

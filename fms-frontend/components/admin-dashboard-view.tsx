@@ -32,14 +32,14 @@ export function AdminDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{stats.totalUsers}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{stats.totalUsers}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Active platform accounts</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>User Roles</CardDescription>
-            <CardTitle className="text-3xl font-medium tabular-nums">{stats.usersByRole}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{stats.usersByRole}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">System access tiers</CardContent>
         </Card>
@@ -57,7 +57,7 @@ export function AdminDashboardView() {
                 <div key={entry.role} className="flex items-center gap-2">
                   <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
                   <span className="text-xs text-muted-foreground min-w-[70px]">{entry.role}</span>
-                  <span className="text-xs font-medium tabular-nums">{entry.count}</span>
+                  <span className="text-xs tabular-nums">{entry.count}</span>
                 </div>
               ))}
             </div>

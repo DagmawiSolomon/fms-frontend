@@ -70,7 +70,7 @@ export default function UsersPage() {
       {!canManage ? (
         <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
           <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-            <div className="flex items-center gap-2 mb-2 font-semibold">
+            <div className="flex items-center gap-2 mb-2">
               <ShieldAlertIcon className="size-4" />
               Access limited
             </div>
@@ -105,7 +105,7 @@ export default function UsersPage() {
                   {users.length ? (
                     users.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell className="">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">{user.role}</Badge>

@@ -17,7 +17,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
             $1,250.00
           </CardTitle>
           <CardAction>
@@ -29,7 +29,7 @@ export function SectionCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className="line-clamp-1 flex gap-2">
             Trending up this month{" "}
             <TrendingUpIcon className="size-4" />
           </div>
@@ -41,7 +41,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
             1,234
           </CardTitle>
           <CardAction>
@@ -53,7 +53,7 @@ export function SectionCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className="line-clamp-1 flex gap-2">
             Down 20% this period{" "}
             <TrendingDownIcon className="size-4" />
           </div>
@@ -65,7 +65,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
             45,678
           </CardTitle>
           <CardAction>
@@ -77,7 +77,7 @@ export function SectionCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className="line-clamp-1 flex gap-2">
             Strong user retention{" "}
             <TrendingUpIcon className="size-4" />
           </div>
@@ -87,7 +87,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
             4.5%
           </CardTitle>
           <CardAction>
@@ -99,7 +99,7 @@ export function SectionCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className="line-clamp-1 flex gap-2">
             Steady performance increase{" "}
             <TrendingUpIcon className="size-4" />
           </div>
