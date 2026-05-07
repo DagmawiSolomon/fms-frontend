@@ -25,7 +25,8 @@ import {
 import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
-import { useRole, type Role } from "@/components/role-provider"
+import { useRole } from "@/components/role-provider"
+import { Role } from "@/lib/roles"
 import {
   Select,
   SelectContent,
@@ -103,6 +104,7 @@ export function SiteHeader({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="leadership">Leadership (CEO/COO)</SelectItem>
               <SelectItem value="finance">Finance Team</SelectItem>
               <SelectItem value="manager">Manager</SelectItem>
               <SelectItem value="employee">Employee</SelectItem>

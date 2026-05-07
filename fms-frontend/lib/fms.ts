@@ -53,15 +53,20 @@ export type FmsCashRequest = {
   status: "pending" | "approved" | "disbursed" | "rejected"
   purpose?: string | null
   requestedBy?: string | null
+  budgetId?: string | number | null
 }
 
 export type FmsExpense = {
   id: string | number
-  title: string
+  merchant: string
   amount: number
-  status: "pending" | "verified" | "rejected"
+  status: "pending" | "approved" | "verified" | "rejected"
   category?: string | null
   receiptUrl?: string | null
+  budgetId?: string | number | null
+  requestId?: string | number | null
+  date?: string | null
+  submitter?: string | null
 }
 
 export type FmsAuthResponse = {
@@ -116,9 +121,12 @@ export type CashRequestInput = {
 }
 
 export type ExpenseInput = {
-  title: string
+  merchant: string
   amount: number
   category: string
+  date: string
+  budgetId?: string | number
+  requestId?: string | number
   notes?: string
 }
 
@@ -241,6 +249,7 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
       requestedBy: (request.requestedBy ?? request.createdBy ?? null) as
         | string
         | null,
+      budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
     }
   })
 }
@@ -250,13 +259,17 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
     const expense = item as Record<string, unknown>
     return {
       id: normalizeIdentifier(expense.id ?? expense._id, index),
-      title: (expense.title ?? expense.name ?? "Expense") as string,
+      merchant: (expense.merchant ?? expense.title ?? expense.name ?? "Expense") as string,
       amount: numberValue(expense.amount ?? expense.total ?? 0),
       status: normalizeExpenseStatus(expense.status),
       category: (expense.category ?? expense.type ?? null) as string | null,
       receiptUrl: (expense.receiptUrl ?? expense.receipt ?? null) as
         | string
         | null,
+      budgetId: (expense.budgetId ?? expense.budget_id ?? null) as string | number | null,
+      requestId: (expense.requestId ?? expense.request_id ?? null) as string | number | null,
+      date: (expense.date ?? expense.created_at ?? null) as string | null,
+      submitter: (expense.submitter ?? expense.user_name ?? null) as string | null,
     }
   })
 }

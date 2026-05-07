@@ -6,6 +6,7 @@ import { EmployeeDashboardView } from "@/components/employee-dashboard-view"
 import { ManagerDashboardView } from "@/components/manager-dashboard-view"
 import { FinanceDashboardView } from "@/components/finance-dashboard-view"
 import { AdminDashboardView } from "@/components/admin-dashboard-view"
+import { LeadershipDashboardView } from "@/components/leadership-dashboard-view"
 import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
 
@@ -95,6 +96,7 @@ export default function DashboardPage() {
       {role === "manager" && <ManagerDashboardView />}
       {role === "finance" && <FinanceDashboardView />}
       {role === "admin" && <AdminDashboardView />}
+      {role === "leadership" && <LeadershipDashboardView />}
     </DashboardShell>
   )
 }

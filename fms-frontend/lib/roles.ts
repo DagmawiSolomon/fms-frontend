@@ -8,10 +8,12 @@ import {
   ShieldCheck,
   Briefcase,
   Users,
+  Coins,
+  LayoutDashboard,
   LucideIcon
 } from "lucide-react"
 
-export type Role = "employee" | "manager" | "finance" | "admin"
+export type Role = "employee" | "manager" | "finance" | "admin" | "leadership"
 
 export interface NavItem {
   title: string
@@ -59,7 +61,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   finance: {
     name: "Finance Team",
     description: "Financial oversight, budget creation, and disbursement.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
+    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -68,6 +70,9 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "budgets.create",
       "budgets.update",
       "budgets.summary",
+      "petty_cash.view",
+      "petty_cash.record_transaction",
+      "petty_cash.verify",
       "cash_requests.view_all",
       "cash_requests.view_specific",
       "cash_requests.disburse",
@@ -83,18 +88,20 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   manager: {
     name: "Department Manager",
-    description: "Budget approval and cash request verification.",
+    description: "Budget submission, approval, and cash request verification.",
     navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
       "budgets.view_all",
       "budgets.view_specific",
+      "budgets.create",
       "budgets.approve",
       "budgets.reject",
       "budgets.summary",
       "cash_requests.view_all",
       "cash_requests.view_specific",
+      "cash_requests.create",
       "cash_requests.approve",
       "expenses.view_all",
       "expenses.read_receipt",
@@ -107,8 +114,10 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   employee: {
     name: "General Employee",
     description: "Submit expenses and request cash for operations.",
-    navigation: ["Dashboard", "Cash Requests", "Expenses"],
+    navigation: ["Dashboard", "Petty Cash", "Cash Requests", "Expenses"],
     permissions: [
+      "petty_cash.view",
+      "petty_cash.record_transaction",
       "cash_requests.create",
       "cash_requests.view_specific",
       "cash_requests.view_self",
@@ -119,6 +128,29 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "users.view_profile_self"
     ],
     color: "blue"
+  },
+  leadership: {
+    name: "Leadership (CEO/COO)",
+    description: "Executive oversight, high-value approvals, and petty cash limits.",
+    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses", "Reports"],
+    permissions: [
+      "users.view_all",
+      "users.view_profile",
+      "budgets.view_all",
+      "budgets.approve",
+      "budgets.reject",
+      "budgets.summary",
+      "petty_cash.view",
+      "petty_cash.set_limit",
+      "cash_requests.view_all",
+      "cash_requests.approve",
+      "expenses.view_all",
+      "reports.budgets",
+      "reports.expenses",
+      "reports.overview",
+      "reports.executive"
+    ],
+    color: "indigo"
   }
 }
 
@@ -134,6 +166,11 @@ export const ALL_NAV_ITEMS = [
     icon: HandCoins,
   },
   {
+    title: "Petty Cash",
+    url: "/petty-cash",
+    icon: Coins,
+  },
+  {
     title: "Cash Requests",
     url: "/cash-requests",
     icon: ReceiptTextIcon,
@@ -142,6 +179,11 @@ export const ALL_NAV_ITEMS = [
     title: "Expenses",
     url: "/expenses",
     icon: WalletIcon,
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: ChartColumnBigIcon,
   },
   {
     title: "Users",
