@@ -1,0 +1,213 @@
+"use client"
+
+import * as React from "react"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, ResponsiveContainer, LabelList } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ArrowDownIcon, ArrowUpIcon, Settings2Icon, TrendingUpIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+
+// --- Executive Mock Data ---
+const executiveStats = {
+  totalRevenue: 2450000,
+  operatingExpenses: 540000,
+  pettyCashLimit: 5000,
+  pettyCashSpent: 3850,
+  pendingHighValueBudgets: 3,
+  trends: {
+    revenue: "+12.5%",
+    expenses: "+4.2%",
+    pettyCash: "77%", // Usage percentage
+  }
+}
+
+const budgetOverviewData = [
+  { category: "Payroll", allocated: 1200000, actual: 1180000 },
+  { category: "Marketing", allocated: 350000, actual: 320000 },
+  { category: "R&D", allocated: 500000, actual: 480000 },
+  { category: "Operations", allocated: 400000, actual: 410000 },
+]
+
+const budgetChartConfig = {
+  allocated: { label: "Allocated", color: "#6366f1" },
+  actual: { label: "Actual", color: "#10b981" },
+} satisfies ChartConfig
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+export function LeadershipDashboardView() {
+  const [weeklyLimit, setWeeklyLimit] = React.useState(executiveStats.pettyCashLimit)
+  const [isEditingLimit, setIsEditingLimit] = React.useState(false)
+
+  const handleUpdateLimit = () => {
+    if (weeklyLimit < executiveStats.pettyCashSpent) {
+      toast.warning(`Warning: New limit (${formatMoney(weeklyLimit)}) is lower than this week's current spending (${formatMoney(executiveStats.pettyCashSpent)}).`)
+    } else {
+      toast.success(`Petty Cash weekly limit updated to ${formatMoney(weeklyLimit)}`)
+    }
+    setIsEditingLimit(false)
+  }
+
+  const pettyCashUsagePercent = (executiveStats.pettyCashSpent / weeklyLimit) * 100
+  const isThresholdReached = pettyCashUsagePercent >= 80
+
+  return (
+    <div className="flex flex-col gap-0">
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+        <Card className="rounded-none border-0 shadow-none @container/card">
+          <CardHeader className="pb-2">
+            <CardDescription>Total Revenue</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {executiveStats.trends.revenue}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs last qtr</span>
+            </div>
+          </CardHeader>
+        </Card>
+        
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Operating Expenses</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-rose-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {executiveStats.trends.expenses}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Petty Cash Usage</CardDescription>
+            <CardTitle className={cn(
+              "text-2xl tabular-nums",
+              isThresholdReached ? "text-rose-600" : "text-foreground"
+            )}>
+              {pettyCashUsagePercent.toFixed(1)}%
+            </CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className={cn(
+                "text-[10px] flex items-center",
+                isThresholdReached ? "text-rose-500" : "text-emerald-500"
+              )}>
+                {isThresholdReached ? "Threshold Alert!" : "Within Limit"}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {formatMoney(executiveStats.pettyCashSpent)} / {formatMoney(weeklyLimit)}
+              </span>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Pending High-Value</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{executiveStats.pendingHighValueBudgets}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-amber-500 flex items-center">
+                Requires Approval
+              </span>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <div className="grid gap-0 lg:grid-cols-3 border rounded-b-[4px] overflow-hidden">
+        <Card className="lg:col-span-2 rounded-none border-0 shadow-none">
+          <CardHeader>
+            <CardTitle>Budget Allocation vs Actuals</CardTitle>
+            <CardDescription>Executive Overview by Category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={budgetChartConfig} className="h-[350px] w-full">
+              <BarChart data={budgetOverviewData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="category" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <Legend verticalAlign="bottom" height={36} />
+                <Bar dataKey="allocated" fill="var(--color-allocated)" radius={[0, 0, 0, 0]} barSize={40} />
+                <Bar dataKey="actual" fill="var(--color-actual)" radius={[0, 0, 0, 0]} barSize={40} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50 bg-muted/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Petty Cash Settings</CardTitle>
+                <CardDescription>Manage organization limits</CardDescription>
+              </div>
+              <Settings2Icon className="size-5 text-muted-foreground/50" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Weekly Spending Limit</label>
+              {isEditingLimit ? (
+                <div className="flex gap-2">
+                  <Input 
+                    type="number" 
+                    value={weeklyLimit} 
+                    onChange={(e) => setWeeklyLimit(Number(e.target.value))}
+                    className="h-9 rounded-none"
+                  />
+                  <Button size="sm" className="h-9 rounded-none" onClick={handleUpdateLimit}>Save</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 border border-dashed rounded-none bg-background">
+                  <span className="text-xl font-medium tabular-nums">{formatMoney(weeklyLimit)}</span>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs underline" onClick={() => setIsEditingLimit(true)}>Edit</Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Consumption Stats</label>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span>Usage Progress</span>
+                  <span className={isThresholdReached ? "text-rose-500 font-bold" : ""}>{pettyCashUsagePercent.toFixed(0)}%</span>
+                </div>
+                <div className="h-2 w-full bg-muted border overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full transition-all duration-500",
+                      isThresholdReached ? "bg-rose-500" : "bg-emerald-500"
+                    )} 
+                    style={{ width: `${pettyCashUsagePercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                  * Alerts are automatically sent to finance when usage crosses 80%.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-border/50">
+              <Button className="w-full h-10 rounded-none bg-indigo-600 hover:bg-indigo-700" onClick={() => toast.info("Audit log exported to email")}>
+                Export Executive Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
