@@ -39,10 +39,10 @@ export default function DashboardPage() {
   const financeActions = (
     <div className="flex items-center gap-2">
       <Tabs value={periodType} onValueChange={setPeriodType} className="w-auto">
-        <TabsList className="h-10 rounded-none bg-background border-4 p-0">
-          <TabsTrigger value="monthly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Monthly</TabsTrigger>
-          <TabsTrigger value="quarterly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quarterly</TabsTrigger>
-          <TabsTrigger value="yearly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Yearly</TabsTrigger>
+        <TabsList className="h-9 rounded-[4px] bg-background border p-0">
+          <TabsTrigger value="monthly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Monthly</TabsTrigger>
+          <TabsTrigger value="quarterly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quarterly</TabsTrigger>
+          <TabsTrigger value="yearly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Yearly</TabsTrigger>
         </TabsList>
       </Tabs>
       
@@ -52,7 +52,7 @@ export default function DashboardPage() {
             id="date"
             variant={"outline"}
             className={cn(
-              "h-10 w-[260px] justify-start text-left font-normal rounded-none border-4",
+              "h-9 w-[240px] justify-start text-left font-normal rounded-[4px] border",
               !date && "text-muted-foreground"
             )}
           >
