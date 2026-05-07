@@ -42,7 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { resolvedTheme, setTheme } = useTheme()
   const { role, config } = useRole()
 
-  const visibleItems = ALL_NAV_ITEMS.filter((item) => 
+  const visibleItems = ALL_NAV_ITEMS.filter((item) =>
     config.navigation.includes(item.title)
   )
 

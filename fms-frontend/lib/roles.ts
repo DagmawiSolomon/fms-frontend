@@ -59,7 +59,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   finance: {
     name: "Finance Team",
     description: "Financial oversight, budget creation, and disbursement.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -84,7 +84,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   manager: {
     name: "Department Manager",
     description: "Budget approval and cash request verification.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -142,11 +142,6 @@ export const ALL_NAV_ITEMS = [
     title: "Expenses",
     url: "/expenses",
     icon: WalletIcon,
-  },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: ChartColumnBigIcon,
   },
   {
     title: "Users",
