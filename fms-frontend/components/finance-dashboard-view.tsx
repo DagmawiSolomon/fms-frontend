@@ -1,13 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell, Line, LineChart, Legend } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, Treemap, ResponsiveContainer, Tooltip } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
 
-// --- Mock Data ---
+// --- Original Mock Data ---
 const stats = {
   totalBudgetAllocated: 850000,
   totalBudgetUsed: 540000,
@@ -50,21 +49,13 @@ const cashFlowChartConfig = {
   disbursed: { label: "Disbursed", color: "#10b981" },
 } satisfies ChartConfig
 
-const expenseCategoryData = [
-  { category: "Travel", amount: 45000, fill: "#3b82f6" },
-  { category: "Software", amount: 120000, fill: "#8b5cf6" },
-  { category: "Hardware", amount: 85000, fill: "#10b981" },
-  { category: "Office", amount: 25000, fill: "#f59e0b" },
-  { category: "Events", amount: 65000, fill: "#ec4899" },
+const expenseTreemapData = [
+  { name: "Travel", value: 45000, fill: "#3b82f6" },
+  { name: "Software", value: 120000, fill: "#8b5cf6" },
+  { name: "Hardware", value: 85000, fill: "#10b981" },
+  { name: "Office", value: 25000, fill: "#f59e0b" },
+  { name: "Events", value: 65000, fill: "#ec4899" },
 ]
-
-const expenseChartConfig = {
-  travel: { label: "Travel", color: "#3b82f6" },
-  software: { label: "Software", color: "#8b5cf6" },
-  hardware: { label: "Hardware", color: "#10b981" },
-  office: { label: "Office", color: "#f59e0b" },
-  events: { label: "Events", color: "#ec4899" },
-} satisfies ChartConfig
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -73,6 +64,56 @@ function formatMoney(value: number) {
     maximumFractionDigits: 0,
   }).format(value)
 }
+
+const CustomTreemapContent = (props: any) => {
+  const { x, y, width, height, index, name, value, fill } = props;
+
+  // Calculate dynamic font sizes based on box size
+  const nameSize = Math.max(10, Math.min(width / 8, 16));
+  const valueSize = Math.max(8, Math.min(width / 10, 14));
+
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        style={{
+          fill: fill,
+          stroke: '#fff',
+          strokeWidth: 2 / (index + 1),
+          strokeOpacity: 1,
+        }}
+      />
+      {width > 40 && height > 30 && (
+        <>
+          <text
+            x={x + width / 2}
+            y={y + height / 2 - 5}
+            textAnchor="middle"
+            fill="#fff"
+            fontSize={nameSize}
+            fontWeight="400"
+          >
+            {name}
+          </text>
+          <text
+            x={x + width / 2}
+            y={y + height / 2 + 12}
+            textAnchor="middle"
+            fill="#fff"
+            fontSize={valueSize}
+            fontWeight="400"
+            opacity={0.8}
+          >
+            {formatMoney(value)}
+          </text>
+        </>
+      )}
+    </g>
+  );
+};
 
 export function FinanceDashboardView() {
   return (
@@ -156,8 +197,8 @@ export function FinanceDashboardView() {
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                 <Legend verticalAlign="bottom" height={36} />
-                <Bar dataKey="used" stackId="a" fill="var(--color-used)" radius={[0, 0, 4, 4]} barSize={30} />
-                <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar dataKey="used" stackId="a" fill="var(--color-used)" radius={[0, 0, 0, 0]} barSize={30} />
+                <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[0, 0, 0, 0]} barSize={30} />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -186,40 +227,32 @@ export function FinanceDashboardView() {
         <Card className="lg:col-span-2 rounded-none border-b-0 border-r-0 border-l-0 shadow-none border-t border-border/50">
           <CardHeader>
             <CardTitle>Expense Categories</CardTitle>
-            <CardDescription>Global breakdown</CardDescription>
+            <CardDescription>Global breakdown (Treemap view)</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-center py-6">
-            <div className="flex items-center justify-center gap-1">
-              <div className="flex flex-col gap-1.5 pr-2">
-                {expenseCategoryData.map((entry) => (
-                  <div key={entry.category} className="flex items-center gap-2">
-                    <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
-                    <span className="text-xs text-muted-foreground min-w-[80px]">{entry.category}</span>
-                    <span className="text-xs tabular-nums">{formatMoney(entry.amount)}</span>
-                  </div>
-                ))}
-              </div>
-              <ChartContainer config={expenseChartConfig} className="h-[300px] w-[300px] shrink-0">
-                <PieChart width={300} height={300}>
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Pie 
-                    data={expenseCategoryData} 
-                    dataKey="amount" 
-                    nameKey="category" 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={70} 
-                    outerRadius={110} 
-                    paddingAngle={2}
-                    stroke="none"
-                  >
-                    {expenseCategoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </div>
+          <CardContent className="h-[400px] w-full pt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <Treemap
+                data={expenseTreemapData}
+                dataKey="value"
+                aspectRatio={4 / 3}
+                stroke="#fff"
+                content={<CustomTreemapContent />}
+              >
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-none border bg-background p-2 shadow-sm text-xs">
+                          <div className="font-medium">{payload[0].payload.name}</div>
+                          <div className="text-muted-foreground">{formatMoney(payload[0].value)}</div>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+              </Treemap>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
