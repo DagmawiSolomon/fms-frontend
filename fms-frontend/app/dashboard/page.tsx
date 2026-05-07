@@ -40,9 +40,9 @@ export default function DashboardPage() {
     <div className="flex items-center gap-2">
       <Tabs value={periodType} onValueChange={setPeriodType} className="w-auto">
         <TabsList className="h-9 rounded-[4px] bg-background border p-0">
-          <TabsTrigger value="monthly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Monthly</TabsTrigger>
-          <TabsTrigger value="quarterly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quarterly</TabsTrigger>
-          <TabsTrigger value="yearly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Yearly</TabsTrigger>
+          <TabsTrigger value="monthly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Monthly</TabsTrigger>
+          <TabsTrigger value="quarterly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Quarterly</TabsTrigger>
+          <TabsTrigger value="yearly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Yearly</TabsTrigger>
         </TabsList>
       </Tabs>
       
