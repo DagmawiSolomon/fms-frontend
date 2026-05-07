@@ -4,8 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import {
   ChartColumnBigIcon,
-  Gauge,
   HandCoins,
+  HomeIcon,
   LogOutIcon,
   ReceiptTextIcon,
   MoonIcon,
@@ -38,7 +38,7 @@ const navItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: <Gauge />,
+    icon: <HomeIcon />,
   },
   {
     title: "Budgets",
@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     >
       <SidebarHeader>
         <div className="flex items-center justify-start px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <SidebarTrigger className="rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50" />
+          <SidebarTrigger className="rounded-none text-sidebar-foreground hover:bg-sidebar-accent/50" />
         </div>
       </SidebarHeader>
 
@@ -136,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 setTheme(resolvedTheme === "dark" ? "light" : "dark")
               }}
             >
-              <span className="flex size-4 items-center justify-center shrink-0 [&_svg]:size-4 [&_svg]:shrink-0">
+              <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
                 <ThemeIcon />
               </span>
               <span className="group-data-[collapsible=icon]:hidden">{themeLabel}</span>
@@ -152,7 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 router.push("/login")
               }}
             >
-              <span className="flex size-4 items-center justify-center shrink-0 [&_svg]:size-4 [&_svg]:shrink-0">
+              <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
                 <LogOutIcon />
               </span>
               <span className="group-data-[collapsible=icon]:hidden">Log out</span>

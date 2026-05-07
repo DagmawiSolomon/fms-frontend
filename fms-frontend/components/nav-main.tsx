@@ -44,10 +44,10 @@ export function NavMain({
                   className="gap-3 group-data-[collapsible=icon]:justify-center"
                 >
                   <Link href={item.url} className={cn("flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center")}>
-                    <span className="flex size-4 items-center justify-center shrink-0 [&_svg]:size-4 [&_svg]:shrink-0">
+                    <span className="flex size-4 items-center justify-center shrink-0 rounded-xl [&_svg]:size-4 [&_svg]:shrink-0">
                       {item.icon}
                     </span>
-                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                    <span className="group-data-[collapsible=icon]:hidden font-medium">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

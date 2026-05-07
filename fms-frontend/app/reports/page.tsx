@@ -46,7 +46,7 @@ export default function ReportsPage() {
   return (
     <DashboardShell
       title="Reports"
-      description="Overview charts and financial reporting snapshots"
+      description="Analytics overview across department budgets and spend trends."
     >
       <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
         <ReportCard label="Budgeted" value={summary.totalBudget} />
@@ -55,11 +55,7 @@ export default function ReportsPage() {
         <ReportCard label="Pending approvals" value={summary.pendingApprovals} />
       </div>
 
-      <Card className="rounded-none overflow-hidden border shadow-none">
-        <CardHeader>
-          <CardTitle>Budget and spend trend</CardTitle>
-          <CardDescription>Analytics across budget and spend trends</CardDescription>
-        </CardHeader>
+      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <ChartContainer config={chartConfig} className="h-[360px] w-full">
             <AreaChart data={mockPoints} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

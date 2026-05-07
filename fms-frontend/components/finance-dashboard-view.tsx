@@ -103,7 +103,7 @@ export function FinanceDashboardView() {
         </Card>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-2 border border-b-0 rounded-none overflow-hidden">
+      <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
             <CardTitle>Budget Utilization by Department</CardTitle>

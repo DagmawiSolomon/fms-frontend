@@ -42,22 +42,24 @@ export function DashboardShell({
                 "md:pt-2 md:group-has-data-[collapsible=icon]/sidebar-wrapper:md:pt-4"
               )}
             >
-              <div className="mb-8 flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
-                  {description && (
-                    <p className="text-muted-foreground max-w-[75ch]">
-                      {description}
-                    </p>
+              <div className="flex flex-col gap-0">
+                <div className="flex flex-row items-center justify-between gap-4 border border-b-0 rounded-t-[4px] bg-card/30 px-4 py-8">
+                  <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
+                    {description && (
+                      <p className="text-muted-foreground max-w-[75ch]">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                  {actions && (
+                    <div className="flex items-center gap-3 shrink-0">
+                      {actions}
+                    </div>
                   )}
                 </div>
-                {actions && (
-                  <div className="flex items-center gap-3 shrink-0">
-                    {actions}
-                  </div>
-                )}
+                {children}
               </div>
-              {children}
             </div>
           </div>
         </div>

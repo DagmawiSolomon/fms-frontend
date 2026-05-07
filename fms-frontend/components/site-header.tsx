@@ -117,7 +117,7 @@ export function SiteHeader({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="h-10 gap-2 rounded-xl px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
+              className="h-10 gap-2 rounded-none px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
             >
               <Avatar className="size-7 rounded-lg grayscale">
                 <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
@@ -137,7 +137,7 @@ export function SiteHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="min-w-56 rounded-xl bg-sidebar"
+            className="min-w-56 rounded-none bg-sidebar"
             align="end"
             sideOffset={8}
           >

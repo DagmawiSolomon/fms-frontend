@@ -65,20 +65,18 @@ export default function UsersPage() {
   return (
     <DashboardShell
       title="Users"
-      description="Administrative user management and role control"
+      description="Administrative control over user access, permissions, and organizational roles."
     >
       {!canManage ? (
-        <Card className="rounded-none overflow-hidden border shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <div className="flex items-center gap-2 mb-2 font-semibold">
               <ShieldAlertIcon className="size-4" />
               Access limited
-            </CardTitle>
-            <CardDescription>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               Only administrators can manage the user directory.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
             <Button
               variant="outline"
               onClick={() => {
@@ -91,12 +89,8 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="rounded-none overflow-hidden border shadow-none">
-          <CardHeader>
-            <CardTitle>All users</CardTitle>
-            <CardDescription>Change roles and review the active account list</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+          <CardContent className="pt-6">
             <div className="overflow-hidden rounded-none border">
               <Table>
                 <TableHeader>

@@ -73,7 +73,7 @@ export function EmployeeDashboardView() {
         </Card>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-2 border rounded-none overflow-hidden">
+      <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
             <CardTitle>Spending Over Time</CardTitle>

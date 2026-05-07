@@ -45,7 +45,7 @@ export function AdminDashboardView() {
         </Card>
       </div>
 
-      <Card className="rounded-none overflow-hidden border shadow-none">
+      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardHeader>
           <CardTitle>Users by Role</CardTitle>
           <CardDescription>Distribution of permissions</CardDescription>

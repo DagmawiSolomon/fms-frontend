@@ -77,7 +77,7 @@ export function ManagerDashboardView() {
         </Card>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-2 border rounded-none overflow-hidden">
+      <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
             <CardTitle>Approval Pipeline</CardTitle>
@@ -110,7 +110,7 @@ export function ManagerDashboardView() {
             <ChartContainer config={utilizationChartConfig} className="h-[300px] w-full">
               <PieChart>
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Legend verticalAlign="bottom" height={36} />
+                <Legend verticalAlign="top" height={36} />
                 <Pie data={budgetUtilizationData} dataKey="amount" nameKey="type" cx="50%" cy="45%" innerRadius={60} outerRadius={80} paddingAngle={2}>
                   {budgetUtilizationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />

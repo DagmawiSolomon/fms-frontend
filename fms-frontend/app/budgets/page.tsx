@@ -134,7 +134,7 @@ export default function BudgetsPage() {
   return (
     <DashboardShell
       title="Budgets"
-      description="Create, review, approve, and track budget lines"
+      description="Manage departmental funding and monitor expenditure."
       actions={
         canCreateBudgets ? (
           <Button onClick={openCreateDialog}>
@@ -163,16 +163,8 @@ export default function BudgetsPage() {
         />
       </div>
 
-      <Card className="rounded-none overflow-hidden border shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Budget ledger</CardTitle>
-            <CardDescription>
-              Detailed record of all department budget lines
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+        <CardContent className="pt-6">
           <div className="overflow-hidden rounded-none border">
             <Table>
               <TableHeader>

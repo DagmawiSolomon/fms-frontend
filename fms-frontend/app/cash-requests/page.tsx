@@ -91,7 +91,7 @@ export default function CashRequestsPage() {
   return (
     <DashboardShell
       title="Cash requests"
-      description="Submit and approve advance cash funding"
+      description="Monitor and approve pending advance funding requests."
       actions={
         canCreateRequest ? (
           <Button onClick={() => setDialogOpen(true)}>
@@ -101,14 +101,8 @@ export default function CashRequestsPage() {
         ) : null
       }
     >
-      <Card className="rounded-none overflow-hidden border shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Active requests</CardTitle>
-            <CardDescription>All pending and approved funding requests</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+        <CardContent className="pt-6">
           <div className="overflow-hidden rounded-none border">
             <Table>
               <TableHeader>

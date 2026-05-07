@@ -100,7 +100,7 @@ export default function ExpensesPage() {
   return (
     <DashboardShell
       title="Expenses"
-      description="Track and manage individual expenditure"
+      description="Review and verify itemized expenses submitted by staff."
       actions={
         canCreateExpense ? (
           <Button onClick={() => setDialogOpen(true)}>
@@ -110,14 +110,8 @@ export default function ExpensesPage() {
         ) : null
       }
     >
-      <Card className="rounded-none overflow-hidden border shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Expense reports</CardTitle>
-            <CardDescription>Review itemized expenses submitted by staff</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+        <CardContent className="pt-6">
           <div className="overflow-hidden rounded-none border">
             <Table>
               <TableHeader>
