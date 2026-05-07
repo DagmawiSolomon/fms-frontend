@@ -31,7 +31,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   admin: {
     name: "System Administrator",
     description: "Full system access, user management, and configuration.",
-    navigation: ["Dashboard", "Users", "Budgets", "Reports", "Profile"],
+    navigation: ["Dashboard", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -59,7 +59,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   finance: {
     name: "Finance Team",
     description: "Financial oversight, budget creation, and disbursement.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users", "Profile"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -84,7 +84,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   manager: {
     name: "Department Manager",
     description: "Budget approval and cash request verification.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users", "Profile"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Reports", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -107,7 +107,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   employee: {
     name: "General Employee",
     description: "Submit expenses and request cash for operations.",
-    navigation: ["Dashboard", "Cash Requests", "Expenses", "Profile"],
+    navigation: ["Dashboard", "Cash Requests", "Expenses"],
     permissions: [
       "cash_requests.create",
       "cash_requests.view_specific",

@@ -97,7 +97,6 @@ export function AdminDashboardView() {
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <ActivityIcon className="size-3" /> {stats.trends.health}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">Stability Status</span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -116,7 +115,7 @@ export function AdminDashboardView() {
         <CardHeader className="border-b border-border/50 pb-4">
           <div className="flex flex-col gap-1">
             <CardTitle>Users by Role</CardTitle>
-            <CardDescription>Horizontal distribution of account permissions</CardDescription>
+
           </div>
           <CardAction>
             <div className="flex items-center gap-4">
