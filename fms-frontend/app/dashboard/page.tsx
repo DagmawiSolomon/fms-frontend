@@ -9,6 +9,8 @@ import { AdminDashboardView } from "@/components/admin-dashboard-view"
 import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
 
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 function getGreeting() {
   const hour = new Date().getHours()
   if (hour < 12) return "Good morning,"

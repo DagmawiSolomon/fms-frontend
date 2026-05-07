@@ -2,11 +2,13 @@
 
 import * as React from "react"
 
-export type Role = "employee" | "manager" | "finance" | "admin"
+import { Role, ROLE_CONFIGS, RoleConfig } from "@/lib/roles"
 
 interface RoleContextType {
   role: Role
+  config: RoleConfig
   setRole: (role: Role) => void
+  hasPermission: (permission: string) => boolean
 }
 
 const RoleContext = React.createContext<RoleContextType | undefined>(undefined)
@@ -18,7 +20,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     setIsMounted(true)
     const savedRole = localStorage.getItem("fms-role") as Role | null
-    if (savedRole && ["employee", "manager", "finance", "admin"].includes(savedRole)) {
+    if (savedRole && Object.keys(ROLE_CONFIGS).includes(savedRole)) {
       setRoleState(savedRole)
     }
   }, [])
@@ -28,11 +30,14 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("fms-role", newRole)
   }, [])
 
-  // To prevent hydration mismatch, you could return null before mount if necessary
-  // but just letting it start with 'employee' is usually fine since it's client-side state.
+  const hasPermission = React.useCallback((permission: string) => {
+    return ROLE_CONFIGS[role].permissions.includes(permission)
+  }, [role])
+
+  const config = ROLE_CONFIGS[role]
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={{ role, config, setRole, hasPermission }}>
       {children}
     </RoleContext.Provider>
   )
