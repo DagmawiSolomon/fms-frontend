@@ -424,8 +424,8 @@ function SummaryCard({
       !isFirst && "border-l"
     )}>
       <CardHeader className="pb-2">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">{label}</div>
-        <CardTitle className="text-2xl tabular-nums tracking-tight text-foreground @[250px]/card:text-3xl">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-3xl tabular-nums tracking-tight text-foreground">
           {formatMoney(value)}
         </CardTitle>
         {trend && (
