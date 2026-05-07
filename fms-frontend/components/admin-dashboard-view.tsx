@@ -1,89 +1,170 @@
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, Legend } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ArrowUpIcon, TrendingUpIcon, ActivityIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // --- Mock Data ---
 const stats = {
   totalUsers: 142,
-  usersByRole: "4 Roles",
+  systemHealth: "99.8%",
+  trends: {
+    users: "+12",
+    health: "Stable"
+  },
+  microservices: [
+    { name: "Auth", status: "Healthy" },
+    { name: "Expense", status: "Healthy" },
+    { name: "Budget", status: "Degraded" },
+    { name: "Notification", status: "Healthy" },
+  ]
 }
 
 const usersByRoleData = [
-  { role: "Employee", count: 105, fill: "#3b82f6" }, // blue-500
-  { role: "Manager", count: 22, fill: "#8b5cf6" },  // violet-500
-  { role: "Finance", count: 12, fill: "#10b981" },  // emerald-500
-  { role: "Admin", count: 3, fill: "#f59e0b" },     // amber-500
+  { 
+    name: "Roles",
+    Employee: 105, 
+    Manager: 22, 
+    Finance: 12, 
+    Admin: 3 
+  },
 ]
 
 const usersChartConfig = {
-  employee: { label: "Employee", color: "#3b82f6" },
-  manager: { label: "Manager", color: "#8b5cf6" },
-  finance: { label: "Finance", color: "#10b981" },
-  admin: { label: "Admin", color: "#f59e0b" },
+  Employee: { label: "Employee", color: "#3b82f6" },
+  Manager: { label: "Manager", color: "#8b5cf6" },
+  Finance: { label: "Finance", color: "#10b981" },
+  Admin: { label: "Admin", color: "#f59e0b" },
 } satisfies ChartConfig
+
+const renderCustomLabel = (props: any) => {
+  const { x, y, width, height, value, dataKey } = props
+  if (width < 60) return null 
+
+  return (
+    <g>
+      <text
+        x={x + 12}
+        y={y + height / 2 + (dataKey === "Admin" ? 4 : -4)}
+        fill="#fff"
+        fontSize={11}
+        fontWeight="700"
+        className="select-none pointer-events-none uppercase tracking-tighter"
+      >
+        {dataKey}
+      </text>
+      {dataKey !== "Admin" && (
+        <text
+          x={x + 12}
+          y={y + height / 2 + 10}
+          fill="#fff"
+          fillOpacity={0.7}
+          fontSize={10}
+          fontWeight="500"
+          className="select-none pointer-events-none tabular-nums"
+        >
+          {value} Users
+        </text>
+      )}
+    </g>
+  )
+}
 
 export function AdminDashboardView() {
   return (
     <div className="flex flex-col gap-0">
+      {/* Stats Section - Restored original grid/border layout */}
       <div className="grid gap-0 md:grid-cols-2 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
             <CardTitle className="text-3xl tabular-nums">{stats.totalUsers}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ArrowUpIcon className="size-3" /> {stats.trends.users}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">this month</span>
+            </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Active platform accounts</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Active platform accounts across roles</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>User Roles</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.usersByRole}</CardTitle>
+            <CardDescription>System Health</CardDescription>
+            <CardTitle className="text-3xl tabular-nums">{stats.systemHealth}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <ActivityIcon className="size-3" /> {stats.trends.health}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">Stability Status</span>
+            </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">System access tiers</CardContent>
+          <CardContent className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            {stats.microservices.map((m) => (
+              <div key={m.name} className="flex items-center gap-1.5">
+                <div className={cn("size-1.5 rounded-full", m.status === "Healthy" ? "bg-emerald-500" : "bg-amber-500")} />
+                <span className="text-muted-foreground">{m.name}</span>
+              </div>
+            ))}
+          </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
-        <CardHeader>
-          <CardTitle>Users by Role</CardTitle>
-          <CardDescription>Distribution of permissions</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center py-6">
-          <div className="flex items-center justify-center gap-1">
-            <div className="flex flex-col gap-1.5 pr-2">
-              {usersByRoleData.map((entry) => (
-                <div key={entry.role} className="flex items-center gap-2">
-                  <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
-                  <span className="text-xs text-muted-foreground min-w-[70px]">{entry.role}</span>
-                  <span className="text-xs tabular-nums">{entry.count}</span>
+      {/* Graph Section - Restored separate card layout */}
+      <Card className="rounded-none overflow-hidden border shadow-none">
+        <CardHeader className="border-b border-border/50 pb-4">
+          <div className="flex flex-col gap-1">
+            <CardTitle>Users by Role</CardTitle>
+            <CardDescription>Horizontal distribution of account permissions</CardDescription>
+          </div>
+          <CardAction>
+            <div className="flex items-center gap-4">
+              {Object.entries(usersChartConfig).map(([key, config]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="size-2 rounded-full" style={{ backgroundColor: config.color }} />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{config.label}</span>
                 </div>
               ))}
             </div>
-            <ChartContainer config={usersChartConfig} className="h-[320px] w-[320px] shrink-0">
-              <PieChart width={320} height={320}>
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Pie 
-                  data={usersByRoleData} 
-                  dataKey="count" 
-                  nameKey="role" 
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70} 
-                  outerRadius={140} 
-                  paddingAngle={2}
-                  stroke="none"
-                >
-                  {usersByRoleData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-          </div>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="p-6">
+          <ChartContainer config={usersChartConfig} className="h-32 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={usersByRoleData}
+                layout="vertical"
+                margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+              >
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dot" />}
+                />
+                {Object.keys(usersChartConfig).map((key) => (
+                  <Bar 
+                    key={key}
+                    dataKey={key} 
+                    stackId="a" 
+                    fill={`var(--color-${key})`} 
+                    radius={[0, 0, 0, 0]}
+                  >
+                    <LabelList dataKey={key} content={renderCustomLabel} />
+                  </Bar>
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
     </div>
   )
 }
+
+
+
+
