@@ -10,6 +10,13 @@ import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { DateRange } from "react-day-picker"
+import { cn } from "@/lib/utils"
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -21,13 +28,68 @@ function getGreeting() {
 export default function DashboardPage() {
   const session = useSession()
   const { role } = useRole()
+  const [periodType, setPeriodType] = React.useState("monthly")
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: new Date(2026, 0, 1),
+    to: new Date(2026, 11, 31),
+  })
 
   const userName = session.data?.name ?? "John"
+
+  const financeActions = (
+    <div className="flex items-center gap-2">
+      <Tabs value={periodType} onValueChange={setPeriodType} className="w-auto">
+        <TabsList className="h-10 rounded-none bg-background border-4 p-0">
+          <TabsTrigger value="monthly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Monthly</TabsTrigger>
+          <TabsTrigger value="quarterly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quarterly</TabsTrigger>
+          <TabsTrigger value="yearly" className="rounded-none px-4 h-full text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Yearly</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={"outline"}
+            className={cn(
+              "h-10 w-[260px] justify-start text-left font-normal rounded-none border-4",
+              !date && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date?.from ? (
+              date.to ? (
+                <>
+                  {format(date.from, "LLL dd, y")} -{" "}
+                  {format(date.to, "LLL dd, y")}
+                </>
+              ) : (
+                format(date.from, "LLL dd, y")
+              )
+            ) : (
+              <span>Pick a date range</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 rounded-none" align="end">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={setDate}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
 
   return (
     <DashboardShell
       title={`${getGreeting()} ${userName} !`}
       description="Welcome back. Here’s your personalized workspace overview."
+      actions={role === "finance" ? financeActions : undefined}
     >
       {role === "employee" && <EmployeeDashboardView />}
       {role === "manager" && <ManagerDashboardView />}
