@@ -6,13 +6,17 @@ import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
+  ArrowDownIcon,
+  ArrowUpIcon,
   BanknoteIcon,
   CheckIcon,
   PlusIcon,
+  SearchIcon,
   XIcon,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +35,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -60,14 +71,30 @@ const requestSchema = z.object({
 type RequestFormValues = z.infer<typeof requestSchema>
 
 export default function CashRequestsPage() {
-  const { role } = useRole()
+  const { role, hasPermission } = useRole()
   
-  const canCreateRequest = role !== "reports"
-  const canApproveRequest = role === "manager" || role === "admin"
-  const canDisburseRequest = role === "finance" || role === "admin"
+  const canCreateRequest = hasPermission("cash_requests.create")
+  const canApproveRequest = hasPermission("cash_requests.approve")
+  const canDisburseRequest = hasPermission("cash_requests.disburse")
 
   const [requests, setRequests] = React.useState<FmsCashRequest[]>(mockRequestsData)
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [statusFilter, setStatusFilter] = React.useState("all")
+
+  const totals = requests.reduce((acc, req) => {
+    acc.total += req.amount
+    if (req.status === "pending") acc.pending += req.amount
+    if (req.status === "approved") acc.approved += req.amount
+    return acc
+  }, { total: 0, pending: 0, approved: 0 })
+
+  const filteredRequests = requests.filter(req => {
+    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         req.id.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === "all" || req.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   const handleCreate = (values: RequestFormValues) => {
     const newReq: FmsCashRequest = {
@@ -101,9 +128,60 @@ export default function CashRequestsPage() {
         ) : null
       }
     >
+      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+        <SummaryCard
+          label="Total Requested"
+          value={totals.total}
+          description="Cumulative value of all cash requests"
+          isFirst
+          trend={{ value: "+5.4%", isUp: true }}
+          trendLabel="from last month"
+        />
+        <SummaryCard
+          label="Pending Amount"
+          value={totals.pending}
+          description="Funds currently awaiting approval"
+          trend={{ value: "+3", isUp: true }}
+          trendLabel="requests today"
+        />
+        <SummaryCard
+          label="Disbursed"
+          value={totals.approved}
+          description="Total cash released this period"
+          trend={{ value: "+18.2%", isUp: true }}
+          trendLabel="vs last month"
+        />
+      </div>
+
       <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardContent className="pt-6">
-          <div className="overflow-hidden rounded-none border">
+          <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search requests..." 
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="disbursed">Disbursed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-none">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -116,8 +194,8 @@ export default function CashRequestsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.length ? (
-                  requests.map((req) => (
+                {filteredRequests.length ? (
+                  filteredRequests.map((req) => (
                     <TableRow key={req.id}>
                       <TableCell className="font-medium">{req.title}</TableCell>
                       <TableCell className="max-w-[250px] truncate text-muted-foreground">
@@ -316,4 +394,56 @@ function formatMoney(value: number) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function SummaryCard({
+  label,
+  value,
+  description,
+  isFirst,
+  trend,
+  trendLabel,
+}: {
+  label: string
+  value: number
+  description: string
+  isFirst?: boolean
+  trend?: {
+    value: string
+    isUp: boolean
+  }
+  trendLabel?: string
+}) {
+  return (
+    <Card className={cn(
+      "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+      !isFirst && "border-l"
+    )}>
+      <CardHeader className="pb-2">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
+          {formatMoney(value)}
+        </CardTitle>
+        {trend && (
+          <div className="flex items-center gap-1 mt-1">
+            <span className={cn(
+              "text-[10px] flex items-center",
+              trend.isUp ? "text-emerald-500" : "text-rose-500"
+            )}>
+              {trend.isUp ? <ArrowUpIcon className="size-3" /> : <ArrowDownIcon className="size-3" />}
+              {trend.value}
+            </span>
+            {trendLabel && (
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {trendLabel}
+              </span>
+            )}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">
+        {description}
+      </CardContent>
+    </Card>
+  )
 }

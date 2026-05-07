@@ -42,7 +42,46 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+import { useRole } from "@/components/role-provider"
+import { ShieldAlertIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+
 export default function ReportsPage() {
+  const { role, config } = useRole()
+  const router = useRouter()
+  
+  const canView = config.navigation.includes("Reports")
+
+  if (!canView) {
+    return (
+      <DashboardShell
+        title="Reports"
+        description="Access restricted."
+      >
+        <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldAlertIcon className="size-4" />
+              Access limited
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              You do not have permission to view reporting analytics.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                router.push("/dashboard")
+              }}
+            >
+              Return to dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </DashboardShell>
+    )
+  }
+
   return (
     <DashboardShell
       title="Reports"

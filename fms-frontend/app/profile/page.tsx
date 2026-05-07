@@ -7,13 +7,13 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRole } from "@/components/role-provider"
 import { useSession } from "@/hooks/use-session"
-import { normalizeRole } from "@/lib/auth"
 
 export default function ProfilePage() {
   const session = useSession()
   const user = session.data
-  const role = normalizeRole(user?.role ?? null)
+  const { role } = useRole()
 
   return (
     <DashboardShell title="Profile" description="Your current authenticated account">

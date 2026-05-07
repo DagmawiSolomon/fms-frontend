@@ -6,8 +6,11 @@ import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
+  ArrowDownIcon,
+  ArrowUpIcon,
   CheckIcon,
   PlusIcon,
+  SearchIcon,
   XIcon,
 } from "lucide-react"
 
@@ -71,15 +74,25 @@ const budgetSchema = z.object({
 type BudgetFormValues = z.infer<typeof budgetSchema>
 
 export default function BudgetsPage() {
-  const { role } = useRole()
+  const { role, hasPermission } = useRole()
   
-  const canCreateBudgets = role === "finance" || role === "admin"
-  const canUpdateBudgets = role === "finance" || role === "admin" || role === "manager"
-  const canApproveBudgets = role === "manager" || role === "admin"
+  const canCreateBudgets = hasPermission("budgets.create")
+  const canUpdateBudgets = hasPermission("budgets.update")
+  const canApproveBudgets = hasPermission("budgets.approve")
+  const canRejectBudgets = hasPermission("budgets.reject")
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>(mockBudgetsData)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [deptFilter, setDeptFilter] = React.useState("all")
+
+  const filteredBudgets = budgets.filter(budget => {
+    const matchesSearch = budget.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         budget.id.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesDept = deptFilter === "all" || budget.department === deptFilter
+    return matchesSearch && matchesDept
+  })
 
   const totals = budgets.reduce(
     (acc, budget) => {
@@ -150,22 +163,55 @@ export default function BudgetsPage() {
           value={totals.amount}
           description="Total funds allocated across all departments"
           isFirst
+          trend={{ value: "+2.5%", isUp: true }}
+          trendLabel="from last month"
         />
         <SummaryCard
           label="Spent total"
           value={totals.spent}
           description="Total actual spending recorded to date"
+          trend={{ value: "+12.1%", isUp: true }}
+          trendLabel="vs previous"
         />
         <SummaryCard
           label="Remaining total"
           value={totals.remaining}
           description="Total unspent funds across all budget lines"
+          trend={{ value: "-4.3%", isUp: false }}
+          trendLabel="from last month"
         />
       </div>
 
       <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardContent className="pt-6">
-          <div className="overflow-hidden rounded-none border">
+          <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search budgets..." 
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={deptFilter} onValueChange={setDeptFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="IT">IT</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="Operations">Operations</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-none">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -179,8 +225,8 @@ export default function BudgetsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgets.length ? (
-                  budgets.map((budget) => (
+                {filteredBudgets.length ? (
+                  filteredBudgets.map((budget) => (
                     <TableRow key={budget.id}>
                       <TableCell>
                         <div className="font-medium">{budget.name}</div>
@@ -211,26 +257,26 @@ export default function BudgetsPage() {
                             </Button>
                           )}
                           {canApproveBudgets && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={budget.status === "approved"}
-                                onClick={() => handleStatusChange(budget.id, "approved")}
-                              >
-                                <CheckIcon className="size-4" />
-                                <span className="sr-only">Approve</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={budget.status === "rejected"}
-                                onClick={() => handleStatusChange(budget.id, "rejected")}
-                              >
-                                <XIcon className="size-4" />
-                                <span className="sr-only">Reject</span>
-                              </Button>
-                            </>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={budget.status === "approved"}
+                              onClick={() => handleStatusChange(budget.id, "approved")}
+                            >
+                              <CheckIcon className="size-4" />
+                              <span className="sr-only">Approve</span>
+                            </Button>
+                          )}
+                          {canRejectBudgets && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={budget.status === "rejected"}
+                              onClick={() => handleStatusChange(budget.id, "rejected")}
+                            >
+                              <XIcon className="size-4" />
+                              <span className="sr-only">Reject</span>
+                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -459,22 +505,45 @@ function SummaryCard({
   value,
   description,
   isFirst,
+  trend,
+  trendLabel,
 }: {
   label: string
   value: number
   description: string
   isFirst?: boolean
+  trend?: {
+    value: string
+    isUp: boolean
+  }
+  trendLabel?: string
 }) {
   return (
     <Card className={cn(
       "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
       !isFirst && "border-l"
     )}>
-      <CardHeader>
+      <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl font-medium tabular-nums @[250px]/card:text-3xl">
+        <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
           {formatMoney(value)}
         </CardTitle>
+        {trend && (
+          <div className="flex items-center gap-1 mt-1">
+            <span className={cn(
+              "text-[10px] flex items-center",
+              trend.isUp ? "text-emerald-500" : "text-rose-500"
+            )}>
+              {trend.isUp ? <ArrowUpIcon className="size-3" /> : <ArrowDownIcon className="size-3" />}
+              {trend.value}
+            </span>
+            {trendLabel && (
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {trendLabel}
+              </span>
+            )}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
         {description}

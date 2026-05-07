@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ShieldAlertIcon } from "lucide-react"
+import { SearchIcon, ShieldAlertIcon } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Badge } from "@/components/ui/badge"
@@ -52,10 +53,21 @@ const mockUsers: UserRow[] = [
 
 export default function UsersPage() {
   const router = useRouter()
-  const { role } = useRole()
+  const { role, hasPermission } = useRole()
   
   const [users, setUsers] = React.useState<UserRow[]>(mockUsers)
-  const canManage = role === "admin"
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [roleFilter, setRoleFilter] = React.useState("all")
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesRole = roleFilter === "all" || user.role === roleFilter
+    return matchesSearch && matchesRole
+  })
+
+  const canView = hasPermission("users.view_all")
+  const canManage = hasPermission("users.change_role")
 
   const handleRoleChange = (id: string, newRole: UserRow["role"]) => {
     setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u))
@@ -67,7 +79,7 @@ export default function UsersPage() {
       title="Users"
       description="Administrative control over user access, permissions, and organizational roles."
     >
-      {!canManage ? (
+      {!canView ? (
         <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
           <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
             <div className="flex items-center gap-2 mb-2">
@@ -75,62 +87,89 @@ export default function UsersPage() {
               Access limited
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              Only administrators can manage the user directory.
+              You do not have permission to view the user directory.
             </p>
             <Button
               variant="outline"
               onClick={() => {
-                clearAuthToken()
-                router.push("/login")
+                router.push("/dashboard")
               }}
             >
-              Return to login
+              Return to dashboard
             </Button>
           </CardContent>
         </Card>
       ) : (
         <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
           <CardContent className="pt-6">
-            <div className="overflow-hidden rounded-none border">
+            <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search name or email..." 
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="finance">Finance</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-none">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    {canManage && <TableHead className="text-right">Action</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.length ? (
-                    users.map((user) => (
+                  {filteredUsers.length ? (
+                    filteredUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">{user.role}</Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Select
-                            value={user.role}
-                            onValueChange={(value) => handleRoleChange(user.id, value as UserRow["role"])}
-                          >
-                            <SelectTrigger className="ml-auto w-40">
-                              <SelectValue placeholder="Change role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="finance">Finance</SelectItem>
-                              <SelectItem value="manager">Manager</SelectItem>
-                              <SelectItem value="employee">Employee</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
+                        {canManage && (
+                          <TableCell className="text-right">
+                            <Select
+                              value={user.role}
+                              onValueChange={(value) => handleRoleChange(user.id, value as UserRow["role"])}
+                            >
+                              <SelectTrigger className="ml-auto w-40">
+                                <SelectValue placeholder="Change role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="finance">Finance</SelectItem>
+                                <SelectItem value="manager">Manager</SelectItem>
+                                <SelectItem value="employee">Employee</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
+                      <TableCell colSpan={canManage ? 4 : 3} className="h-24 text-center">
                         No users found.
                       </TableCell>
                     </TableRow>

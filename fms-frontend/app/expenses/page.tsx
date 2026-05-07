@@ -6,13 +6,17 @@ import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
+  ArrowDownIcon,
+  ArrowUpIcon,
   CheckIcon,
   PlusIcon,
+  SearchIcon,
   ShieldCheckIcon,
   XIcon,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -68,14 +72,30 @@ const expenseSchema = z.object({
 type ExpenseFormValues = z.infer<typeof expenseSchema>
 
 export default function ExpensesPage() {
-  const { role } = useRole()
+  const { role, hasPermission } = useRole()
   
-  const canCreateExpense = role !== "reports"
-  const canApproveExpense = role === "manager" || role === "admin"
-  const canVerifyExpense = role === "finance" || role === "admin"
+  const canCreateExpense = hasPermission("expenses.create")
+  const canApproveExpense = hasPermission("expenses.approve")
+  const canVerifyExpense = hasPermission("expenses.verify")
 
   const [expenses, setExpenses] = React.useState<FmsExpense[]>(mockExpensesData)
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [categoryFilter, setCategoryFilter] = React.useState("all")
+
+  const totals = expenses.reduce((acc, exp) => {
+    acc.total += exp.amount
+    if (exp.status === "pending") acc.pending += exp.amount
+    if (exp.status === "approved") acc.approved += exp.amount
+    return acc
+  }, { total: 0, pending: 0, approved: 0 })
+
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = expense.merchant.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         expense.id.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
+    return matchesSearch && matchesCategory
+  })
 
   const handleCreate = (values: ExpenseFormValues) => {
     const newExp: FmsExpense = {
@@ -110,9 +130,60 @@ export default function ExpensesPage() {
         ) : null
       }
     >
+      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+        <SummaryCard
+          label="Total expenses"
+          value={totals.total}
+          description="Sum of all submitted expenditures"
+          isFirst
+          trend={{ value: "+8.2%", isUp: true }}
+          trendLabel="from last month"
+        />
+        <SummaryCard
+          label="Pending review"
+          value={totals.pending}
+          description="Awaiting verification by finance"
+          trend={{ value: "+2", isUp: true }}
+          trendLabel="new this week"
+        />
+        <SummaryCard
+          label="Verified"
+          value={totals.approved}
+          description="Sum of all approved expenses"
+          trend={{ value: "+5.2%", isUp: true }}
+          trendLabel="from last month"
+        />
+      </div>
+
       <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardContent className="pt-6">
-          <div className="overflow-hidden rounded-none border">
+          <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search merchant or ID..." 
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="Software">Software</SelectItem>
+                  <SelectItem value="Travel">Travel</SelectItem>
+                  <SelectItem value="Meals">Meals</SelectItem>
+                  <SelectItem value="Hardware">Hardware</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-none">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -126,8 +197,8 @@ export default function ExpensesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.length ? (
-                  expenses.map((expense) => (
+                {filteredExpenses.length ? (
+                  filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell className="">
                         {expense.merchant}
@@ -361,4 +432,56 @@ function formatMoney(value: number) {
     style: "currency",
     currency: "USD",
   }).format(value)
+}
+
+function SummaryCard({
+  label,
+  value,
+  description,
+  isFirst,
+  trend,
+  trendLabel,
+}: {
+  label: string
+  value: number
+  description: string
+  isFirst?: boolean
+  trend?: {
+    value: string
+    isUp: boolean
+  }
+  trendLabel?: string
+}) {
+  return (
+    <Card className={cn(
+      "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+      !isFirst && "border-l"
+    )}>
+      <CardHeader className="pb-2">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-2xl tabular-nums @[250px]/card:text-3xl">
+          {formatMoney(value)}
+        </CardTitle>
+        {trend && (
+          <div className="flex items-center gap-1 mt-1">
+            <span className={cn(
+              "text-[10px] flex items-center",
+              trend.isUp ? "text-emerald-500" : "text-rose-500"
+            )}>
+              {trend.isUp ? <ArrowUpIcon className="size-3" /> : <ArrowDownIcon className="size-3" />}
+              {trend.value}
+            </span>
+            {trendLabel && (
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {trendLabel}
+              </span>
+            )}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">
+        {description}
+      </CardContent>
+    </Card>
+  )
 }
