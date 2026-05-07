@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, Treemap, ResponsiveContainer, Tooltip } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, ResponsiveContainer, LabelList } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
@@ -49,13 +49,24 @@ const cashFlowChartConfig = {
   disbursed: { label: "Disbursed", color: "#10b981" },
 } satisfies ChartConfig
 
-const expenseTreemapData = [
-  { name: "Travel", value: 45000, fill: "#3b82f6" },
-  { name: "Software", value: 120000, fill: "#8b5cf6" },
-  { name: "Hardware", value: 85000, fill: "#10b981" },
-  { name: "Office", value: 25000, fill: "#f59e0b" },
-  { name: "Events", value: 65000, fill: "#ec4899" },
+const expenseDistributionData = [
+  {
+    name: "Expenses",
+    Travel: 45000,
+    Software: 120000,
+    Hardware: 85000,
+    Office: 25000,
+    Events: 65000,
+  },
 ]
+
+const expenseChartConfig = {
+  Travel: { label: "Travel", color: "#3b82f6" },
+  Software: { label: "Software", color: "#8b5cf6" },
+  Hardware: { label: "Hardware", color: "#10b981" },
+  Office: { label: "Office", color: "#f59e0b" },
+  Events: { label: "Events", color: "#ec4899" },
+} satisfies ChartConfig
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -65,55 +76,36 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
-const CustomTreemapContent = (props: any) => {
-  const { x, y, width, height, index, name, value, fill } = props;
-
-  // Calculate dynamic font sizes based on box size
-  const nameSize = Math.max(10, Math.min(width / 8, 16));
-  const valueSize = Math.max(8, Math.min(width / 10, 14));
+const renderDistributionLabel = (props: any) => {
+  const { x, y, width, height, value, dataKey } = props
+  if (width < 45) return null
 
   return (
     <g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        style={{
-          fill: fill,
-          stroke: '#fff',
-          strokeWidth: 2 / (index + 1),
-          strokeOpacity: 1,
-        }}
-      />
-      {width > 40 && height > 30 && (
-        <>
-          <text
-            x={x + width / 2}
-            y={y + height / 2 - 5}
-            textAnchor="middle"
-            fill="#fff"
-            fontSize={nameSize}
-            fontWeight="400"
-          >
-            {name}
-          </text>
-          <text
-            x={x + width / 2}
-            y={y + height / 2 + 12}
-            textAnchor="middle"
-            fill="#fff"
-            fontSize={valueSize}
-            fontWeight="400"
-            opacity={0.8}
-          >
-            {formatMoney(value)}
-          </text>
-        </>
-      )}
+      <text
+        x={x + 8}
+        y={y + height / 2 - 4}
+        fill="#fff"
+        fontSize={13}
+        fontWeight="700"
+        className="select-none pointer-events-none uppercase tracking-tighter"
+      >
+        {dataKey}
+      </text>
+      <text
+        x={x + 8}
+        y={y + height / 2 + 12}
+        fill="#fff"
+        fillOpacity={0.8}
+        fontSize={11}
+        fontWeight="500"
+        className="select-none pointer-events-none tabular-nums"
+      >
+        {formatMoney(value)}
+      </text>
     </g>
-  );
-};
+  )
+}
 
 export function FinanceDashboardView() {
   return (
@@ -227,32 +219,45 @@ export function FinanceDashboardView() {
         <Card className="lg:col-span-2 rounded-none border-b-0 border-r-0 border-l-0 shadow-none border-t border-border/50">
           <CardHeader>
             <CardTitle>Expense Categories</CardTitle>
-            <CardDescription>Global breakdown (Treemap view)</CardDescription>
+            <CardDescription>Global breakdown (Distribution view)</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px] w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <Treemap
-                data={expenseTreemapData}
-                dataKey="value"
-                aspectRatio={4 / 3}
-                stroke="#fff"
-                content={<CustomTreemapContent />}
-              >
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="rounded-none border bg-background p-2 shadow-sm text-xs">
-                          <div className="font-medium">{payload[0].payload.name}</div>
-                          <div className="text-muted-foreground">{formatMoney(payload[0].value)}</div>
-                        </div>
-                      )
-                    }
-                    return null
-                  }}
-                />
-              </Treemap>
-            </ResponsiveContainer>
+          <CardContent className="p-6 pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-4 mb-6">
+              {Object.entries(expenseChartConfig).map(([key, config]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="size-2 rounded-full" style={{ backgroundColor: config.color }} />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap uppercase font-medium tracking-tight">{config.label}</span>
+                </div>
+              ))}
+            </div>
+            <ChartContainer config={expenseChartConfig} className="h-24 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={expenseDistributionData}
+                  layout="vertical"
+                  margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" hide />
+                  <ChartTooltip
+                    cursor={false}
+                    shared={false}
+                    content={<ChartTooltipContent indicator="dot" hideLabel />}
+                  />
+                  {Object.keys(expenseChartConfig).map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      stackId="a"
+                      fill={`var(--color-${key})`}
+                      radius={[0, 0, 0, 0]}
+                    >
+                      <LabelList dataKey={key} content={renderDistributionLabel} />
+                    </Bar>
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
