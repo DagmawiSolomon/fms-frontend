@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell
-      title={`${getGreeting()} ${userName}`}
+      title={`${getGreeting()} ${userName} !`}
       description="Welcome back. Here’s your personalized workspace overview."
     >
       {role === "employee" && <EmployeeDashboardView />}

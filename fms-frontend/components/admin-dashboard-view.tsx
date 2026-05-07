@@ -24,12 +24,12 @@ const stats = {
 }
 
 const usersByRoleData = [
-  { 
+  {
     name: "Roles",
-    Employee: 105, 
-    Manager: 22, 
-    Finance: 12, 
-    Admin: 3 
+    Employee: 105,
+    Manager: 22,
+    Finance: 12,
+    Admin: 3
   },
 ]
 
@@ -42,33 +42,31 @@ const usersChartConfig = {
 
 const renderCustomLabel = (props: any) => {
   const { x, y, width, height, value, dataKey } = props
-  if (width < 60) return null 
+  if (width < 30) return null // Even smaller threshold since we want to show Admin
 
   return (
     <g>
       <text
-        x={x + 12}
-        y={y + height / 2 + (dataKey === "Admin" ? 4 : -4)}
+        x={x + 8}
+        y={y + height / 2 - 4}
         fill="#fff"
-        fontSize={11}
+        fontSize={10}
         fontWeight="700"
         className="select-none pointer-events-none uppercase tracking-tighter"
       >
         {dataKey}
       </text>
-      {dataKey !== "Admin" && (
-        <text
-          x={x + 12}
-          y={y + height / 2 + 10}
-          fill="#fff"
-          fillOpacity={0.7}
-          fontSize={10}
-          fontWeight="500"
-          className="select-none pointer-events-none tabular-nums"
-        >
-          {value} Users
-        </text>
-      )}
+      <text
+        x={x + 8}
+        y={y + height / 2 + 10}
+        fill="#fff"
+        fillOpacity={0.7}
+        fontSize={9}
+        fontWeight="500"
+        className="select-none pointer-events-none tabular-nums"
+      >
+        {value}
+      </text>
     </g>
   )
 }
@@ -143,14 +141,15 @@ export function AdminDashboardView() {
                 <YAxis type="category" dataKey="name" hide />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
+                  shared={false}
+                  content={<ChartTooltipContent indicator="dot" hideLabel />}
                 />
                 {Object.keys(usersChartConfig).map((key) => (
-                  <Bar 
+                  <Bar
                     key={key}
-                    dataKey={key} 
-                    stackId="a" 
-                    fill={`var(--color-${key})`} 
+                    dataKey={key}
+                    stackId="a"
+                    fill={`var(--color-${key})`}
                     radius={[0, 0, 0, 0]}
                   >
                     <LabelList dataKey={key} content={renderCustomLabel} />
