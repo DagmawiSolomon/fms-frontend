@@ -67,6 +67,8 @@ const expenseSchema = z.object({
   category: z.string().min(2, "Category is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
   date: z.string().min(8, "Date is required"),
+  budgetId: z.string().optional(),
+  requestId: z.string().optional(),
 })
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>
@@ -92,7 +94,7 @@ export default function ExpensesPage() {
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.merchant.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         expense.id.toLowerCase().includes(searchQuery.toLowerCase())
+                         String(expense.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -104,6 +106,8 @@ export default function ExpensesPage() {
       category: values.category,
       amount: values.amount,
       date: values.date,
+      budgetId: values.budgetId,
+      requestId: values.requestId,
       status: "pending",
       submitter: "Current User",
     }
@@ -352,6 +356,50 @@ function ExpenseDialog({
                   type="date"
                   {...form.register("date")}
                 />
+              }
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Linked Budget"
+              error={form.formState.errors.budgetId?.message}
+              control={
+                <Select
+                  value={form.watch("budgetId")}
+                  onValueChange={(value) =>
+                    form.setValue("budgetId", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a budget" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="BUD-01">Q1 Engineering Ops</SelectItem>
+                    <SelectItem value="BUD-02">Global Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
+            />
+            <Field
+              label="Linked Cash Request"
+              error={form.formState.errors.requestId?.message}
+              control={
+                <Select
+                  value={form.watch("requestId")}
+                  onValueChange={(value) =>
+                    form.setValue("requestId", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a request" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="REQ-01">New Laptops</SelectItem>
+                    <SelectItem value="REQ-02">Ad Spend Advance</SelectItem>
+                  </SelectContent>
+                </Select>
               }
             />
           </div>

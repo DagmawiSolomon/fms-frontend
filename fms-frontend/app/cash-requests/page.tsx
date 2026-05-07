@@ -66,6 +66,7 @@ const requestSchema = z.object({
   title: z.string().min(2, "Request title is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
   purpose: z.string().min(5, "Purpose is required"),
+  budgetId: z.string().optional(),
 })
 
 type RequestFormValues = z.infer<typeof requestSchema>
@@ -91,7 +92,7 @@ export default function CashRequestsPage() {
 
   const filteredRequests = requests.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         req.id.toLowerCase().includes(searchQuery.toLowerCase())
+                         String(req.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || req.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -102,6 +103,7 @@ export default function CashRequestsPage() {
       title: values.title,
       amount: values.amount,
       purpose: values.purpose,
+      budgetId: values.budgetId,
       status: "pending",
       requestedBy: "Current User",
     }
@@ -328,6 +330,27 @@ function RequestDialog({
                 step="0.01"
                 {...form.register("amount", { valueAsNumber: true })}
               />
+            }
+          />
+          <Field
+            label="Linked Budget"
+            error={form.formState.errors.budgetId?.message}
+            control={
+              <Select
+                value={form.watch("budgetId")}
+                onValueChange={(value) =>
+                  form.setValue("budgetId", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a budget (Optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (Out-of-budget)</SelectItem>
+                  <SelectItem value="BUD-01">Q1 Engineering Ops</SelectItem>
+                  <SelectItem value="BUD-02">Global Marketing</SelectItem>
+                </SelectContent>
+              </Select>
             }
           />
           <Field

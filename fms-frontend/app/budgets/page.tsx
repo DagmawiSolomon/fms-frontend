@@ -89,7 +89,7 @@ export default function BudgetsPage() {
 
   const filteredBudgets = budgets.filter(budget => {
     const matchesSearch = budget.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         budget.id.toLowerCase().includes(searchQuery.toLowerCase())
+                         String(budget.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = deptFilter === "all" || budget.department === deptFilter
     return matchesSearch && matchesDept
   })
