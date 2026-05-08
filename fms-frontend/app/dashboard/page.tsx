@@ -37,7 +37,7 @@ export default function DashboardPage() {
 
   const userName = session.data?.name ?? "John"
 
-  const financeActions = (
+  const dashboardActions = (
     <div className="flex items-center gap-2">
       <Tabs value={periodType} onValueChange={setPeriodType} className="w-auto">
         <TabsList className="h-9 rounded-[4px] bg-background border p-0">
@@ -90,7 +90,7 @@ export default function DashboardPage() {
     <DashboardShell
       title={`${getGreeting()} ${userName} !`}
       description="Welcome back. Here’s your personalized workspace overview."
-      actions={role === "finance" ? financeActions : undefined}
+      actions={role !== "admin" ? dashboardActions : undefined}
     >
       {role === "employee" && <EmployeeDashboardView />}
       {role === "manager" && <ManagerDashboardView />}

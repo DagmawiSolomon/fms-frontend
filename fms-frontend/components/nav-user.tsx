@@ -22,11 +22,12 @@ import {
 } from "@/components/ui/sidebar"
 import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
-import {
-  EllipsisVerticalIcon,
-  CircleUserRoundIcon,
-  LogOutIcon,
-} from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { 
+  MoreVerticalIcon, 
+  UserCircleIcon, 
+  Logout01Icon 
+} from "@hugeicons/core-free-icons"
 
 export function NavUser({
   user,
@@ -66,7 +67,7 @@ export function NavUser({
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">{user.email}</span>
               </div>
-              <EllipsisVerticalIcon className="ml-auto size-4" />
+              <HugeiconsIcon icon={MoreVerticalIcon} className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -92,7 +93,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => router.push("/profile")}>
-                <CircleUserRoundIcon />
+                <HugeiconsIcon icon={UserCircleIcon} />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem>Account</DropdownMenuItem>
@@ -106,7 +107,7 @@ export function NavUser({
                 router.push("/login")
               }}
             >
-              <LogOutIcon />
+              <HugeiconsIcon icon={Logout01Icon} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

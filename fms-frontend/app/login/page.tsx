@@ -90,7 +90,7 @@ function AuthContent() {
       {/* Left side - Auth Image */}
       <div className="hidden w-1/2 border-r lg:flex relative overflow-hidden bg-background">
         <Image
-          src="/photo_2026-05-07_20-58-45-dithered.svg"
+          src="/photo_2026-05-07_20-58-53.jpg"
           alt="Auth Background"
           fill
           className="object-cover"
@@ -99,17 +99,12 @@ function AuthContent() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex w-full flex-col items-center justify-center p-8 lg:w-1/2">
-        <div className="w-full max-w-sm flex flex-col gap-6">
-          <div className="flex flex-col gap-1 text-center lg:text-left transition-all duration-300">
-            <h1 className="text-3xl font-normal tracking-tight">
-              {mode === "login" ? "Sign in" : "Create account"}
+      <div className="flex w-full flex-col items-center justify-center lg:w-1/2">
+        <div className="w-full max-w-sm flex flex-col gap-4">
+          <div className="flex flex-col gap-0 text-center lg:text-left transition-all duration-300">
+            <h1 className="text-3xl tracking-tight">
+              {mode === "login" ? "Welcome to FMS" : "Create account"}
             </h1>
-            <p className="text-lg text-muted-foreground">
-              {mode === "login"
-                ? "Welcome back! Enter your details below."
-                : "Join FMS to manage your finances with precision"}
-            </p>
           </div>
 
           <Card className="rounded-none border-0 shadow-none bg-transparent">

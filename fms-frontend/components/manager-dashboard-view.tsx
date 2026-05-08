@@ -4,7 +4,8 @@ import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 
 // --- Mock Data ---
 const stats = {
@@ -60,7 +61,7 @@ export function ManagerDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{stats.pendingBudgetApprovals}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {stats.trends.budgets}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.budgets}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
             </div>
@@ -73,7 +74,7 @@ export function ManagerDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{stats.pendingCashRequests}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {stats.trends.requests}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.requests}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">new today</span>
             </div>
@@ -86,7 +87,7 @@ export function ManagerDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalPendingAmount)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {stats.trends.amount}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.amount}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">total volume</span>
             </div>
@@ -99,7 +100,7 @@ export function ManagerDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <ArrowDownIcon className="size-3" /> {stats.trends.remaining}
+                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">vs last month</span>
             </div>

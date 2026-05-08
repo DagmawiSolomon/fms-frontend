@@ -2,17 +2,13 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ChartColumnBigIcon,
-  HandCoins,
-  HomeIcon,
-  LogOutIcon,
-  ReceiptTextIcon,
-  MoonIcon,
-  User,
-  WalletIcon,
-  SunIcon,
-} from "lucide-react"
+  Logout01Icon,
+  Moon02Icon,
+  Sun01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
 
@@ -47,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   )
 
   const themeLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode"
-  const ThemeIcon = resolvedTheme === "dark" ? SunIcon : MoonIcon
+  const ThemeIcon = resolvedTheme === "dark" ? Sun01Icon : Moon02Icon
 
   return (
     <Sidebar
@@ -75,7 +71,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarSeparator />
         <NavMain
           label="Settings"
-          items={[{ title: "Profile", url: "/profile", icon: User }]}
+          items={[{ title: "Profile", url: "/profile", icon: UserIcon }]}
         />
 
 
@@ -94,7 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }}
             >
               <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
-                <ThemeIcon />
+                <HugeiconsIcon icon={ThemeIcon} />
               </span>
               <span className="group-data-[collapsible=icon]:hidden">{themeLabel}</span>
             </SidebarMenuButton>
@@ -110,7 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }}
             >
               <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
-                <LogOutIcon />
+                <HugeiconsIcon icon={Logout01Icon} />
               </span>
               <span className="group-data-[collapsible=icon]:hidden">Log out</span>
             </SidebarMenuButton>

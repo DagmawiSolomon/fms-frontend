@@ -1,17 +1,13 @@
 import { 
-  HomeIcon, 
-  HandCoins, 
-  ReceiptTextIcon, 
-  WalletIcon, 
-  ChartColumnBigIcon, 
-  User,
-  ShieldCheck,
-  Briefcase,
-  Users,
-  Coins,
-  LayoutDashboard,
-  LucideIcon
-} from "lucide-react"
+  Home04Icon,
+  Invoice04Icon,
+  Cashier02Icon,
+  ReceiptTextIcon,
+  Wallet01Icon,
+  Calendar04Icon,
+  UserMultipleIcon,
+  UserIcon
+} from "@hugeicons/core-free-icons"
 
 export type Role = "employee" | "manager" | "finance" | "admin" | "leadership"
 
@@ -158,17 +154,17 @@ export const ALL_NAV_ITEMS = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: HomeIcon,
+    icon: Home04Icon,
   },
   {
     title: "Budgets",
     url: "/budgets",
-    icon: HandCoins,
+    icon: Invoice04Icon,
   },
   {
     title: "Petty Cash",
     url: "/petty-cash",
-    icon: Coins,
+    icon: Cashier02Icon,
   },
   {
     title: "Cash Requests",
@@ -178,21 +174,21 @@ export const ALL_NAV_ITEMS = [
   {
     title: "Expenses",
     url: "/expenses",
-    icon: WalletIcon,
+    icon: Wallet01Icon,
   },
   {
     title: "Reports",
     url: "/reports",
-    icon: ChartColumnBigIcon,
+    icon: Calendar04Icon,
   },
   {
     title: "Users",
     url: "/users",
-    icon: Users,
+    icon: UserMultipleIcon,
   },
   {
     title: "Profile",
     url: "/profile",
-    icon: User,
+    icon: UserIcon,
   },
 ]

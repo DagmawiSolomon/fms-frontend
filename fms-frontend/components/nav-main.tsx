@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
 export function NavMain({
@@ -47,7 +48,7 @@ export function NavMain({
                   >
                     <Link href={item.url} className={cn("flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center")}>
                       <span className="flex size-4 items-center justify-center shrink-0 rounded-xl [&_svg]:size-4 [&_svg]:shrink-0">
-                        {Icon && <Icon />}
+                        {Icon && <HugeiconsIcon icon={Icon} />}
                       </span>
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>

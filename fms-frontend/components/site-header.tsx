@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import {
-  CalendarDaysIcon,
-  ChevronDownIcon,
-  Handshake,
-  LogOutIcon,
-  UserCircleIcon,
-} from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { 
+  Agreement01Icon, 
+  Calendar04Icon, 
+  ArrowDown01Icon, 
+  UserCircleIcon, 
+  Logout01Icon 
+} from "@hugeicons/core-free-icons"
 import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
@@ -82,7 +83,7 @@ export function SiteHeader({
         <div className="flex min-w-0 items-center gap-2">
 
           <span className="text-sm flex items-center gap-1 ">
-            <Handshake className="size-4 shrink-0 text-sidebar-foreground" />
+            <HugeiconsIcon icon={Agreement01Icon} className="size-4 shrink-0 text-sidebar-foreground" />
             <span>FMS</span>
           </span>
           <span className="sr-only">
@@ -92,7 +93,7 @@ export function SiteHeader({
         </div>
 
         <div className="ml-auto flex min-w-0 items-center gap-2 text-xs text-sidebar-foreground/75">
-          <CalendarDaysIcon className="size-4 shrink-0 text-sidebar-foreground/55" />
+          <HugeiconsIcon icon={Calendar04Icon} className="size-4 shrink-0 text-sidebar-foreground/55" />
           <span className="truncate">{dateLabel}</span>
         </div>
 
@@ -134,7 +135,7 @@ export function SiteHeader({
               <span className="hidden max-w-32 truncate text-sm sm:block">
                 {user.name}
               </span>
-              <ChevronDownIcon className="size-4 opacity-70" />
+              <HugeiconsIcon icon={ArrowDown01Icon} className="size-4 opacity-70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -165,7 +166,7 @@ export function SiteHeader({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/profile")}>
-              <UserCircleIcon />
+              <HugeiconsIcon icon={UserCircleIcon} />
               Profile
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -174,7 +175,7 @@ export function SiteHeader({
                 router.push("/login")
               }}
             >
-              <LogOutIcon />
+              <HugeiconsIcon icon={Logout01Icon} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

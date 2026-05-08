@@ -4,7 +4,14 @@ import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, ResponsiveContainer, LabelList } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { ArrowDownIcon, ArrowUpIcon, Settings2Icon, TrendingUpIcon, TriangleAlertIcon, XIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { 
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Settings02Icon,
+  Alert01Icon,
+  Cancel01Icon
+} from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -65,10 +72,10 @@ export function LeadershipDashboardView() {
   return (
     <div className="flex flex-col gap-0">
       {isThresholdReached && !hideThresholdAlert && (
-        <div className="mb-6">
-          <Alert className="bg-black text-rose-500 border-rose-500/30 flex items-center justify-between pr-2 [&>svg+div]:translate-y-0 rounded-[4px]">
+        <div className="mt-0">
+          <Alert className="bg-black text-rose-500 border-rose-500/30 border-y-0 flex items-center justify-between pr-2 [&>svg+div]:translate-y-0 rounded-none">
             <div className="flex items-start gap-3">
-              <TriangleAlertIcon className="mt-0.5 size-4" />
+              <HugeiconsIcon icon={Alert01Icon} className="mt-0.5 size-4" />
               <div className="flex-col justify-center">
                 <AlertTitle>Threshold Alert (80%)</AlertTitle>
                 <AlertDescription>
@@ -82,43 +89,45 @@ export function LeadershipDashboardView() {
               size="icon"
               variant="ghost"
             >
-              <XIcon className="h-5 w-5" />
+              <HugeiconsIcon icon={Cancel01Icon} className="h-5 w-5" />
             </Button>
           </Alert>
         </div>
       )}
-      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden mt-6">
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {executiveStats.trends.revenue}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.revenue}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">vs last qtr</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Consolidated gross income across all streams</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Operating Expenses</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {executiveStats.trends.expenses}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.expenses}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Total operational spend for current period</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Petty Cash Usage</CardDescription>
             <CardTitle className={cn(
-              "text-2xl tabular-nums",
+              "text-3xl tabular-nums",
               isThresholdReached ? "text-rose-600" : "text-foreground"
             )}>
               {pettyCashUsagePercent.toFixed(1)}%
@@ -135,18 +144,20 @@ export function LeadershipDashboardView() {
               </span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Percentage of weekly petty cash spent</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending High-Value</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{executiveStats.pendingHighValueBudgets}</CardTitle>
+            <CardTitle className="text-3xl tabular-nums">{executiveStats.pendingHighValueBudgets}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-amber-500 flex items-center">
                 Requires Approval
               </span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Items requiring immediate attention</CardContent>
         </Card>
       </div>
 
@@ -178,7 +189,7 @@ export function LeadershipDashboardView() {
                 <CardTitle>Petty Cash Settings</CardTitle>
                 <CardDescription>Manage organization limits</CardDescription>
               </div>
-              <Settings2Icon className="size-5 text-muted-foreground/50" />
+              <HugeiconsIcon icon={Settings02Icon} className="size-5 text-muted-foreground/50" />
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">

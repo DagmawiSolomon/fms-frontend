@@ -4,7 +4,8 @@ import * as React from "react"
 import { Line, LineChart, Pie, PieChart, XAxis, CartesianGrid, Tooltip, Cell, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 
 // --- Mock Data ---
 const stats = {
@@ -62,7 +63,7 @@ export function EmployeeDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{stats.totalExpenses}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {stats.trends.expenses}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.expenses}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">since last week</span>
             </div>
@@ -75,7 +76,7 @@ export function EmployeeDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalSpent)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <ArrowUpIcon className="size-3" /> {stats.trends.spent}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.spent}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
             </div>
@@ -88,7 +89,7 @@ export function EmployeeDashboardView() {
             <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingFunds)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <ArrowDownIcon className="size-3" /> {stats.trends.remaining}
+                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
             </div>
