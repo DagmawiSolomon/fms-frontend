@@ -35,10 +35,10 @@ const usersByRoleData = [
 ]
 
 const usersChartConfig = {
-  Employee: { label: "Employee", color: "#3b82f6" },
-  Manager: { label: "Manager", color: "#8b5cf6" },
-  Finance: { label: "Finance", color: "#10b981" },
-  Admin: { label: "Admin", color: "#f59e0b" },
+  Employee: { label: "Employee", color: "var(--chart-1)" },
+  Manager: { label: "Manager", color: "var(--chart-2)" },
+  Finance: { label: "Finance", color: "var(--chart-3)" },
+  Admin: { label: "Admin", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 const renderCustomLabel = (props: any) => {

@@ -29,21 +29,21 @@ const spendingData = [
 ]
 
 const spendingChartConfig = {
-  amount: { label: "Amount Spent", color: "#3b82f6" },
+  amount: { label: "Amount Spent", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
 const categoryData = [
-  { category: "Travel", amount: 1800, fill: "#3b82f6" },
-  { category: "Meals", amount: 850, fill: "#8b5cf6" },
-  { category: "Supplies", amount: 1100, fill: "#10b981" },
-  { category: "Software", amount: 500, fill: "#f59e0b" },
+  { category: "Travel", amount: 1800, fill: "var(--chart-1)" },
+  { category: "Meals", amount: 850, fill: "var(--chart-2)" },
+  { category: "Supplies", amount: 1100, fill: "var(--chart-3)" },
+  { category: "Software", amount: 500, fill: "var(--chart-4)" },
 ]
 
 const categoryChartConfig = {
-  travel: { label: "Travel", color: "#3b82f6" },
-  meals: { label: "Meals", color: "#8b5cf6" },
-  supplies: { label: "Supplies", color: "#10b981" },
-  software: { label: "Software", color: "#f59e0b" },
+  travel: { label: "Travel", color: "var(--chart-1)" },
+  meals: { label: "Meals", color: "var(--chart-2)" },
+  supplies: { label: "Supplies", color: "var(--chart-3)" },
+  software: { label: "Software", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 function formatMoney(value: number) {

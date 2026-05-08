@@ -40,8 +40,8 @@ const budgetOverviewData = [
 ]
 
 const budgetChartConfig = {
-  allocated: { label: "Allocated", color: "#6366f1" },
-  actual: { label: "Actual", color: "#10b981" },
+  allocated: { label: "Allocated", color: "var(--chart-1)" },
+  actual: { label: "Actual", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
 function formatMoney(value: number) {

@@ -28,19 +28,19 @@ const approvalPipelineData = [
 ]
 
 const approvalChartConfig = {
-  approved: { label: "Approved", color: "#10b981" },
-  pending: { label: "Pending", color: "#f59e0b" },
-  rejected: { label: "Rejected", color: "#ef4444" },
+  approved: { label: "Approved", color: "var(--chart-2)" },
+  pending: { label: "Pending", color: "var(--chart-3)" },
+  rejected: { label: "Rejected", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 const budgetUtilizationData = [
-  { type: "Used", amount: 280000, fill: "#3b82f6" },
-  { type: "Remaining", amount: 120000, fill: "#10b981" },
+  { type: "Used", amount: 280000, fill: "var(--chart-1)" },
+  { type: "Remaining", amount: 120000, fill: "var(--chart-2)" },
 ]
 
 const utilizationChartConfig = {
-  used: { label: "Used", color: "#3b82f6" },
-  remaining: { label: "Remaining", color: "#10b981" },
+  used: { label: "Used", color: "var(--chart-1)" },
+  remaining: { label: "Remaining", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
 function formatMoney(value: number) {

@@ -33,8 +33,8 @@ const budgetByDeptData = [
 ]
 
 const budgetDeptChartConfig = {
-  used: { label: "Used", color: "#3b82f6" },
-  remaining: { label: "Remaining", color: "#10b981" },
+  used: { label: "Used", color: "var(--chart-1)" },
+  remaining: { label: "Remaining", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
 const cashFlowData = [
@@ -46,8 +46,8 @@ const cashFlowData = [
 ]
 
 const cashFlowChartConfig = {
-  requested: { label: "Requested", color: "#8b5cf6" },
-  disbursed: { label: "Disbursed", color: "#10b981" },
+  requested: { label: "Requested", color: "var(--chart-3)" },
+  disbursed: { label: "Disbursed", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
 const expenseDistributionData = [
@@ -62,11 +62,11 @@ const expenseDistributionData = [
 ]
 
 const expenseChartConfig = {
-  Travel: { label: "Travel", color: "#3b82f6" },
-  Software: { label: "Software", color: "#8b5cf6" },
-  Hardware: { label: "Hardware", color: "#10b981" },
-  Office: { label: "Office", color: "#f59e0b" },
-  Events: { label: "Events", color: "#ec4899" },
+  Travel: { label: "Travel", color: "var(--chart-1)" },
+  Software: { label: "Software", color: "var(--chart-2)" },
+  Hardware: { label: "Hardware", color: "var(--chart-3)" },
+  Office: { label: "Office", color: "var(--chart-4)" },
+  Events: { label: "Events", color: "var(--chart-5)" },
 } satisfies ChartConfig
 
 function formatMoney(value: number) {
