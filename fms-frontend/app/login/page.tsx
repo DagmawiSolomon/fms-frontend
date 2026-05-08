@@ -12,9 +12,12 @@ import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { fmsApi, extractAuthToken, normalizeSessionUser } from "@/lib/fms"
 import { setAuthToken } from "@/lib/auth"
 import { toast } from "sonner"
+import Link from "next/link"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -83,7 +86,7 @@ function AuthContent() {
   return (
     <div className="flex min-h-svh w-full overflow-hidden bg-background">
       {/* Left side - Auth Image */}
-      <div className="hidden w-1/2 border-r lg:flex relative overflow-hidden bg-white">
+      <div className="hidden w-1/2 border-r lg:flex relative overflow-hidden bg-background">
         <Image
           src="/photo_2026-05-07_20-58-45-dithered.svg"
           alt="Auth Background"
@@ -91,101 +94,127 @@ function AuthContent() {
           className="object-cover"
           priority
         />
-
       </div>
 
       {/* Right side - Form */}
       <div className="flex w-full flex-col items-center justify-center p-8 lg:w-1/2">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="flex flex-col space-y-2 text-center lg:text-left transition-all duration-300">
-            <h1 className="text-3xl font-medium tracking-tight">
+        <div className="w-full max-w-sm flex flex-col gap-6">
+          <div className="flex flex-col gap-1 text-center lg:text-left transition-all duration-300">
+            <h1 className="text-3xl font-normal tracking-tight">
               {mode === "login" ? "Sign in" : "Create account"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login"
-                ? "Enter your credentials to access your dashboard"
+                ? "Welcome back! Enter your details below."
                 : "Join FMS to manage your finances with precision"}
             </p>
           </div>
 
-          <Card className="rounded-none border-0 shadow-none">
+          <Card className="rounded-none border-0 shadow-none bg-transparent">
             <CardContent className="p-0">
               {mode === "login" ? (
                 <form
-                  className="grid gap-4"
+                  className="flex flex-col gap-6"
                   onSubmit={loginForm.handleSubmit((values) => loginMutation.mutate(values))}
                 >
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email" className="text-xs text-muted-foreground">Email address</Label>
                     <Input
-                      placeholder="Email address"
+                      id="email"
+                      placeholder="name@example.com"
                       type="email"
-                      className="h-11 rounded-none border-t-0 border-x-0 border-b focus-visible:ring-0"
+                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
                       {...loginForm.register("email")}
                     />
                     {loginForm.formState.errors.email && (
                       <p className="text-xs text-destructive">{loginForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-xs text-muted-foreground">Password</Label>
+                      <Link
+                        href="/forgot-password"
+                        className="text-xs text-blue-500 hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
                     <Input
-                      placeholder="Password"
+                      id="password"
+                      placeholder="••••••••"
                       type="password"
-                      className="h-11 rounded-none border-t-0 border-x-0 border-b focus-visible:ring-0"
+                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
                       {...loginForm.register("password")}
                     />
                     {loginForm.formState.errors.password && (
                       <p className="text-xs text-destructive">{loginForm.formState.errors.password.message}</p>
                     )}
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="keep-me-logged-in" className="rounded-[4px]" />
+                    <Label
+                      htmlFor="keep-me-logged-in"
+                      className="text-sm font-normal leading-none cursor-pointer text-muted-foreground"
+                    >
+                      Keep me logged in
+                    </Label>
+                  </div>
                   <Button
                     type="submit"
                     disabled={isPending}
-                    className="mt-4 h-11 rounded-none"
+                    className="h-11 rounded-[4px]"
                   >
                     {isPending ? "Signing in..." : "Continue to Dashboard"}
                   </Button>
-                  <div className="mt-4 flex items-center justify-center">
-                    <Button
+                  <div className="flex items-center justify-center text-sm text-muted-foreground">
+                    Don&apos;t have an account?{" "}
+                    <button
                       type="button"
-                      variant="link"
-                      className="text-muted-foreground hover:text-foreground"
+                      className="ml-1 text-blue-500 underline underline-offset-4 hover:text-blue-400"
                       onClick={() => setMode("register")}
                     >
-                      Don&apos;t have an account? Sign up
-                    </Button>
+                      Sign up
+                    </button>
                   </div>
                 </form>
               ) : (
                 <form
-                  className="grid gap-4"
+                  className="flex flex-col gap-6"
                   onSubmit={registerForm.handleSubmit((values) => registerMutation.mutate(values))}
                 >
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
+                    <Label htmlFor="reg-name" className="text-xs text-muted-foreground">Full Name</Label>
                     <Input
-                      placeholder="Full Name"
-                      className="h-11 rounded-none border-t-0 border-x-0 border-b focus-visible:ring-0"
+                      id="reg-name"
+                      placeholder="John Doe"
+                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
                       {...registerForm.register("name")}
                     />
                     {registerForm.formState.errors.name && (
                       <p className="text-xs text-destructive">{registerForm.formState.errors.name.message}</p>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
+                    <Label htmlFor="reg-email" className="text-xs text-muted-foreground">Email address</Label>
                     <Input
-                      placeholder="Email address"
+                      id="reg-email"
+                      placeholder="name@example.com"
                       type="email"
-                      className="h-11 rounded-none border-t-0 border-x-0 border-b focus-visible:ring-0"
+                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
                       {...registerForm.register("email")}
                     />
                     {registerForm.formState.errors.email && (
                       <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
+                    <Label htmlFor="reg-password" className="text-xs text-muted-foreground">Password</Label>
                     <Input
-                      placeholder="Password"
+                      id="reg-password"
+                      placeholder="••••••••"
                       type="password"
-                      className="h-11 rounded-none border-t-0 border-x-0 border-b focus-visible:ring-0"
+                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
                       {...registerForm.register("password")}
                     />
                     {registerForm.formState.errors.password && (
@@ -195,19 +224,19 @@ function AuthContent() {
                   <Button
                     type="submit"
                     disabled={isPending}
-                    className="mt-4 h-11 rounded-none"
+                    className="h-11 rounded-[4px]"
                   >
                     {isPending ? "Creating account..." : "Create account"}
                   </Button>
-                  <div className="mt-4 flex items-center justify-center">
-                    <Button
+                  <div className="flex items-center justify-center text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <button
                       type="button"
-                      variant="link"
-                      className="text-muted-foreground hover:text-foreground"
+                      className="ml-1 text-blue-500 underline underline-offset-4 hover:text-blue-400"
                       onClick={() => setMode("login")}
                     >
-                      Already have an account? Sign in
-                    </Button>
+                      Sign in
+                    </button>
                   </div>
                 </form>
               )}
