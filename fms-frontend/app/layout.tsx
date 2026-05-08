@@ -1,12 +1,19 @@
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AppProviders } from "@/app/providers"
-import { Geist_Mono, Geist } from "next/font/google"
+import { Geist_Mono, Inter } from "next/font/google"
+import localFont from "next/font/local"
 import { cn } from "@/lib/utils"
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
+})
+
+const generalSans = localFont({
+  src: "./fonts/GeneralSans-Variable.woff2",
+  variable: "--font-general-sans",
+  display: "swap",
 })
 
 const geistMono = Geist_Mono({
@@ -23,7 +30,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", geistMono.variable, geist.variable, "font-sans")}
+      className={cn("antialiased", geistMono.variable, inter.variable, generalSans.variable, "font-sans")}
     >
       <body>
         <ThemeProvider>
