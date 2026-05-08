@@ -49,7 +49,7 @@ export default function ProfilePage() {
           </div>
 
           {session.isLoading ? (
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground/50 pt-4 border-t border-border/50">
+            <div className="text-xs text-muted-foreground/50 pt-4 border-t border-border/50">
               Synchronizing account data...
             </div>
           ) : null}
@@ -62,7 +62,7 @@ export default function ProfilePage() {
 function Info({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50">{label}</div>
+      <div className="text-xs text-muted-foreground/50">{label}</div>
       <div className="text-sm text-foreground">{value}</div>
     </div>
   )

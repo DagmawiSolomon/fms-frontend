@@ -217,13 +217,13 @@ export default function BudgetsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Budget</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Department</TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Amount</TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Spent</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Status</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Owner</TableHead>
-                  {showActions && <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Actions</TableHead>}
+                  <TableHead className="text-xs text-muted-foreground/50">Budget</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Department</TableHead>
+                  <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-right text-xs text-muted-foreground/50">Spent</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Owner</TableHead>
+                  {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -232,7 +232,7 @@ export default function BudgetsPage() {
                     <TableRow key={budget.id}>
                       <TableCell>
                         <div className="text-sm font-normal text-foreground">{budget.name}</div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <div className="text-xs text-muted-foreground">
                           {budget.period || "No period"}
                         </div>
                       </TableCell>
@@ -497,7 +497,7 @@ function Field({
 }) {
   return (
     <div className="grid gap-1.5">
-      <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">{label}</div>
+      <div className="text-xs text-muted-foreground/60">{label}</div>
       {control}
       {error ? <div className="text-xs text-destructive">{error}</div> : null}
     </div>
@@ -542,7 +542,7 @@ function SummaryCard({
               {trend.value}
             </span>
             {trendLabel && (
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] text-muted-foreground">
                 {trendLabel}
               </span>
             )}
@@ -559,15 +559,15 @@ function SummaryCard({
 function StatusBadge({ status }: { status: FmsBudgetStatus }) {
   const tone =
     status === "approved"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+      ? "border-emerald-500/20 text-emerald-500"
       : status === "rejected"
-        ? "border-rose-500/30 bg-rose-500/10 text-rose-700"
+        ? "border-rose-500/20 text-rose-500"
         : status === "draft"
-          ? "border-slate-500/30 bg-slate-500/10 text-slate-700"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+          ? "border-slate-500/20 text-slate-400"
+          : "border-amber-500/20 text-amber-500"
 
   return (
-    <Badge variant="outline" className={cn(tone, "rounded-[4px] capitalize")}>
+    <Badge variant="outline" className={cn(tone, "rounded-[4px] bg-black capitalize font-medium")}>
       {status}
     </Badge>
   )

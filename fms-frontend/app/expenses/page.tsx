@@ -193,13 +193,13 @@ export default function ExpensesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Merchant</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Category</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Date</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Submitter</TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Amount</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Status</TableHead>
-                  {showActions && <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50">Actions</TableHead>}
+                  <TableHead className="text-xs text-muted-foreground/50">Merchant</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Category</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
+                  <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
+                  {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -455,7 +455,7 @@ function Field({
 }) {
   return (
     <div className="grid gap-1.5">
-      <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">{label}</div>
+      <div className="text-xs text-muted-foreground/60">{label}</div>
       {control}
       {error ? <div className="text-xs text-destructive">{error}</div> : null}
     </div>
@@ -465,15 +465,15 @@ function Field({
 function StatusBadge({ status }: { status: FmsExpense["status"] }) {
   const tone =
     status === "verified"
-      ? "border-blue-500/30 bg-blue-500/10 text-blue-700"
+      ? "border-blue-500/20 text-blue-400"
       : status === "approved"
-        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+        ? "border-emerald-500/20 text-emerald-500"
         : status === "rejected"
-          ? "border-rose-500/30 bg-rose-500/10 text-rose-700"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+          ? "border-rose-500/20 text-rose-500"
+          : "border-amber-500/20 text-amber-500"
 
   return (
-    <Badge variant="outline" className={cn(tone, "rounded-[4px] capitalize")}>
+    <Badge variant="outline" className={cn(tone, "rounded-[4px] bg-black capitalize font-medium")}>
       {status}
     </Badge>
   )
@@ -524,7 +524,7 @@ function SummaryCard({
               {trend.value}
             </span>
             {trendLabel && (
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] text-muted-foreground">
                 {trendLabel}
               </span>
             )}

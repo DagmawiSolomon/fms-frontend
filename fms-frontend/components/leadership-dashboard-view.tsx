@@ -4,11 +4,12 @@ import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, ResponsiveContainer, LabelList } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { ArrowDownIcon, ArrowUpIcon, Settings2Icon, TrendingUpIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, Settings2Icon, TrendingUpIcon, TriangleAlertIcon, XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // --- Executive Mock Data ---
 const executiveStats = {
@@ -47,10 +48,11 @@ function formatMoney(value: number) {
 export function LeadershipDashboardView() {
   const [weeklyLimit, setWeeklyLimit] = React.useState(executiveStats.pettyCashLimit)
   const [isEditingLimit, setIsEditingLimit] = React.useState(false)
+  const [hideThresholdAlert, setHideThresholdAlert] = React.useState(false)
 
   const handleUpdateLimit = () => {
     if (weeklyLimit < executiveStats.pettyCashSpent) {
-      toast.warning(`Warning: New limit (${formatMoney(weeklyLimit)}) is lower than this week's current spending (${formatMoney(executiveStats.pettyCashSpent)}).`)
+      toast.warning(`Warning: New limit (${formatMoney(weeklyLimit)}) is lower than current spending.`)
     } else {
       toast.success(`Petty Cash weekly limit updated to ${formatMoney(weeklyLimit)}`)
     }
@@ -62,7 +64,30 @@ export function LeadershipDashboardView() {
 
   return (
     <div className="flex flex-col gap-0">
-      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+      {isThresholdReached && !hideThresholdAlert && (
+        <div className="mb-6">
+          <Alert className="bg-black text-rose-500 border-rose-500/30 flex items-center justify-between pr-2 [&>svg+div]:translate-y-0 rounded-[4px]">
+            <div className="flex items-start gap-3">
+              <TriangleAlertIcon className="mt-0.5 size-4" />
+              <div className="flex-col justify-center">
+                <AlertTitle>Threshold Alert (80%)</AlertTitle>
+                <AlertDescription>
+                  Weekly petty cash usage has reached {pettyCashUsagePercent.toFixed(1)}%. Monitor expenditures closely.
+                </AlertDescription>
+              </div>
+            </div>
+            <Button
+              className="pl-0! text-rose-500 hover:bg-rose-500/10 hover:text-rose-400"
+              onClick={() => setHideThresholdAlert(true)}
+              size="icon"
+              variant="ghost"
+            >
+              <XIcon className="h-5 w-5" />
+            </Button>
+          </Alert>
+        </div>
+      )}
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden mt-6">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Revenue</CardDescription>
@@ -75,7 +100,7 @@ export function LeadershipDashboardView() {
             </div>
           </CardHeader>
         </Card>
-        
+
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Operating Expenses</CardDescription>
@@ -157,45 +182,69 @@ export function LeadershipDashboardView() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Weekly Spending Limit</label>
+            <div className="space-y-3">
+              <label className="text-sm text-muted-foreground block">Weekly Spending Limit</label>
               {isEditingLimit ? (
-                <div className="flex gap-2">
-                  <Input 
-                    type="number" 
-                    value={weeklyLimit} 
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="number"
+                    value={weeklyLimit}
                     onChange={(e) => setWeeklyLimit(Number(e.target.value))}
-                    className="h-9 rounded-none"
+                    className="h-9 rounded-[4px]"
                   />
-                  <Button size="sm" className="h-9 rounded-none" onClick={handleUpdateLimit}>Save</Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 h-9 rounded-[4px]" onClick={handleUpdateLimit}>Save Changes</Button>
+                    <Button size="sm" variant="outline" className="h-9 rounded-[4px]" onClick={() => setIsEditingLimit(false)}>Cancel</Button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-3 border border-dashed rounded-none bg-background">
+                <div className="flex items-center justify-between p-3 border border-dashed rounded-[4px] bg-muted/20">
                   <span className="text-xl font-medium tabular-nums">{formatMoney(weeklyLimit)}</span>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs underline" onClick={() => setIsEditingLimit(true)}>Edit</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs underline" onClick={() => setIsEditingLimit(true)}>Edit Limit</Button>
                 </div>
               )}
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Consumption Stats</label>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Usage Progress</span>
-                  <span className={isThresholdReached ? "text-rose-500 font-bold" : ""}>{pettyCashUsagePercent.toFixed(0)}%</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">Consumption Stats</label>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-baseline">
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Usage: </span>
+                    <span className="font-medium">{formatMoney(executiveStats.pettyCashSpent)}</span>
+                    <span className={cn(
+                      "ml-1.5 text-[10px]",
+                      isThresholdReached ? "text-rose-500 font-bold" : "text-muted-foreground/70"
+                    )}>
+                      ({pettyCashUsagePercent.toFixed(0)}%)
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium">
+                    {formatMoney(weeklyLimit)}
+                  </span>
                 </div>
-                <div className="h-2 w-full bg-muted border overflow-hidden">
-                  <div 
-                    className={cn(
-                      "h-full transition-all duration-500",
-                      isThresholdReached ? "bg-rose-500" : "bg-emerald-500"
-                    )} 
-                    style={{ width: `${pettyCashUsagePercent}%` }}
-                  />
+
+                <div className="flex justify-between h-4 items-center overflow-hidden">
+                  {Array.from({ length: 60 }).map((_, i) => {
+                    const step = (i / 60) * 100
+                    const isActive = pettyCashUsagePercent >= step
+                    
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-0.5 h-3.5 transition-all duration-300",
+                          isActive 
+                            ? (isThresholdReached ? "bg-rose-500" : "bg-emerald-500") 
+                            : "bg-muted"
+                        )}
+                      />
+                    )
+                  })}
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                  * Alerts are automatically sent to finance when usage crosses 80%.
-                </p>
               </div>
             </div>
 

@@ -159,10 +159,10 @@ export default function UsersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">User</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Email</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Role</TableHead>
-                      <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground/50"></TableHead>
+                      <TableHead className="text-xs text-muted-foreground/50">User</TableHead>
+                      <TableHead className="text-xs text-muted-foreground/50">Email</TableHead>
+                      <TableHead className="text-xs text-muted-foreground/50">Role</TableHead>
+                      <TableHead className="text-right text-xs text-muted-foreground/50"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -223,12 +223,12 @@ export default function UsersPage() {
 
                     <div className="grid gap-4">
                       <div className="grid gap-1">
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Email Address</div>
+                        <div className="text-xs text-muted-foreground/50">Email Address</div>
                         <div className="text-sm text-foreground">{selectedUser.email}</div>
                       </div>
 
                       <div className="grid gap-2">
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Current Role</div>
+                        <div className="text-xs text-muted-foreground/50">Current Role</div>
                         <Select
                           value={draftRole || ""}
                           onValueChange={(value) => setDraftRole(value as UserRow["role"])}
@@ -246,7 +246,7 @@ export default function UsersPage() {
                       </div>
 
                       <div className="grid gap-2">
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Account Actions</div>
+                        <div className="text-xs text-muted-foreground/50">Account Actions</div>
                         <Button variant="outline" className="w-fit justify-start rounded-[4px]" onClick={handlePromote}>
                           Promote
                         </Button>

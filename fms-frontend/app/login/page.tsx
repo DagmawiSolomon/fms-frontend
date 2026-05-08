@@ -18,6 +18,7 @@ import { fmsApi, extractAuthToken, normalizeSessionUser } from "@/lib/fms"
 import { setAuthToken } from "@/lib/auth"
 import { toast } from "sonner"
 import Link from "next/link"
+import { Eye, EyeOff } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -39,6 +40,7 @@ function AuthContent() {
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login"
 
   const [mode, setMode] = React.useState<"login" | "register">(initialMode)
+  const [showPassword, setShowPassword] = React.useState(false)
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -103,7 +105,7 @@ function AuthContent() {
             <h1 className="text-3xl font-normal tracking-tight">
               {mode === "login" ? "Sign in" : "Create account"}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-lg text-muted-foreground">
               {mode === "login"
                 ? "Welcome back! Enter your details below."
                 : "Join FMS to manage your finances with precision"}
@@ -140,13 +142,26 @@ function AuthContent() {
                         Forgot password?
                       </Link>
                     </div>
-                    <Input
-                      id="password"
-                      placeholder="••••••••"
-                      type="password"
-                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
-                      {...loginForm.register("password")}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        placeholder="••••••••"
+                        type={showPassword ? "text" : "password"}
+                        className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring pr-10"
+                        {...loginForm.register("password")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
                     {loginForm.formState.errors.password && (
                       <p className="text-xs text-destructive">{loginForm.formState.errors.password.message}</p>
                     )}
@@ -210,13 +225,26 @@ function AuthContent() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="reg-password" className="text-xs text-muted-foreground">Password</Label>
-                    <Input
-                      id="reg-password"
-                      placeholder="••••••••"
-                      type="password"
-                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
-                      {...registerForm.register("password")}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="reg-password"
+                        placeholder="••••••••"
+                        type={showPassword ? "text" : "password"}
+                        className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring pr-10"
+                        {...registerForm.register("password")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
                     {registerForm.formState.errors.password && (
                       <p className="text-xs text-destructive">{registerForm.formState.errors.password.message}</p>
                     )}
