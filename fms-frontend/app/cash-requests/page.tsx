@@ -448,7 +448,7 @@ function SummaryCard({
     )}>
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-3xl tabular-nums tracking-tight text-foreground">
+        <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">
           {formatMoney(value)}
         </CardTitle>
         {trend && (
