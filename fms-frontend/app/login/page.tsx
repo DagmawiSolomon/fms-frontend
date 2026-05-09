@@ -88,22 +88,26 @@ function AuthContent() {
   return (
     <div className="flex min-h-svh w-full overflow-hidden bg-background">
       {/* Left side - Auth Image */}
-      <div className="hidden w-1/2 border-r lg:flex relative overflow-hidden bg-background">
-        <Image
-          src="/photo_2026-05-07_20-58-53.jpg"
-          alt="Auth Background"
-          fill
-          className="object-cover"
-          priority
-        />
+      <div className="hidden lg:w-[65%] lg:flex relative overflow-hidden bg-background">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src="/ascii-art.mp4" type="video/mp4" />
+        </video>
+        {/* Gradient overlay to smoothly blend the video into the sidebar */}
+        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-r from-transparent to-sidebar z-10 pointer-events-none" />
       </div>
 
       {/* Right side - Form */}
-      <div className="flex w-full flex-col items-center justify-center lg:w-1/2">
+      <div className="flex w-full flex-col items-center justify-center lg:w-[35%] bg-sidebar bg-noise text-sidebar-foreground p-6 sm:p-8">
         <div className="w-full max-w-sm flex flex-col gap-4">
           <div className="flex flex-col gap-0 text-center lg:text-left transition-all duration-300">
-            <h1 className="text-3xl tracking-tight">
-              {mode === "login" ? "Welcome to FMS" : "Create account"}
+            <h1 className="text-3xl tracking-tight text-foreground font-heading">
+              {mode === "login" ? "Welcome to FMS" : "Create an account"}
             </h1>
           </div>
 
@@ -115,12 +119,12 @@ function AuthContent() {
                   onSubmit={loginForm.handleSubmit((values) => loginMutation.mutate(values))}
                 >
                   <div className="grid gap-2">
-                    <Label htmlFor="email" className="text-xs text-muted-foreground">Email address</Label>
+                    <Label htmlFor="email" className="text-md text-foreground">Email address</Label>
                     <Input
                       id="email"
                       placeholder="name@example.com"
                       type="email"
-                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
+                      className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
                       {...loginForm.register("email")}
                     />
                     {loginForm.formState.errors.email && (
@@ -129,7 +133,7 @@ function AuthContent() {
                   </div>
                   <div className="grid gap-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-xs text-muted-foreground">Password</Label>
+                      <Label htmlFor="password" className="text-md text-foreground">Password</Label>
                       <Link
                         href="/forgot-password"
                         className="text-xs text-blue-500 hover:underline"
@@ -142,7 +146,7 @@ function AuthContent() {
                         id="password"
                         placeholder="••••••••"
                         type={showPassword ? "text" : "password"}
-                        className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring pr-10"
+                        className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20 pr-10"
                         {...loginForm.register("password")}
                       />
                       <button
@@ -162,7 +166,7 @@ function AuthContent() {
                     )}
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="keep-me-logged-in" className="rounded-[4px]" />
+                    <Checkbox id="keep-me-logged-in" />
                     <Label
                       htmlFor="keep-me-logged-in"
                       className="text-sm font-normal leading-none cursor-pointer text-muted-foreground"
@@ -173,7 +177,7 @@ function AuthContent() {
                   <Button
                     type="submit"
                     disabled={isPending}
-                    className="h-11 rounded-[4px]"
+                    className="h-11 font-heading"
                   >
                     {isPending ? "Signing in..." : "Continue to Dashboard"}
                   </Button>
@@ -194,11 +198,11 @@ function AuthContent() {
                   onSubmit={registerForm.handleSubmit((values) => registerMutation.mutate(values))}
                 >
                   <div className="grid gap-2">
-                    <Label htmlFor="reg-name" className="text-xs text-muted-foreground">Full Name</Label>
+                    <Label htmlFor="reg-name" className="text-md text-foreground">Full Name</Label>
                     <Input
                       id="reg-name"
                       placeholder="John Doe"
-                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
+                      className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
                       {...registerForm.register("name")}
                     />
                     {registerForm.formState.errors.name && (
@@ -206,12 +210,12 @@ function AuthContent() {
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="reg-email" className="text-xs text-muted-foreground">Email address</Label>
+                    <Label htmlFor="reg-email" className="text-md text-foreground">Email address</Label>
                     <Input
                       id="reg-email"
                       placeholder="name@example.com"
                       type="email"
-                      className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring"
+                      className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
                       {...registerForm.register("email")}
                     />
                     {registerForm.formState.errors.email && (
@@ -219,13 +223,13 @@ function AuthContent() {
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="reg-password" className="text-xs text-muted-foreground">Password</Label>
+                    <Label htmlFor="reg-password" className="text-md text-foreground">Password</Label>
                     <div className="relative">
                       <Input
                         id="reg-password"
                         placeholder="••••••••"
                         type={showPassword ? "text" : "password"}
-                        className="h-11 bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring pr-10"
+                        className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20 pr-10"
                         {...registerForm.register("password")}
                       />
                       <button
@@ -247,7 +251,7 @@ function AuthContent() {
                   <Button
                     type="submit"
                     disabled={isPending}
-                    className="h-11 rounded-[4px]"
+                    className="h-11 font-heading"
                   >
                     {isPending ? "Creating account..." : "Create account"}
                   </Button>
