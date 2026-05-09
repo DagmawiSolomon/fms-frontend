@@ -274,6 +274,19 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
   })
 }
 
+export function normalizeUsers(payload: unknown): FmsSessionUser[] {
+  return unwrapList<FmsSessionUser>(payload).map((item, index) => {
+    const user = item as Record<string, unknown>
+    return {
+      id: normalizeIdentifier(user.id ?? user._id ?? user.userId, index),
+      name: (user.name ?? user.fullName ?? user.username ?? "User") as string,
+      email: (user.email ?? "user@example.com") as string,
+      avatar: (user.avatar ?? user.image ?? null) as string | null,
+      role: normalizeRole(user.role as string | null | undefined),
+    }
+  })
+}
+
 export const fmsApi = {
   loginUser: (payload: LoginPayload) =>
     apiRequest<FmsAuthResponse>("/loginUser", {
@@ -289,52 +302,61 @@ export const fmsApi = {
     }),
   getBudgetSummary: () => apiRequest<unknown>("/GetBudgetSummary"),
   getReportOverview: () => apiRequest<unknown>("/ReportOverview"),
-  getBudgets: () => apiRequest<unknown>("/budgets"),
+  getBudgets: () => apiRequest<unknown>("/GetALLBudgets"),
   createBudget: (payload: BudgetInput) =>
-    apiRequest<unknown>("/budgets", {
+    apiRequest<unknown>("/createBudget", {
       method: "POST",
       body: payload,
     }),
   updateBudget: (id: string | number, payload: Partial<BudgetInput>) =>
-    apiRequest<unknown>(`/budgets/${id}`, {
-      method: "PATCH",
-      body: payload,
+    apiRequest<unknown>("/UpdateBudget", {
+      method: "POST",
+      body: { ...payload, id },
     }),
   setBudgetStatus: (id: string | number, status: FmsBudgetStatus) =>
-    apiRequest<unknown>(`/budgets/${id}/status`, {
-      method: "PATCH",
-      body: { status },
+    apiRequest<unknown>(status === "approved" ? "/ApproveBudget" : "/RejectBudget", {
+      method: "POST",
+      body: { id },
     }),
-  getUsers: () => apiRequest<unknown>("/GetAllUser"),
+  getUsers: () => apiRequest<unknown>("/users"),
+  promoteUser: (id: string | number) =>
+    apiRequest<unknown>(`/promoteUser?id=${id}`),
+  getSpecificProfile: (id: string | number) =>
+    apiRequest<unknown>(`/GetspecificProfile?id=${id}`),
+  changeUserRole: (id: string | number, role: string) =>
+    apiRequest<unknown>(`/ChangeUserRole?id=${id}&role=${role}`),
   updateUserRole: (id: string | number, role: UserRole) =>
-    apiRequest<unknown>(`/users/${id}/role`, {
-      method: "PATCH",
-      body: { role },
+    apiRequest<unknown>("/ChangeUserRole", {
+      method: "POST",
+      body: { id, role },
     }),
-  getMe: () => apiRequest<unknown>("/api/users/me"),
+  getMe: () => apiRequest<unknown>("/users/me"),
   createCashRequest: (payload: CashRequestInput) =>
-    apiRequest<unknown>("/cash-requests", {
+    apiRequest<unknown>("/CreateCashRequest", {
       method: "POST",
       body: payload,
     }),
-  getCashRequests: () => apiRequest<unknown>("/cash-requests"),
+  getCashRequests: () => apiRequest<unknown>("/GetAllCashRequests"),
   approveCashRequest: (id: string | number) =>
-    apiRequest<unknown>(`/cash-requests/${id}/approve`, {
-      method: "PATCH",
+    apiRequest<unknown>("/ApproveCashRequest", {
+      method: "POST",
+      body: { id },
     }),
   disburseCashRequest: (id: string | number) =>
-    apiRequest<unknown>(`/cash-requests/${id}/disburse`, {
-      method: "PATCH",
+    apiRequest<unknown>("/DisburseCashRequest", {
+      method: "POST",
+      body: { id },
     }),
   createExpense: (payload: ExpenseInput | FormData) =>
-    apiRequest<unknown>("/expenses", {
+    apiRequest<unknown>("/createExpense", {
       method: "POST",
       body: payload,
     }),
-  getExpenses: () => apiRequest<unknown>("/expenses"),
+  getExpenses: () => apiRequest<unknown>("/GetAllExpenses"),
   verifyExpense: (id: string | number) =>
-    apiRequest<unknown>(`/expenses/${id}/verify`, {
-      method: "PATCH",
+    apiRequest<unknown>("/VerifyExpenses", {
+      method: "POST",
+      body: { id },
     }),
 }
 

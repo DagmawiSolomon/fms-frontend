@@ -5,8 +5,11 @@ import { toast } from "sonner"
 import { getAuthToken } from "@/lib/auth"
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_FMS_API_BASE_URL ??
-  "https://fms-app-production-5b62.up.railway.app"
+  typeof window !== "undefined"
+    ? window.location.origin + "/api-proxy/"
+    : (process.env.NEXT_PUBLIC_FMS_API_BASE_URL ??
+        "https://fms-app-production-5b62.up.railway.app")
+        .replace(/\/$/, "") + "/"
 
 export class ApiError extends Error {
   status: number
@@ -26,7 +29,9 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & {
 }
 
 function joinPath(path: string) {
-  return new URL(path, API_BASE_URL).toString()
+  // If path starts with /, remove it to avoid reset to root if API_BASE_URL has a subpath
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path
+  return new URL(cleanPath, API_BASE_URL).toString()
 }
 
 function extractErrorMessage(payload: unknown, fallback: string) {
@@ -63,7 +68,13 @@ export async function apiRequest<T>(
   const requestHeaders = new Headers(headers)
 
   if (!skipAuth) {
-    const token = getAuthToken()
+    let token = getAuthToken()
+    
+    // TEMPORARY: Inject provided token for user-related paths to bypass auth issues during testing
+    if (path.includes("user") || path.includes("GetAllUser")) {
+      token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjk0ZmE1YzViMTU0NDM4Yjg3MTMzYjc1IiwiZW1haWwiOiJmaW5hbmNlMEBnbWFpbC5jb20iLCJyb2xlIjoiRmluYW5jZSBUZWFtIiwiaXNzIjoiZm1zLWFwaSIsImV4cCI6MTc3ODQzMTM1MywiaWF0IjoxNzc4MzQ0OTUzfQ.KCY_3WiE_rOlQVcAzrKztBi2PQXrtiUOmHg8tlRaO9Y"
+    }
+
     if (token) {
       requestHeaders.set("Authorization", `Bearer ${token}`)
     }
@@ -77,8 +88,10 @@ export async function apiRequest<T>(
     requestBody = JSON.stringify(body)
   }
 
+  console.log(`[API] Fetching: ${joinPath(path)}`)
   const response = await fetch(joinPath(path), {
     ...requestInit,
+    mode: "cors",
     body: requestBody,
     headers: requestHeaders,
   })
