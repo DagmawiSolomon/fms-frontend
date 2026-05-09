@@ -43,9 +43,9 @@ export function DashboardShell({
               )}
             >
               <div className="flex flex-col gap-0">
-                <div className="flex flex-row items-center justify-between gap-4 border border-b-0 rounded-t-[4px] bg-card/30 px-4 py-8">
+                <div className="flex flex-row items-center justify-between gap-4 border border-b-0 border-white/8 bg-card bg-noise shadow-[0_1px_0_rgba(255,255,255,0.03)] px-4 py-8">
                   <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl tracking-tight">{title}</h1>
+                    <h1 className="text-3xl tracking-tight font-medium font-heading text-slate-50">{title}</h1>
                     {description && (
                       <p className="text-muted-foreground max-w-[75ch]">
                         {description}

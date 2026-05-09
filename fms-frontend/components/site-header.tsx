@@ -16,12 +16,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { 
-  Agreement01Icon, 
-  Calendar04Icon, 
-  ArrowDown01Icon, 
-  UserCircleIcon, 
-  Logout01Icon 
+import {
+  Agreement01Icon,
+  Calendar04Icon,
+  ArrowDown01Icon,
+  UserCircleIcon,
+  LogoutSquare01Icon
 } from "@hugeicons/core-free-icons"
 import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
@@ -77,14 +77,13 @@ export function SiteHeader({
   }, [])
 
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border/70 bg-sidebar/95 text-sidebar-foreground transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border/70 bg-sidebar bg-noise text-sidebar-foreground transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-3 px-4">
 
         <div className="flex min-w-0 items-center gap-2">
 
-          <span className="text-sm flex items-center gap-1 ">
-            <HugeiconsIcon icon={Agreement01Icon} className="size-4 shrink-0 text-sidebar-foreground" />
-            <span>FMS</span>
+          <span className="text-sm flex items-center gap-1 font-medium text-white">
+
           </span>
           <span className="sr-only">
             {title}
@@ -170,12 +169,13 @@ export function SiteHeader({
               Profile
             </DropdownMenuItem>
             <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
               onClick={() => {
                 clearAuthToken()
                 router.push("/login")
               }}
             >
-              <HugeiconsIcon icon={Logout01Icon} />
+              <HugeiconsIcon icon={LogoutSquare01Icon} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
