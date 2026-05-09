@@ -14,6 +14,9 @@ import {
   TriangleAlertIcon,
   XIcon,
 } from "lucide-react"
+import Link from "next/link"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { cn } from "@/lib/utils"
@@ -43,6 +46,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -75,6 +85,7 @@ export default function PettyCashPage() {
   const [weeklyLimit] = React.useState(250)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [statusFilter, setStatusFilter] = React.useState("all")
   const [hideThresholdAlert, setHideThresholdAlert] = React.useState(false)
 
   const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0)
@@ -83,8 +94,9 @@ export default function PettyCashPage() {
   const isThresholdReached = usagePercent >= 80
 
   const filteredTransactions = transactions.filter(t => 
-    t.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    t.id.toLowerCase().includes(searchQuery.toLowerCase())
+    (t.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.id.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (statusFilter === "all" || t.status === statusFilter)
   )
 
   const handleCreate = (values: PettyCashFormValues) => {
@@ -174,14 +186,24 @@ export default function PettyCashPage() {
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
               <div className="relative flex-1">
-                <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+                <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search transactions..." 
-                  className="pl-9"
+                  className="pl-9 h-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-[180px] h-9">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="overflow-hidden rounded-none">
@@ -203,7 +225,6 @@ export default function PettyCashPage() {
                       <TableRow key={t.id}>
                         <TableCell>
                           <div className="text-sm font-normal text-foreground">{t.description}</div>
-                          <div className="text-xs text-muted-foreground">{t.id}</div>
                         </TableCell>
                         <TableCell>{t.category}</TableCell>
                         <TableCell className="text-xs">{t.date}</TableCell>
@@ -211,7 +232,12 @@ export default function PettyCashPage() {
                         <TableCell>
                           <StatusBadge status={t.status as any} />
                         </TableCell>
-                        <TableCell>{t.recordedBy}</TableCell>
+                        <TableCell>
+                          <Link href={`/profile/${encodeURIComponent(t.recordedBy.toLowerCase().replace(/\s+/g, '-'))}`} className="group flex items-center gap-1 hover:underline hover:text-foreground text-muted-foreground transition-colors w-fit">
+                            <span>{t.recordedBy}</span>
+                            <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                          </Link>
+                        </TableCell>
                         {canVerify && (
                           <TableCell className="text-right">
                             {t.status === "pending" ? (
