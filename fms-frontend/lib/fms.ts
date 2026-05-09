@@ -102,6 +102,8 @@ export type LoginPayload = {
 
 export type RegisterPayload = LoginPayload & {
   name: string
+  role?: string
+  department?: string
 }
 
 export type BudgetInput = {
@@ -294,13 +296,13 @@ export function normalizeUsers(payload: unknown): FmsSessionUser[] {
 
 export const fmsApi = {
   loginUser: (payload: LoginPayload) =>
-    apiRequest<FmsAuthResponse>("/login", {
+    apiRequest<FmsAuthResponse>("/auth-bridge/login", {
       method: "POST",
       body: payload,
       skipAuth: true,
     }),
   registerUser: (payload: RegisterPayload) =>
-    apiRequest<FmsAuthResponse>("/register", {
+    apiRequest<FmsAuthResponse>("/auth-bridge/register", {
       method: "POST",
       body: payload,
       skipAuth: true,
@@ -338,8 +340,10 @@ export const fmsApi = {
       method: "POST",
       body: { username }
     }),
-  getSpecificProfile: () =>
+  getMe: () =>
     apiRequest<unknown>("/users/me"),
+  getProfile: (id: string | number) =>
+    apiRequest<unknown>(`/users/${id}`),
   changeUserRole: (id: string | number, role: string) =>
     apiRequest<unknown>(`/users/${id}/role`, {
       method: "PATCH",
@@ -350,7 +354,6 @@ export const fmsApi = {
       method: "PATCH",
       body: { Role: role },
     }),
-  getMe: () => apiRequest<unknown>("/users/me"),
   createCashRequest: (payload: CashRequestInput) =>
     apiRequest<unknown>("/cash-requests/", {
       method: "POST",
@@ -383,6 +386,12 @@ export const fmsApi = {
       },
     }),
   getExpenses: () => apiRequest<unknown>("/expenses/"),
+  getSpecificExpense: (id: string | number) =>
+    apiRequest<unknown>(`/expenses/${id}`),
+  getReceipt: (expenseId: string | number) =>
+    apiRequest<Blob>(`/expenses/${expenseId}/receipts`, {
+      headers: { Accept: "image/*, application/pdf" }
+    }),
   uploadReceipt: (expenseId: string | number, file: File) => {
     const formData = new FormData()
     formData.append("receipt", file)

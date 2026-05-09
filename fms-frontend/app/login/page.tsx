@@ -29,6 +29,8 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.string().min(2, "Role is required"),
+  department: z.string().min(2, "Department is required"),
 })
 
 type LoginValues = z.infer<typeof loginSchema>
@@ -49,7 +51,7 @@ function AuthContent() {
 
   const registerForm = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", role: "Employee", department: "Finance" },
   })
 
   const loginMutation = useMutation({
@@ -116,10 +118,9 @@ function AuthContent() {
               {mode === "login" ? (
                 <form
                   className="flex flex-col gap-6"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    router.push("/dashboard");
-                  }}
+                  onSubmit={loginForm.handleSubmit((values) => {
+                    loginMutation.mutate(values)
+                  })}
                 >
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-md text-foreground">Email address</Label>
@@ -198,10 +199,9 @@ function AuthContent() {
               ) : (
                 <form
                   className="flex flex-col gap-6"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    router.push("/dashboard");
-                  }}
+                  onSubmit={registerForm.handleSubmit((values) => {
+                    registerMutation.mutate(values)
+                  })}
                 >
                   <div className="grid gap-2">
                     <Label htmlFor="reg-name" className="text-md text-foreground">Full Name</Label>
@@ -227,6 +227,36 @@ function AuthContent() {
                     {registerForm.formState.errors.email && (
                       <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
                     )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="reg-role" className="text-md text-foreground">Role</Label>
+                      <select
+                        id="reg-role"
+                        className="h-11 bg-background border border-border text-foreground rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/20"
+                        {...registerForm.register("role")}
+                      >
+                        <option value="Employee">Employee</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Finance Team">Finance Team</option>
+                        <option value="Leadership">Leadership</option>
+                        <option value="Administrator">Administrator</option>
+                      </select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="reg-dept" className="text-md text-foreground">Department</Label>
+                      <select
+                        id="reg-dept"
+                        className="h-11 bg-background border border-border text-foreground rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/20"
+                        {...registerForm.register("department")}
+                      >
+                        <option value="Finance">Finance</option>
+                        <option value="IT">IT</option>
+                        <option value="Sales">Sales</option>
+                        <option value="HR">HR</option>
+                        <option value="Operations">Operations</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="reg-password" className="text-md text-foreground">Password</Label>
