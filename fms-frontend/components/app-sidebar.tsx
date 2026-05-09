@@ -74,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           items={visibleItems}
         />
 
-        <SidebarSeparator />
+        <SidebarSeparator className="mt-2" />
         <NavMain
           label="Settings"
           items={[{ title: "Profile", url: "/profile", icon: UserIcon }]}

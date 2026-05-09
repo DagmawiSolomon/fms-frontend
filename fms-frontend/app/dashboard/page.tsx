@@ -10,14 +10,17 @@ import { LeadershipDashboardView } from "@/components/leadership-dashboard-view"
 import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { GoogleDocIcon } from "@hugeicons/core-free-icons"
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -39,14 +42,17 @@ export default function DashboardPage() {
 
   const dashboardActions = (
     <div className="flex items-center gap-2">
-      <Tabs value={periodType} onValueChange={setPeriodType} className="w-auto">
-        <TabsList className="h-9 rounded-[4px] bg-background border p-0">
-          <TabsTrigger value="monthly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Monthly</TabsTrigger>
-          <TabsTrigger value="quarterly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Quarterly</TabsTrigger>
-          <TabsTrigger value="yearly" className="rounded-[2px] px-4 h-full text-xs data-[state=active]:bg-white data-[state=active]:text-black">Yearly</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
+      <Select value={periodType} onValueChange={setPeriodType}>
+        <SelectTrigger className="w-[140px] !h-9 text-sm font-normal rounded-[4px] border border-white/10 bg-white/[0.03]">
+          <SelectValue placeholder="Select Period" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="monthly">Monthly</SelectItem>
+          <SelectItem value="quarterly">Quarterly</SelectItem>
+          <SelectItem value="yearly">Yearly</SelectItem>
+        </SelectContent>
+      </Select>
+
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -83,6 +89,16 @@ export default function DashboardPage() {
           />
         </PopoverContent>
       </Popover>
+
+      {role === "leadership" && (
+        <Button
+          className="h-9 rounded-[4px] bg-slate-50 hover:bg-slate-50/90 text-black font-medium px-4 flex items-center gap-2"
+          onClick={() => toast.info("Audit log exported to email")}
+        >
+          <HugeiconsIcon icon={GoogleDocIcon} className="size-4" />
+          Export
+        </Button>
+      )}
     </div>
   )
 

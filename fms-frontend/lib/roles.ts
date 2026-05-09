@@ -1,10 +1,9 @@
-import { 
+import {
   Home04Icon,
   Invoice04Icon,
-  Cashier02Icon,
+  MoneyBag01Icon,
   ReceiptTextIcon,
   Wallet01Icon,
-  Calendar04Icon,
   UserMultipleIcon,
   UserIcon
 } from "@hugeicons/core-free-icons"
@@ -48,9 +47,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "expenses.view_specific",
       "expenses.verify",
       "expenses.read_receipt",
-      "reports.budgets",
-      "reports.expenses",
-      "reports.overview"
+
     ],
     color: "rose"
   },
@@ -76,9 +73,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "expenses.view_specific",
       "expenses.verify",
       "expenses.read_receipt",
-      "reports.budgets",
-      "reports.expenses",
-      "reports.overview"
+
     ],
     color: "emerald"
   },
@@ -101,9 +96,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "cash_requests.approve",
       "expenses.view_all",
       "expenses.read_receipt",
-      "reports.budgets",
-      "reports.expenses",
-      "reports.overview"
+
     ],
     color: "amber"
   },
@@ -128,7 +121,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   leadership: {
     name: "Leadership (CEO/COO)",
     description: "Executive oversight, high-value approvals, and petty cash limits.",
-    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses", "Reports"],
+    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -141,10 +134,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "cash_requests.view_all",
       "cash_requests.approve",
       "expenses.view_all",
-      "reports.budgets",
-      "reports.expenses",
-      "reports.overview",
-      "reports.executive"
+      "expenses.view_all"
     ],
     color: "indigo"
   }
@@ -164,7 +154,7 @@ export const ALL_NAV_ITEMS = [
   {
     title: "Petty Cash",
     url: "/petty-cash",
-    icon: Cashier02Icon,
+    icon: MoneyBag01Icon,
   },
   {
     title: "Cash Requests",
@@ -176,11 +166,7 @@ export const ALL_NAV_ITEMS = [
     url: "/expenses",
     icon: Wallet01Icon,
   },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: Calendar04Icon,
-  },
+
   {
     title: "Users",
     url: "/users",

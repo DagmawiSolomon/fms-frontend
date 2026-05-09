@@ -68,8 +68,8 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
-          <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+        <DropdownMenuItem className="hover:cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => {}}>
+          <LogOut className="w-4 h-4 mr-3 text-destructive" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

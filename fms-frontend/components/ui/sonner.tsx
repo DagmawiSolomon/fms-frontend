@@ -35,31 +35,29 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <HugeiconsIcon icon={Loading01Icon} className="size-4 animate-spin" />
         ),
       }}
-      closeButton
       style={
         {
-          "--normal-bg": "black",
-          "--normal-text": "white",
+          "--normal-bg": "rgba(255, 255, 255, 0.1)",
+          "--normal-text": "#ffffff",
           "--normal-border": "transparent",
           "--border-radius": "4px",
-          "--success-bg": "black",
-          "--success-text": "#10b981",
+          "--success-bg": "rgba(34, 197, 94, 0.1)",
+          "--success-text": "#22c55e",
           "--success-border": "transparent",
-          "--error-bg": "black",
+          "--error-bg": "rgba(239, 68, 68, 0.1)",
           "--error-text": "#ef4444",
           "--error-border": "transparent",
-          "--warning-bg": "black",
+          "--warning-bg": "rgba(245, 158, 11, 0.1)",
           "--warning-text": "#f59e0b",
           "--warning-border": "transparent",
-          "--info-bg": "black",
+          "--info-bg": "rgba(59, 130, 246, 0.1)",
           "--info-text": "#3b82f6",
-          "--info-border": "rgba(59, 130, 246, 0.2)",
+          "--info-border": "transparent",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast font-medium border flex items-center justify-between",
-          closeButton: "static !ml-auto !mr-0 border-0 hover:bg-muted/20 text-current opacity-60 hover:opacity-100 transition-all",
+          toast: "cn-toast font-medium border flex items-center justify-start gap-3",
         },
       }}
       {...props}
