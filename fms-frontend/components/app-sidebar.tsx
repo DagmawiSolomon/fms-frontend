@@ -4,9 +4,9 @@ import * as React from "react"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Logout01Icon,
+  LogoutSquare01Icon,
   Moon02Icon,
-  Sun01Icon,
+  Sun03Icon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
 import { useTheme } from "next-themes"
@@ -42,15 +42,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     config.navigation.includes(item.title)
   )
 
-  const themeLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode"
-  const ThemeIcon = resolvedTheme === "dark" ? Sun01Icon : Moon02Icon
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const themeLabel = mounted ? (resolvedTheme === "dark" ? "Light mode" : "Dark mode") : "Theme"
+  const ThemeIcon = mounted ? (resolvedTheme === "dark" ? Sun03Icon : Moon02Icon) : Sun03Icon
 
   return (
     <Sidebar
       collapsible="icon"
       {...props}
       className={cn(
-        "border-r border-sidebar-border/70 bg-sidebar",
+        "border-r border-sidebar-border/70 bg-sidebar bg-noise",
         props.className
       )}
     >
@@ -80,33 +86,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarSeparator />
 
       <SidebarFooter>
-        <SidebarMenu className="gap-2">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip={themeLabel}
-              className="gap-3 group-data-[collapsible=icon]:justify-center"
-              onClick={() => {
-                setTheme(resolvedTheme === "dark" ? "light" : "dark")
-              }}
-            >
-              <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
-                <HugeiconsIcon icon={ThemeIcon} />
-              </span>
-              <span className="group-data-[collapsible=icon]:hidden">{themeLabel}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
+        <SidebarMenu className="my-3">
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Log out"
-              className="gap-3 group-data-[collapsible=icon]:justify-center"
+              className="gap-3 group-data-[collapsible=icon]:justify-center text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => {
                 clearAuthToken()
                 router.push("/login")
               }}
             >
               <span className="flex size-4 items-center justify-center shrink-0 rounded-sm [&_svg]:size-4 [&_svg]:shrink-0">
-                <HugeiconsIcon icon={Logout01Icon} />
+                <HugeiconsIcon icon={LogoutSquare01Icon} />
               </span>
               <span className="group-data-[collapsible=icon]:hidden">Log out</span>
             </SidebarMenuButton>
