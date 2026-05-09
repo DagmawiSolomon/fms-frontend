@@ -6,37 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
+import { fmsApi, normalizeBudgets, normalizeCashRequests } from "@/lib/fms"
 
-// --- Mock Data ---
-const stats = {
-  pendingBudgetApprovals: 3,
-  pendingCashRequests: 12,
-  totalPendingAmount: 45000,
-  remainingBudget: 120000,
-  trends: {
-    budgets: "+1",
-    requests: "+4",
-    amount: "+$8,500",
-    remaining: "-$2,100"
-  }
+// --- Placeholder Trends ---
+const trends = {
+  budgets: "+1",
+  requests: "+4",
+  amount: "+$8,500",
+  remaining: "-$2,100"
 }
-
-const approvalPipelineData = [
-  { status: "Approved", count: 85, fill: "var(--chart-2)" },
-  { status: "Pending", count: 15, fill: "var(--chart-3)" },
-  { status: "Rejected", count: 5, fill: "var(--chart-4)" },
-]
 
 const approvalChartConfig = {
   approved: { label: "Approved", color: "var(--chart-2)" },
   pending: { label: "Pending", color: "var(--chart-3)" },
   rejected: { label: "Rejected", color: "var(--chart-4)" },
 } satisfies ChartConfig
-
-const budgetUtilizationData = [
-  { type: "Used", amount: 280000, fill: "var(--chart-1)" },
-  { type: "Remaining", amount: 120000, fill: "var(--chart-2)" },
-]
 
 const utilizationChartConfig = {
   used: { label: "Used", color: "var(--chart-1)" },
@@ -52,16 +36,85 @@ function formatMoney(value: number) {
 }
 
 export function ManagerDashboardView() {
+  const [loading, setLoading] = React.useState(true)
+  const [data, setData] = React.useState<{
+    budgets: any[]
+    cashRequests: any[]
+  }>({ budgets: [], cashRequests: [] })
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [budgetsRes, requestsRes] = await Promise.all([
+          fmsApi.getBudgets(),
+          fmsApi.getCashRequests()
+        ])
+        setData({
+          budgets: normalizeBudgets(budgetsRes),
+          cashRequests: normalizeCashRequests(requestsRes)
+        })
+      } catch (error) {
+        console.error("Manager dashboard fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Calculations
+  const pendingBudgets = data.budgets.filter(b => b.status === "pending")
+  const pendingBudgetApprovals = pendingBudgets.length
+  
+  const pendingRequests = data.cashRequests.filter(r => r.status === "pending")
+  const pendingCashRequestsCount = pendingRequests.length
+  const totalPendingAmount = pendingRequests.reduce((sum, r) => sum + r.amount, 0)
+  
+  const totalAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalSpent = data.budgets.reduce((sum, b) => sum + b.spent, 0)
+  const remainingBudget = Math.max(totalAllocated - totalSpent, 0)
+
+  // Charts
+  const approvalPipelineData = React.useMemo(() => {
+    const counts = { Approved: 0, Pending: 0, Rejected: 0 }
+    data.cashRequests.forEach(r => {
+      if (r.status === "approved" || r.status === "disbursed") counts.Approved++
+      else if (r.status === "pending") counts.Pending++
+      else if (r.status === "rejected") counts.Rejected++
+    })
+    return [
+      { status: "Approved", count: counts.Approved, fill: "var(--chart-2)" },
+      { status: "Pending", count: counts.Pending, fill: "var(--chart-3)" },
+      { status: "Rejected", count: counts.Rejected, fill: "var(--chart-4)" },
+    ]
+  }, [data.cashRequests])
+
+  const budgetUtilizationData = [
+    { type: "Used", amount: totalSpent, fill: "var(--chart-1)" },
+    { type: "Remaining", amount: remainingBudget, fill: "var(--chart-2)" },
+  ]
+
+  if (loading) {
+    return (
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-0">
       <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingBudgetApprovals}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingBudgetApprovals}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.budgets}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.budgets}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
             </div>
@@ -71,10 +124,10 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingCashRequests}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingCashRequestsCount}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.requests}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.requests}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">new today</span>
             </div>
@@ -84,10 +137,10 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Pending Amount</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalPendingAmount)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalPendingAmount)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.amount}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.amount}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">total volume</span>
             </div>
@@ -97,10 +150,10 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Budget</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
+                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {trends.remaining}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">vs last month</span>
             </div>

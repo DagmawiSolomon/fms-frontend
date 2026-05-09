@@ -108,14 +108,93 @@ const renderDistributionLabel = (props: any) => {
   )
 }
 
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses } from "@/lib/fms"
+
 export function FinanceDashboardView() {
+  const [loading, setLoading] = React.useState(true)
+  const [data, setData] = React.useState<{
+    budgets: any[]
+    cashRequests: any[]
+    expenses: any[]
+  }>({ budgets: [], cashRequests: [], expenses: [] })
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [budgetsRes, requestsRes, expensesRes] = await Promise.all([
+          fmsApi.getBudgets(),
+          fmsApi.getCashRequests(),
+          fmsApi.getExpenses()
+        ])
+        
+        setData({
+          budgets: normalizeBudgets(budgetsRes),
+          cashRequests: normalizeCashRequests(requestsRes),
+          expenses: normalizeExpenses(expensesRes)
+        })
+      } catch (error) {
+        console.error("Dashboard fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Calculations
+  const totalBudgetAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalBudgetUsed = data.budgets.reduce((sum, b) => sum + b.spent, 0)
+  const remainingBudget = Math.max(totalBudgetAllocated - totalBudgetUsed, 0)
+
+  const pendingCashRequests = data.cashRequests.filter(r => r.status === "pending")
+  const pendingCashRequestsCount = pendingCashRequests.length
+  const pendingCashRequestsAmount = pendingCashRequests.reduce((sum, r) => sum + r.amount, 0)
+
+  const pendingVerifications = data.expenses.filter(e => e.status === "pending").length
+
+  // Charts
+  const budgetByDept = React.useMemo(() => {
+    const depts: Record<string, { used: number, remaining: number }> = {}
+    data.budgets.forEach(b => {
+      const dept = b.department || "Other"
+      if (!depts[dept]) depts[dept] = { used: 0, remaining: 0 }
+      depts[dept].used += b.spent
+      depts[dept].remaining += Math.max(b.amount - b.spent, 0)
+    })
+    return Object.entries(depts).map(([dept, vals]) => ({ dept, ...vals }))
+  }, [data.budgets])
+
+  const categories = React.useMemo(() => {
+    const cats: Record<string, number> = {}
+    data.expenses.forEach(e => {
+      const cat = e.category || "Other"
+      cats[cat] = (cats[cat] || 0) + e.amount
+    })
+    return cats
+  }, [data.expenses])
+
+  const expenseDistribution = [
+    { name: "Expenses", ...categories }
+  ]
+
+  if (loading) {
+    return (
+      <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden animate-pulse">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-0">
       <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Allocated Budget</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetAllocated)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.allocated}
@@ -127,7 +206,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Budget Used</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetUsed)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.used}
@@ -139,7 +218,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
@@ -152,7 +231,7 @@ export function FinanceDashboardView() {
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">
-              {stats.pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(stats.pendingCashRequestsAmount)})</span>
+              {pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(pendingCashRequestsAmount)})</span>
             </CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
@@ -165,7 +244,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Verifications</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingExpenseVerifications}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingVerifications}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.verifications}
@@ -184,7 +263,7 @@ export function FinanceDashboardView() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={budgetDeptChartConfig} className="h-[300px] w-full">
-              <BarChart data={budgetByDeptData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={budgetByDept} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="dept" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -234,7 +313,7 @@ export function FinanceDashboardView() {
             <ChartContainer config={expenseChartConfig} className="h-24 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={expenseDistributionData}
+                  data={expenseDistribution}
                   layout="vertical"
                   margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
                 >

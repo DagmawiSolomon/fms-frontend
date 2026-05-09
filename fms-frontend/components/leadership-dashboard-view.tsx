@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, ResponsiveContainer, LabelList } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -16,28 +16,16 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { fmsApi, normalizeBudgets, normalizeExpenses } from "@/lib/fms"
 
-// --- Executive Mock Data ---
-const executiveStats = {
-  totalRevenue: 2450000,
-  operatingExpenses: 540000,
-  pettyCashLimit: 5000,
-  pettyCashSpent: 3850,
-  efficiencyScore: 9.4,
-  trends: {
-    revenue: "+12.5%",
-    expenses: "+4.2%",
-    burnRate: "77%",
-    efficiency: "+0.2",
-  },
+// --- Placeholder for data not yet in API ---
+const mockRevenue = 2450000
+const mockTrends = {
+  revenue: "+12.5%",
+  expenses: "+4.2%",
+  burnRate: "77%",
+  efficiency: "+0.2",
 }
-
-const budgetOverviewData = [
-  { category: "Payroll", allocated: 1200000, actual: 1180000 },
-  { category: "Marketing", allocated: 350000, actual: 320000 },
-  { category: "R&D", allocated: 500000, actual: 480000 },
-  { category: "Operations", allocated: 400000, actual: 410000 },
-]
 
 const budgetChartConfig = {
   allocated: { label: "Allocated", color: "var(--chart-1)" },
@@ -53,12 +41,46 @@ function formatMoney(value: number) {
 }
 
 export function LeadershipDashboardView() {
-  const [weeklyLimit, setWeeklyLimit] = React.useState(executiveStats.pettyCashLimit)
+  const [loading, setLoading] = React.useState(true)
+  const [data, setData] = React.useState<{
+    budgets: any[]
+    expenses: any[]
+  }>({ budgets: [], expenses: [] })
+
+  const [weeklyLimit, setWeeklyLimit] = React.useState(5000)
   const [isEditingLimit, setIsEditingLimit] = React.useState(false)
   const [hideThresholdAlert, setHideThresholdAlert] = React.useState(false)
 
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [budgetsRes, expensesRes] = await Promise.all([
+          fmsApi.getBudgets(),
+          fmsApi.getExpenses()
+        ])
+        setData({
+          budgets: normalizeBudgets(budgetsRes),
+          expenses: normalizeExpenses(expensesRes)
+        })
+      } catch (error) {
+        console.error("Leadership dashboard fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const operatingExpenses = data.expenses.reduce((sum, e) => sum + e.amount, 0)
+  
+  // Petty cash logic - assuming category "Petty Cash" or similar
+  const pettyCashSpent = data.expenses
+    .filter(e => e.category?.toLowerCase().includes("petty"))
+    .reduce((sum, e) => sum + e.amount, 0)
+
   const handleUpdateLimit = () => {
-    if (weeklyLimit < executiveStats.pettyCashSpent) {
+    if (weeklyLimit < pettyCashSpent) {
       toast.warning(`Warning: New limit (${formatMoney(weeklyLimit)}) is lower than current spending.`)
     } else {
       toast.success(`Petty Cash weekly limit updated to ${formatMoney(weeklyLimit)}`)
@@ -66,8 +88,29 @@ export function LeadershipDashboardView() {
     setIsEditingLimit(false)
   }
 
-  const pettyCashUsagePercent = (executiveStats.pettyCashSpent / weeklyLimit) * 100
+  const pettyCashUsagePercent = (pettyCashSpent / weeklyLimit) * 100
   const isThresholdReached = pettyCashUsagePercent >= 80
+
+  const budgetOverviewData = React.useMemo(() => {
+    const categories: Record<string, { allocated: number, actual: number }> = {}
+    data.budgets.forEach(b => {
+      const cat = b.department || "Other"
+      if (!categories[cat]) categories[cat] = { allocated: 0, actual: 0 }
+      categories[cat].allocated += b.amount
+      categories[cat].actual += b.spent
+    })
+    return Object.entries(categories).map(([category, vals]) => ({ category, ...vals }))
+  }, [data.budgets])
+
+  if (loading) {
+    return (
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-0">
@@ -88,10 +131,10 @@ export function LeadershipDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(mockRevenue)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.revenue}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.revenue}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">vs last qtr</span>
             </div>
@@ -102,10 +145,10 @@ export function LeadershipDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Operating Expenses</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(operatingExpenses)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.expenses}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.expenses}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
             </div>
@@ -130,7 +173,7 @@ export function LeadershipDashboardView() {
                 {isThresholdReached ? "Threshold Alert!" : "Within Limit"}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">
-                <span className="text-slate-50">{formatMoney(executiveStats.pettyCashSpent)}</span> / {formatMoney(weeklyLimit)}
+                <span className="text-slate-50">{formatMoney(pettyCashSpent)}</span> / {formatMoney(weeklyLimit)}
               </span>
             </div>
           </CardHeader>
@@ -140,10 +183,10 @@ export function LeadershipDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Efficiency Score</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{executiveStats.efficiencyScore}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">9.4</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.efficiency}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.efficiency}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">Index Score</span>
             </div>
@@ -216,7 +259,7 @@ export function LeadershipDashboardView() {
                 <div className="flex justify-between items-baseline">
                   <div className="text-xs">
                     <span className="text-muted-foreground">Burn: </span>
-                    <span className="text-muted-foreground font-medium text-slate-50">{formatMoney(executiveStats.pettyCashSpent)}</span>
+                    <span className="text-muted-foreground font-medium text-slate-50">{formatMoney(pettyCashSpent)}</span>
                     <span className={cn(
                       "ml-1.5 text-[10px]",
                       isThresholdReached ? "text-chart-4 font-bold" : "text-muted-foreground/70"
@@ -251,12 +294,9 @@ export function LeadershipDashboardView() {
             </div>
             
             <div className="h-px bg-border/50 w-full my-4" />
-
-
           </CardContent>
         </Card>
       </div>
     </div>
   )
 }
-

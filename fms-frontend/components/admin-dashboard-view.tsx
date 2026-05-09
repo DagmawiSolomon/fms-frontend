@@ -72,7 +72,56 @@ const renderCustomLabel = (props: any) => {
   )
 }
 
+import { fmsApi, normalizeUsers } from "@/lib/fms"
+
 export function AdminDashboardView() {
+  const [loading, setLoading] = React.useState(true)
+  const [users, setUsers] = React.useState<any[]>([])
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const res = await fmsApi.getUsers()
+        setUsers(normalizeUsers(res))
+      } catch (error) {
+        console.error("Admin dashboard fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const totalUsers = users.length
+  
+  const usersByRole = React.useMemo(() => {
+    const roles: Record<string, number> = {
+      Employee: 0,
+      Manager: 0,
+      Finance: 0,
+      Admin: 0
+    }
+    
+    users.forEach(u => {
+      const role = u.role?.toLowerCase() || "user"
+      if (role.includes("admin")) roles.Admin++
+      else if (role.includes("finance")) roles.Finance++
+      else if (role.includes("manage")) roles.Manager++
+      else roles.Employee++
+    })
+    
+    return [{ name: "Roles", ...roles }]
+  }, [users])
+
+  if (loading) {
+    return (
+      <div className="grid gap-0 md:grid-cols-2 border border-b-0 rounded-none overflow-hidden animate-pulse">
+        <div className="h-32 bg-white/5" />
+        <div className="h-32 bg-white/5 border-l border-border/50" />
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col gap-0">
       {/* Stats Section - Restored original grid/border layout */}
@@ -80,7 +129,7 @@ export function AdminDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.totalUsers}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{totalUsers}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.users}
@@ -111,12 +160,10 @@ export function AdminDashboardView() {
         </Card>
       </div>
 
-      {/* Graph Section - Restored separate card layout */}
       <Card className="rounded-none overflow-hidden border shadow-none">
         <CardHeader className="border-b border-border/50 pb-4">
           <div className="flex flex-col gap-1">
             <CardTitle>Users by Role</CardTitle>
-
           </div>
           <CardAction>
             <div className="flex items-center gap-4">
@@ -133,7 +180,7 @@ export function AdminDashboardView() {
           <ChartContainer config={usersChartConfig} className="h-32 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={usersByRoleData}
+                data={usersByRole}
                 layout="vertical"
                 margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
               >

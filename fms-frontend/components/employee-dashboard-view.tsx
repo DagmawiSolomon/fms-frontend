@@ -1,43 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { Line, LineChart, Pie, PieChart, XAxis, CartesianGrid, Tooltip, Cell, YAxis, Legend } from "recharts"
+import { Line, LineChart, Pie, PieChart, XAxis, CartesianGrid, Cell, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
+import { fmsApi, normalizeExpenses, normalizeBudgets } from "@/lib/fms"
+import { format } from "date-fns"
 
-// --- Mock Data ---
-const stats = {
-  totalExpenses: 28,
-  totalSpent: 4250.75,
-  remainingFunds: 1749.25,
-  trends: {
-    expenses: "+3",
-    spent: "+12%",
-    remaining: "-8%"
-  }
+// --- Mock Data Trends (Placeholder) ---
+const trends = {
+  expenses: "+3",
+  spent: "+12%",
+  remaining: "-8%"
 }
-
-const spendingData = [
-  { date: "May 01", amount: 150 },
-  { date: "May 02", amount: 300 },
-  { date: "May 03", amount: 250 },
-  { date: "May 04", amount: 800 },
-  { date: "May 05", amount: 450 },
-  { date: "May 06", amount: 900 },
-]
 
 const spendingChartConfig = {
   amount: { label: "Amount Spent", color: "var(--chart-1)" },
 } satisfies ChartConfig
-
-const categoryData = [
-  { category: "Travel", amount: 1800, fill: "var(--chart-1)" },
-  { category: "Meals", amount: 850, fill: "var(--chart-2)" },
-  { category: "Supplies", amount: 1100, fill: "var(--chart-3)" },
-  { category: "Software", amount: 500, fill: "var(--chart-4)" },
-]
 
 const categoryChartConfig = {
   travel: { label: "Travel", color: "var(--chart-1)" },
@@ -55,16 +36,89 @@ function formatMoney(value: number) {
 }
 
 export function EmployeeDashboardView() {
+  const [loading, setLoading] = React.useState(true)
+  const [data, setData] = React.useState<{
+    expenses: any[]
+    budgets: any[]
+  }>({ expenses: [], budgets: [] })
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [expensesRes, budgetsRes] = await Promise.all([
+          fmsApi.getExpenses(),
+          fmsApi.getBudgets()
+        ])
+        setData({
+          expenses: normalizeExpenses(expensesRes),
+          budgets: normalizeBudgets(budgetsRes)
+        })
+      } catch (error) {
+        console.error("Employee dashboard fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Calculations
+  const totalExpenses = data.expenses.length
+  const totalSpent = data.expenses
+    .filter(e => e.status === "approved" || e.status === "verified")
+    .reduce((sum, e) => sum + e.amount, 0)
+  
+  const totalAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
+  const remainingFunds = Math.max(totalAllocated - totalSpent, 0)
+
+  // Charts
+  const spendingOverTime = React.useMemo(() => {
+    const groups: Record<string, number> = {}
+    data.expenses.forEach(e => {
+      if (!e.date) return
+      const d = new Date(e.date)
+      const label = format(d, "MMM dd")
+      groups[label] = (groups[label] || 0) + e.amount
+    })
+    return Object.entries(groups)
+      .map(([date, amount]) => ({ date, amount }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [data.expenses])
+
+  const categories = React.useMemo(() => {
+    const cats: Record<string, number> = {}
+    data.expenses.forEach(e => {
+      const cat = e.category || "Other"
+      cats[cat] = (cats[cat] || 0) + e.amount
+    })
+    return Object.entries(cats).map(([category, amount], i) => ({
+      category,
+      amount,
+      fill: `var(--chart-${(i % 5) + 1})`
+    }))
+  }, [data.expenses])
+
+  if (loading) {
+    return (
+      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-0">
       <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Expenses</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.totalExpenses}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{totalExpenses}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.expenses}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.expenses}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">since last week</span>
             </div>
@@ -74,10 +128,10 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Spent</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalSpent)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalSpent)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.spent}
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.spent}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
             </div>
@@ -87,10 +141,10 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Funds</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingFunds)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingFunds)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
+                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {trends.remaining}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
             </div>
@@ -107,7 +161,7 @@ export function EmployeeDashboardView() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={spendingChartConfig} className="h-[300px] w-full">
-              <LineChart data={spendingData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+              <LineChart data={spendingOverTime} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(val) => `$${val}`} />
@@ -127,11 +181,11 @@ export function EmployeeDashboardView() {
           <CardContent className="flex items-center justify-center py-6">
             <div className="flex items-center justify-center gap-1">
               <div className="flex flex-col gap-1.5 pr-2">
-                {categoryData.map((entry) => (
+                {categories.map((entry) => (
                   <div key={entry.category} className="flex items-center gap-2">
                     <div className="size-2 rounded-full" style={{ backgroundColor: entry.fill }} />
-                    <span className="text-xs text-muted-foreground min-w-[70px]">{entry.category}</span>
-                    <span className="text-xs tabular-nums">{formatMoney(entry.amount)}</span>
+                    <span className="text-xs text-muted-foreground min-w-[70px] font-medium uppercase tracking-tight">{entry.category}</span>
+                    <span className="text-xs tabular-nums font-semibold">{formatMoney(entry.amount)}</span>
                   </div>
                 ))}
               </div>
@@ -139,7 +193,7 @@ export function EmployeeDashboardView() {
                 <PieChart width={240} height={240}>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie 
-                    data={categoryData} 
+                    data={categories} 
                     dataKey="amount" 
                     nameKey="category" 
                     cx="50%" 
@@ -149,7 +203,7 @@ export function EmployeeDashboardView() {
                     paddingAngle={2}
                     stroke="none"
                   >
-                    {categoryData.map((entry, index) => (
+                    {categories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
