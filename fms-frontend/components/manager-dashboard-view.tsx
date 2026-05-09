@@ -22,9 +22,9 @@ const stats = {
 }
 
 const approvalPipelineData = [
-  { status: "Approved", count: 85, fill: "#10b981" },
-  { status: "Pending", count: 15, fill: "#f59e0b" },
-  { status: "Rejected", count: 5, fill: "#ef4444" },
+  { status: "Approved", count: 85, fill: "var(--chart-2)" },
+  { status: "Pending", count: 15, fill: "var(--chart-3)" },
+  { status: "Rejected", count: 5, fill: "var(--chart-4)" },
 ]
 
 const approvalChartConfig = {
@@ -58,7 +58,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.pendingBudgetApprovals}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingBudgetApprovals}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.budgets}
@@ -71,7 +71,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.pendingCashRequests}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingCashRequests}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.requests}
@@ -84,7 +84,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Pending Amount</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalPendingAmount)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalPendingAmount)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.amount}
@@ -97,7 +97,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Budget</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}

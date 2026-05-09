@@ -115,7 +115,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Allocated Budget</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalBudgetAllocated)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.allocated}
@@ -127,7 +127,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Budget Used</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalBudgetUsed)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.used}
@@ -139,7 +139,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{formatMoney(stats.remainingBudget)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
@@ -151,7 +151,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">
               {stats.pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(stats.pendingCashRequestsAmount)})</span>
             </CardTitle>
             <div className="flex items-center gap-1 mt-1">
@@ -165,7 +165,7 @@ export function FinanceDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Verifications</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">{stats.pendingExpenseVerifications}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.pendingExpenseVerifications}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.verifications}

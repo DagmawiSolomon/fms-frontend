@@ -80,7 +80,7 @@ export function AdminDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.totalUsers}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.totalUsers}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.users}
@@ -93,10 +93,10 @@ export function AdminDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>System Health</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.systemHealth}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.systemHealth}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={Activity01Icon} className="size-3" /> {stats.trends.health}
+                {stats.trends.health}
               </span>
             </div>
           </CardHeader>

@@ -5,12 +5,11 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Legend, Re
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { 
+import {
   ArrowDown01Icon,
   ArrowUp01Icon,
   Settings02Icon,
-  Alert01Icon,
-  Cancel01Icon
+  Alert01Icon
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,12 +23,13 @@ const executiveStats = {
   operatingExpenses: 540000,
   pettyCashLimit: 5000,
   pettyCashSpent: 3850,
-  pendingHighValueBudgets: 3,
+  efficiencyScore: 9.4,
   trends: {
     revenue: "+12.5%",
     expenses: "+4.2%",
-    pettyCash: "77%", // Usage percentage
-  }
+    burnRate: "77%",
+    efficiency: "+0.2",
+  },
 }
 
 const budgetOverviewData = [
@@ -73,24 +73,14 @@ export function LeadershipDashboardView() {
     <div className="flex flex-col gap-0">
       {isThresholdReached && !hideThresholdAlert && (
         <div className="mt-0">
-          <Alert className="bg-black text-rose-500 border-rose-500/30 border-y-0 flex items-center justify-between pr-2 [&>svg+div]:translate-y-0 rounded-none">
-            <div className="flex items-start gap-3">
-              <HugeiconsIcon icon={Alert01Icon} className="mt-0.5 size-4" />
-              <div className="flex-col justify-center">
-                <AlertTitle>Threshold Alert (80%)</AlertTitle>
-                <AlertDescription>
-                  Weekly petty cash usage has reached {pettyCashUsagePercent.toFixed(1)}%. Monitor expenditures closely.
-                </AlertDescription>
-              </div>
+          <Alert className="border-none bg-chart-4/10 text-chart-4 flex items-center justify-start gap-3 [&>svg+div]:translate-y-0 rounded-none">
+            <HugeiconsIcon icon={Alert01Icon} className="mt-0.5 size-4" />
+            <div className="flex-col justify-center">
+              <AlertTitle>Threshold Alert (80%)</AlertTitle>
+              <AlertDescription className="text-chart-4/80">
+                Weekly petty cash usage has reached {pettyCashUsagePercent.toFixed(1)}%. Monitor expenditures closely.
+              </AlertDescription>
             </div>
-            <Button
-              className="pl-0! text-rose-500 hover:bg-rose-500/10 hover:text-rose-400"
-              onClick={() => setHideThresholdAlert(true)}
-              size="icon"
-              variant="ghost"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-5 w-5" />
-            </Button>
           </Alert>
         </div>
       )}
@@ -98,7 +88,7 @@ export function LeadershipDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(executiveStats.totalRevenue)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.revenue}
@@ -106,13 +96,13 @@ export function LeadershipDashboardView() {
               <span className="text-[10px] text-muted-foreground uppercase">vs last qtr</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Consolidated gross income across all streams</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Aggregate gross performance across all revenue centers</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Operating Expenses</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(executiveStats.operatingExpenses)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.expenses}
@@ -120,44 +110,45 @@ export function LeadershipDashboardView() {
               <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Total operational spend for current period</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Consolidated overhead and operational liquidity</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Petty Cash Usage</CardDescription>
+            <CardDescription>Burn Rate</CardDescription>
             <CardTitle className={cn(
-              "text-3xl tabular-nums",
-              isThresholdReached ? "text-rose-600" : "text-foreground"
+              "text-3xl font-heading tabular-nums",
+              isThresholdReached ? "text-chart-4" : "text-foreground"
             )}>
               {pettyCashUsagePercent.toFixed(1)}%
             </CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(
                 "text-[10px] flex items-center",
-                isThresholdReached ? "text-rose-500" : "text-emerald-500"
+                isThresholdReached ? "text-chart-4" : "text-chart-1"
               )}>
                 {isThresholdReached ? "Threshold Alert!" : "Within Limit"}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">
-                {formatMoney(executiveStats.pettyCashSpent)} / {formatMoney(weeklyLimit)}
+                <span className="text-slate-50">{formatMoney(executiveStats.pettyCashSpent)}</span> / {formatMoney(weeklyLimit)}
               </span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Percentage of weekly petty cash spent</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Current capital consumption velocity relative to targets</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Pending High-Value</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{executiveStats.pendingHighValueBudgets}</CardTitle>
+            <CardDescription>Efficiency Score</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{executiveStats.efficiencyScore}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-amber-500 flex items-center">
-                Requires Approval
+              <span className="text-[10px] text-emerald-500 flex items-center">
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {executiveStats.trends.efficiency}
               </span>
+              <span className="text-[10px] text-muted-foreground uppercase">Index Score</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Items requiring immediate attention</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Optimized operational performance index</CardContent>
         </Card>
       </div>
 
@@ -182,12 +173,12 @@ export function LeadershipDashboardView() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50 bg-muted/5">
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Petty Cash Settings</CardTitle>
-                <CardDescription>Manage organization limits</CardDescription>
+                <CardTitle>Burn Rate Settings</CardTitle>
+                <CardDescription>Manage burn rate thresholds</CardDescription>
               </div>
               <HugeiconsIcon icon={Settings02Icon} className="size-5 text-muted-foreground/50" />
             </div>
@@ -210,7 +201,7 @@ export function LeadershipDashboardView() {
                 </div>
               ) : (
                 <div className="flex items-center justify-between p-3 border border-dashed rounded-[4px] bg-muted/20">
-                  <span className="text-xl font-medium tabular-nums">{formatMoney(weeklyLimit)}</span>
+                  <span className="text-xl font-medium tabular-nums text-slate-50">{formatMoney(weeklyLimit)}</span>
                   <Button variant="ghost" size="sm" className="h-8 text-xs underline" onClick={() => setIsEditingLimit(true)}>Edit Limit</Button>
                 </div>
               )}
@@ -224,32 +215,32 @@ export function LeadershipDashboardView() {
               <div className="space-y-3">
                 <div className="flex justify-between items-baseline">
                   <div className="text-xs">
-                    <span className="text-muted-foreground">Usage: </span>
-                    <span className="font-medium">{formatMoney(executiveStats.pettyCashSpent)}</span>
+                    <span className="text-muted-foreground">Burn: </span>
+                    <span className="text-muted-foreground font-medium text-slate-50">{formatMoney(executiveStats.pettyCashSpent)}</span>
                     <span className={cn(
                       "ml-1.5 text-[10px]",
-                      isThresholdReached ? "text-rose-500 font-bold" : "text-muted-foreground/70"
+                      isThresholdReached ? "text-chart-4 font-bold" : "text-muted-foreground/70"
                     )}>
                       ({pettyCashUsagePercent.toFixed(0)}%)
                     </span>
                   </div>
-                  <span className="text-xs font-medium">
+                  <span className="text-xs font-medium text-slate-50">
                     {formatMoney(weeklyLimit)}
                   </span>
                 </div>
 
-                <div className="flex justify-between h-4 items-center overflow-hidden">
-                  {Array.from({ length: 60 }).map((_, i) => {
-                    const step = (i / 60) * 100
+                <div className="flex justify-between h-7 items-center overflow-hidden">
+                  {Array.from({ length: 90 }).map((_, i) => {
+                    const step = (i / 90) * 100
                     const isActive = pettyCashUsagePercent >= step
-                    
+
                     return (
                       <div
                         key={i}
                         className={cn(
-                          "w-0.5 h-3.5 transition-all duration-300",
-                          isActive 
-                            ? (isThresholdReached ? "bg-rose-500" : "bg-emerald-500") 
+                          "w-0.5 h-7 transition-all duration-300",
+                          isActive
+                            ? (isThresholdReached ? "bg-chart-4" : "bg-chart-1")
                             : "bg-muted"
                         )}
                       />
@@ -258,12 +249,10 @@ export function LeadershipDashboardView() {
                 </div>
               </div>
             </div>
+            
+            <div className="h-px bg-border/50 w-full my-4" />
 
-            <div className="pt-4 border-t border-border/50">
-              <Button className="w-full h-10 rounded-none bg-indigo-600 hover:bg-indigo-700" onClick={() => toast.info("Audit log exported to email")}>
-                Export Executive Report
-              </Button>
-            </div>
+
           </CardContent>
         </Card>
       </div>

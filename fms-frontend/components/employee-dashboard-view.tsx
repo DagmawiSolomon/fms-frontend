@@ -50,6 +50,7 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    maximumFractionDigits: 0,
   }).format(value)
 }
 
@@ -60,7 +61,7 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Expenses</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{stats.totalExpenses}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.totalExpenses}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.expenses}
@@ -73,7 +74,7 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Total Spent</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.totalSpent)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.totalSpent)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.spent}
@@ -86,7 +87,7 @@ export function EmployeeDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Remaining Funds</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{formatMoney(stats.remainingFunds)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(stats.remainingFunds)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
