@@ -49,34 +49,63 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
+import { fmsApi, normalizeSessionUser, type FmsSessionUser } from "@/lib/fms"
+
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
-  const name = formatNameFromSlug(resolvedParams.id)
-  const email = `${resolvedParams.id.replace("-", ".")}@fms.inc`
-
+  const [profile, setProfile] = React.useState<FmsSessionUser | null>(null)
+  const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
 
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true)
+        const data = await fmsApi.getSpecificProfile(resolvedParams.id)
+        setProfile(normalizeSessionUser(data))
+      } catch (error) {
+        console.error("Failed to fetch profile:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [resolvedParams.id])
+
+  const name = profile?.name ?? formatNameFromSlug(resolvedParams.id)
+  const email = profile?.email ?? `${resolvedParams.id.replace("-", ".")}@fms.inc`
+
   const stats = {
-    totalSpent: 4250,
-    pendingCount: 3,
-    avgTransaction: 65,
-    complianceScore: 98,
+    totalSpent: 0,
+    pendingCount: 0,
+    avgTransaction: 0,
+    complianceScore: 100,
   }
 
-  const transactions = [
-    { id: "PC-102", description: "Taxi for staff (local)", category: "Travel", amount: 12.50, date: "2026-05-03", status: "verified" },
-    { id: "PC-108", description: "Client Lunch", category: "Meals", amount: 125.00, date: "2026-05-01", status: "verified" },
-    { id: "PC-115", description: "Office Supplies", category: "Supplies", amount: 45.00, date: "2026-04-28", status: "pending" },
-    { id: "PC-122", description: "Team Workshop Snacks", category: "Meals", amount: 85.00, date: "2026-04-20", status: "verified" },
-    { id: "PC-130", description: "Software Subscription", category: "IT", amount: 150.00, date: "2026-04-15", status: "rejected" },
-  ]
+  const transactions: any[] = []
 
   const filteredTransactions = transactions.filter(t =>
     (t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.category.toLowerCase().includes(searchQuery.toLowerCase())) &&
     (statusFilter === "all" || t.status === statusFilter)
   )
+
+  if (loading) {
+    return (
+      <DashboardShell
+        title="Employee Profile"
+        description="Loading profile details..."
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-4">
+            <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-muted-foreground text-sm">Loading profile data...</p>
+          </div>
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell
@@ -121,7 +150,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
           <SummaryCard
             label="YTD Expenditures"
-            value={formatMoney(stats.totalSpent)}
+            value={stats.totalSpent > 0 ? formatMoney(stats.totalSpent) : "0"}
             description="Total value of approved requests"
             isFirst
           />
@@ -132,7 +161,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           />
           <SummaryCard
             label="Avg. Transaction"
-            value={formatMoney(stats.avgTransaction)}
+            value={stats.avgTransaction > 0 ? formatMoney(stats.avgTransaction) : "0"}
             description="Mean value per request"
           />
 

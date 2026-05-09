@@ -43,36 +43,40 @@ import { useRouter } from "next/navigation"
 import { useRole } from "@/components/role-provider"
 import { cn } from "@/lib/utils"
 
-type UserRow = {
-  id: string
-  name: string
-  email: string
-  role: "admin" | "finance" | "manager" | "employee"
-  joinedDate: string
-  status: "active" | "inactive"
-}
-
-const mockUsers: UserRow[] = [
-  { id: "USR-001", name: "System Administrator", email: "admin@fms.inc", role: "admin", joinedDate: "Jan 2024", status: "active" },
-  { id: "USR-002", name: "Sarah Jenkins", email: "s.jenkins@fms.inc", role: "finance", joinedDate: "Feb 2024", status: "active" },
-  { id: "USR-003", name: "Marcus Webb", email: "m.webb@fms.inc", role: "manager", joinedDate: "Mar 2024", status: "active" },
-  { id: "USR-004", name: "Alex Torres", email: "a.torres@fms.inc", role: "employee", joinedDate: "Apr 2024", status: "active" },
-  { id: "USR-005", name: "Diana Prince", email: "d.prince@fms.inc", role: "manager", joinedDate: "May 2024", status: "active" },
-  { id: "USR-006", name: "Chris Evans", email: "c.evans@fms.inc", role: "employee", joinedDate: "Jun 2024", status: "inactive" },
-  { id: "USR-007", name: "Natasha Romanoff", email: "n.romanoff@fms.inc", role: "finance", joinedDate: "Jul 2024", status: "active" },
-]
+import { fmsApi, normalizeUsers, type FmsSessionUser } from "@/lib/fms"
 
 export default function UsersPage() {
   const router = useRouter()
   const { role: currentUserRole, hasPermission } = useRole()
 
-  const [users, setUsers] = React.useState<UserRow[]>(mockUsers)
+  const [users, setUsers] = React.useState<FmsSessionUser[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [roleFilter, setRoleFilter] = React.useState("all")
-  const [selectedUser, setSelectedUser] = React.useState<UserRow | null>(null)
+  const [selectedUser, setSelectedUser] = React.useState<FmsSessionUser | null>(null)
 
   // Local state for the dropdown in the sidebar
-  const [draftRole, setDraftRole] = React.useState<UserRow["role"] | null>(null)
+  const [draftRole, setDraftRole] = React.useState<string | null>(null)
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fmsApi.getUsers()
+      setUsers(normalizeUsers(data))
+    } catch (err: any) {
+      console.error("Failed to fetch users:", err)
+      setError(err.message || "Failed to connect to the server. Please check your connection.")
+      toast.error("Connection error. Is the backend running?")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchUsers()
+  }, [])
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,12 +88,28 @@ export default function UsersPage() {
   const canView = hasPermission("users.view_all")
   const canManage = hasPermission("users.change_role")
 
-  const handlePromote = () => {
-    if (selectedUser && draftRole) {
-      const updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, role: draftRole } : u)
-      setUsers(updatedUsers)
-      setSelectedUser({ ...selectedUser, role: draftRole })
-      toast.success("User role updated")
+  const handlePromote = async () => {
+    if (selectedUser) {
+      try {
+        await fmsApi.promoteUser(selectedUser.id)
+        toast.success("User promoted successfully")
+        fetchUsers()
+      } catch (error) {
+        console.error("Failed to promote user:", error)
+      }
+    }
+  }
+
+  const handleRoleChange = async (newRole: string) => {
+    if (selectedUser) {
+      try {
+        await fmsApi.changeUserRole(selectedUser.id, newRole)
+        toast.success("User role updated")
+        setDraftRole(newRole)
+        fetchUsers()
+      } catch (error) {
+        console.error("Failed to update role:", error)
+      }
     }
   }
 
@@ -147,9 +167,8 @@ export default function UsersPage() {
                     <SelectContent>
                       <SelectItem value="all">All Roles</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
+                      <SelectItem value="Finance Team">Finance Team</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -166,7 +185,28 @@ export default function UsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.length ? (
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            Loading users...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : error ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-rose-500">
+                          <div className="flex flex-col items-center gap-2">
+                            <ShieldAlertIcon className="size-8 opacity-50" />
+                            <p>{error}</p>
+                            <Button variant="outline" size="sm" onClick={fetchUsers} className="mt-2">
+                              Retry Connection
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredUsers.length ? (
                       filteredUsers.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell className="">
@@ -231,15 +271,14 @@ export default function UsersPage() {
                         <div className="text-xs text-muted-foreground/50">Current Role</div>
                         <Select
                           value={draftRole || ""}
-                          onValueChange={(value) => setDraftRole(value as UserRow["role"])}
+                          onValueChange={handleRoleChange}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="employee">Employee</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="finance">Finance</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="Finance Team">Finance Team</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
