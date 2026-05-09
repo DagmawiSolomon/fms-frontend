@@ -116,7 +116,10 @@ function AuthContent() {
               {mode === "login" ? (
                 <form
                   className="flex flex-col gap-6"
-                  onSubmit={loginForm.handleSubmit((values) => loginMutation.mutate(values))}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    router.push("/dashboard");
+                  }}
                 >
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-md text-foreground">Email address</Label>
@@ -195,7 +198,10 @@ function AuthContent() {
               ) : (
                 <form
                   className="flex flex-col gap-6"
-                  onSubmit={registerForm.handleSubmit((values) => registerMutation.mutate(values))}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    router.push("/dashboard");
+                  }}
                 >
                   <div className="grid gap-2">
                     <Label htmlFor="reg-name" className="text-md text-foreground">Full Name</Label>
