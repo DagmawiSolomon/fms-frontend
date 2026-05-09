@@ -6,7 +6,7 @@ import { getAuthToken } from "@/lib/auth"
 
 export const API_BASE_URL =
   typeof window !== "undefined"
-    ? window.location.origin + "/api-proxy/"
+    ? window.location.origin + "/fms-proxy/"
     : (process.env.NEXT_PUBLIC_FMS_API_BASE_URL ??
         "https://fms-app-production-5b62.up.railway.app")
         .replace(/\/$/, "") + "/"
@@ -29,6 +29,11 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & {
 }
 
 function joinPath(path: string) {
+  // Local auth-bridge routes should NOT go through the proxy
+  if (path.startsWith("/auth-bridge/")) {
+    return path
+  }
+
   // If path starts with /, remove it to avoid reset to root if API_BASE_URL has a subpath
   const cleanPath = path.startsWith("/") ? path.slice(1) : path
   return new URL(cleanPath, API_BASE_URL).toString()

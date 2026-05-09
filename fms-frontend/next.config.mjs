@@ -3,7 +3,7 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api-proxy/:path*",
+        source: "/fms-proxy/:path*",
         destination: "https://fms-app-production-5b62.up.railway.app/:path*",
       },
     ]
