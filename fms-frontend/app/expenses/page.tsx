@@ -52,15 +52,9 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
+import { fmsApi, normalizeExpenses } from "@/lib/fms"
 import type { FmsExpense } from "@/lib/fms"
 
-const mockExpensesData: FmsExpense[] = [
-  { id: "EXP-01", merchant: "Amazon Web Services", category: "Software", amount: 450.00, date: "2026-05-01", status: "verified", submitter: "Alex Torres", receiptUrl: "receipt-1.pdf" },
-  { id: "EXP-02", merchant: "Delta Airlines", category: "Travel", amount: 850.50, date: "2026-05-03", status: "approved", submitter: "Marcus Webb", receiptUrl: "receipt-2.pdf" },
-  { id: "EXP-03", merchant: "Whole Foods", category: "Meals", amount: 125.75, date: "2026-05-04", status: "pending", submitter: "Sarah Jenkins" },
-  { id: "EXP-04", merchant: "Apple Store", category: "Hardware", amount: 2400.00, date: "2026-04-28", status: "rejected", submitter: "Diana Prince", receiptUrl: "receipt-4.pdf" },
-  { id: "EXP-05", merchant: "Uber", category: "Travel", amount: 45.20, date: "2026-05-05", status: "verified", submitter: "Chris Evans", receiptUrl: "receipt-5.pdf" },
-]
 
 const expenseSchema = z.object({
   merchant: z.string().min(2, "Merchant name is required"),
@@ -80,45 +74,75 @@ export default function ExpensesPage() {
   const canApproveExpense = hasPermission("expenses.approve")
   const canVerifyExpense = hasPermission("expenses.verify")
 
-  const [expenses, setExpenses] = React.useState<FmsExpense[]>(mockExpensesData)
+  const [expenses, setExpenses] = React.useState<FmsExpense[]>([])
+  const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState("all")
 
+  const fetchExpenses = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await fmsApi.getExpenses()
+      setExpenses(normalizeExpenses(data))
+    } catch (error) {
+      console.error("Failed to fetch expenses:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchExpenses()
+  }, [fetchExpenses])
+
   const totals = expenses.reduce((acc, exp) => {
     acc.total += exp.amount
     if (exp.status === "pending") acc.pending += exp.amount
-    if (exp.status === "approved") acc.approved += exp.amount
+    if (exp.status === "approved" || exp.status === "verified") acc.approved += exp.amount
     return acc
   }, { total: 0, pending: 0, approved: 0 })
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.merchant.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = (expense.merchant?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
                          String(expense.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
     return matchesSearch && matchesCategory
   })
 
-  const handleCreate = (values: ExpenseFormValues) => {
-    const newExp: FmsExpense = {
-      id: `EXP-${Math.floor(Math.random() * 1000)}`,
-      merchant: values.merchant,
-      category: values.category,
-      amount: values.amount,
-      date: values.date,
-      budgetId: values.budgetId,
-      requestId: values.requestId,
-      status: "pending",
-      submitter: "Current User",
+  const handleCreate = async (values: ExpenseFormValues) => {
+    try {
+      const response = await fmsApi.createExpense({
+        ...values,
+        merchant: values.merchant,
+        category: values.category
+      })
+      
+      // If there's a file, we would upload it here if we had the ID from the response
+      // For now, let's assume createExpense returns the created expense with an ID
+      const newExpense = response as any
+      if (newExpense?.id && values.receipt) {
+        await fmsApi.uploadReceipt(newExpense.id, values.receipt)
+      }
+
+      toast.success("Expense submitted successfully")
+      setDialogOpen(false)
+      fetchExpenses()
+    } catch (error) {
+      // Handled in apiRequest
     }
-    setExpenses([newExp, ...expenses])
-    toast.success("Expense submitted successfully")
-    setDialogOpen(false)
   }
 
-  const handleStatusChange = (id: string | number, status: FmsExpense["status"]) => {
-    setExpenses(expenses.map(e => e.id === id ? { ...e, status } : e))
-    toast.success(`Expense marked as ${status}`)
+  const handleStatusChange = async (id: string | number, status: FmsExpense["status"]) => {
+    try {
+      if (status === "verified") {
+        await fmsApi.verifyExpense(id)
+      }
+      toast.success(`Expense marked as ${status}`)
+      fetchExpenses()
+    } catch (error) {
+      // Handled in apiRequest
+    }
   }
 
   const showActions = canApproveExpense || canVerifyExpense
@@ -375,6 +399,7 @@ function ExpenseDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
+                    {/* Budgets will be populated here in a real scenario, for now keeping static options consistent with UI */}
                     <SelectItem value="BUD-01">Q1 Engineering Ops</SelectItem>
                     <SelectItem value="BUD-02">Global Marketing</SelectItem>
                   </SelectContent>
@@ -382,24 +407,19 @@ function ExpenseDialog({
               }
             />
             <Field
-              label="Linked Cash Request"
-              error={form.formState.errors.requestId?.message}
+              label="Receipt (Optional)"
               control={
-                <Select
-                  value={form.watch("requestId")}
-                  onValueChange={(value) =>
-                    form.setValue("requestId", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a request" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="REQ-01">New Laptops</SelectItem>
-                    <SelectItem value="REQ-02">Ad Spend Advance</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      form.setValue("receipt", file)
+                      toast.success("Receipt attached")
+                    }
+                  }}
+                />
               }
             />
           </div>

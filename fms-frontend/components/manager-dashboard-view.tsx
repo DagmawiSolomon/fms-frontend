@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeBudgets, normalizeCashRequests } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary } from "@/lib/fms"
 
 // --- Placeholder Trends ---
 const trends = {
@@ -40,19 +40,25 @@ export function ManagerDashboardView() {
   const [data, setData] = React.useState<{
     budgets: any[]
     cashRequests: any[]
-  }>({ budgets: [], cashRequests: [] })
+    summary: any
+    reportPoints: any[]
+  }>({ budgets: [], cashRequests: [], summary: null, reportPoints: [] })
 
   React.useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true)
-        const [budgetsRes, requestsRes] = await Promise.all([
+        const [budgetsRes, requestsRes, reportRes] = await Promise.all([
           fmsApi.getBudgets(),
-          fmsApi.getCashRequests()
+          fmsApi.getCashRequests(),
+          fmsApi.getReportOverview()
         ])
+        
         setData({
           budgets: normalizeBudgets(budgetsRes),
-          cashRequests: normalizeCashRequests(requestsRes)
+          cashRequests: normalizeCashRequests(requestsRes),
+          summary: normalizeSummary(reportRes),
+          reportPoints: [] // We'll calculate or use if reportRes has them
         })
       } catch (error) {
         console.error("Manager dashboard fetch error:", error)
@@ -71,9 +77,9 @@ export function ManagerDashboardView() {
   const pendingCashRequestsCount = pendingRequests.length
   const totalPendingAmount = pendingRequests.reduce((sum, r) => sum + r.amount, 0)
   
-  const totalAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
-  const totalSpent = data.budgets.reduce((sum, b) => sum + b.spent, 0)
-  const remainingBudget = Math.max(totalAllocated - totalSpent, 0)
+  const totalAllocated = data.summary?.total_budget ?? data.budgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalSpent = data.summary?.total_spent ?? data.budgets.reduce((sum, b) => sum + b.spent, 0)
+  const remainingBudget = data.summary?.remaining_budget ?? Math.max(totalAllocated - totalSpent, 0)
 
   // Charts
   const approvalPipelineData = React.useMemo(() => {
@@ -111,7 +117,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingBudgetApprovals}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingBudgetApprovals || 0}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.budgets}
@@ -124,7 +130,7 @@ export function ManagerDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Pending Requests</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingCashRequestsCount}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingCashRequestsCount || 0}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-rose-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.requests}

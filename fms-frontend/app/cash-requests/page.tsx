@@ -52,15 +52,9 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
+import { fmsApi, normalizeCashRequests } from "@/lib/fms"
 import type { FmsCashRequest } from "@/lib/fms"
 
-const mockRequestsData: FmsCashRequest[] = [
-  { id: "REQ-01", title: "New Developer Laptops", amount: 4500, status: "pending", purpose: "Equipment upgrade for engineering team", requestedBy: "Sarah Jenkins" },
-  { id: "REQ-02", title: "Q2 Ad Spend Advance", amount: 12000, status: "approved", purpose: "Facebook & Google ads", requestedBy: "Marcus Webb" },
-  { id: "REQ-03", title: "Office Snacks", amount: 500, status: "disbursed", purpose: "Monthly breakroom restock", requestedBy: "Alex Torres" },
-  { id: "REQ-04", title: "Team Offsite Travel", amount: 3500, status: "rejected", purpose: "Flights to Vegas", requestedBy: "Diana Prince" },
-  { id: "REQ-05", title: "Software Subscriptions", amount: 800, status: "pending", purpose: "Annual renewal for design tools", requestedBy: "Chris Evans" },
-]
 
 const requestSchema = z.object({
   title: z.string().min(2, "Request title is required"),
@@ -78,43 +72,68 @@ export default function CashRequestsPage() {
   const canApproveRequest = hasPermission("cash_requests.approve")
   const canDisburseRequest = hasPermission("cash_requests.disburse")
 
-  const [requests, setRequests] = React.useState<FmsCashRequest[]>(mockRequestsData)
+  const [requests, setRequests] = React.useState<FmsCashRequest[]>([])
+  const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
 
+  const fetchRequests = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await fmsApi.getCashRequests()
+      setRequests(normalizeCashRequests(data))
+    } catch (error) {
+      console.error("Failed to fetch cash requests:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchRequests()
+  }, [fetchRequests])
+
   const totals = requests.reduce((acc, req) => {
     acc.total += req.amount
     if (req.status === "pending") acc.pending += req.amount
-    if (req.status === "approved") acc.approved += req.amount
+    if (req.status === "approved" || req.status === "disbursed") acc.approved += req.amount
     return acc
   }, { total: 0, pending: 0, approved: 0 })
 
   const filteredRequests = requests.filter(req => {
-    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = (req.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
                          String(req.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || req.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const handleCreate = (values: RequestFormValues) => {
-    const newReq: FmsCashRequest = {
-      id: `REQ-${Math.floor(Math.random() * 1000)}`,
-      title: values.title,
-      amount: values.amount,
-      purpose: values.purpose,
-      budgetId: values.budgetId,
-      status: "pending",
-      requestedBy: "Current User",
+  const handleCreate = async (values: RequestFormValues) => {
+    try {
+      await fmsApi.createCashRequest({
+        ...values,
+        purpose: values.purpose
+      })
+      toast.success("Cash request submitted successfully")
+      setDialogOpen(false)
+      fetchRequests()
+    } catch (error) {
+      // Handled in apiRequest
     }
-    setRequests([newReq, ...requests])
-    toast.success("Cash request submitted successfully")
-    setDialogOpen(false)
   }
 
-  const handleStatusChange = (id: string | number, status: FmsCashRequest["status"]) => {
-    setRequests(requests.map(r => r.id === id ? { ...r, status } : r))
-    toast.success(`Request marked as ${status}`)
+  const handleStatusChange = async (id: string | number, status: FmsCashRequest["status"]) => {
+    try {
+      if (status === "approved") {
+        await fmsApi.approveCashRequest(id)
+      } else if (status === "disbursed") {
+        await fmsApi.disburseCashRequest(id)
+      }
+      toast.success(`Request marked as ${status}`)
+      fetchRequests()
+    } catch (error) {
+      // Handled in apiRequest
+    }
   }
 
   const showActions = canApproveRequest || canDisburseRequest

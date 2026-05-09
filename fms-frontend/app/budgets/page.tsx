@@ -51,15 +51,9 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
+import { fmsApi, normalizeBudgets } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus } from "@/lib/fms"
 
-const mockBudgetsData: FmsBudget[] = [
-  { id: "BUD-01", name: "Q1 Engineering Operations", department: "Engineering", amount: 150000, spent: 45000, status: "approved", owner: "Sarah Jenkins", period: "FY2026/Q1" },
-  { id: "BUD-02", name: "Global Marketing Campaign", department: "Marketing", amount: 200000, spent: 85000, status: "approved", owner: "Marcus Webb", period: "FY2026/Q1" },
-  { id: "BUD-03", name: "Office IT Expansion", department: "IT", amount: 75000, spent: 12000, status: "pending", owner: "Alex Torres", period: "FY2026/Q2" },
-  { id: "BUD-04", name: "Executive Offsite", department: "HR", amount: 35000, spent: 35000, status: "approved", owner: "Diana Prince", period: "FY2026/Q1" },
-  { id: "BUD-05", name: "Legacy System Decommission", department: "Engineering", amount: 50000, spent: 0, status: "rejected", owner: "Sarah Jenkins", period: "FY2026/Q2" },
-]
 
 const budgetSchema = z.object({
   name: z.string().min(2, "Budget name is required"),
@@ -81,14 +75,31 @@ export default function BudgetsPage() {
   const canApproveBudgets = hasPermission("budgets.approve")
   const canRejectBudgets = hasPermission("budgets.reject")
 
-  const [budgets, setBudgets] = React.useState<FmsBudget[]>(mockBudgetsData)
+  const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
+  const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [deptFilter, setDeptFilter] = React.useState("all")
 
+  const fetchBudgets = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await fmsApi.getBudgets()
+      setBudgets(normalizeBudgets(data))
+    } catch (error) {
+      console.error("Failed to fetch budgets:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchBudgets()
+  }, [fetchBudgets])
+
   const filteredBudgets = budgets.filter(budget => {
-    const matchesSearch = budget.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = (budget.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
                          String(budget.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = deptFilter === "all" || budget.department === deptFilter
     return matchesSearch && matchesDept
@@ -104,34 +115,44 @@ export default function BudgetsPage() {
     { amount: 0, spent: 0, remaining: 0 }
   )
 
-  const handleCreate = (values: BudgetFormValues) => {
-    const newBudget: FmsBudget = {
-      id: `BUD-${Math.floor(Math.random() * 1000)}`,
-      name: values.name,
-      department: values.department,
-      amount: values.amount,
-      spent: values.spent,
-      period: values.period,
-      status: values.status as FmsBudgetStatus,
-      owner: "Current User",
-      notes: values.notes,
+  const handleCreate = async (values: BudgetFormValues) => {
+    try {
+      await fmsApi.createBudget({
+        ...values,
+        status: values.status as FmsBudgetStatus
+      })
+      toast.success("Budget created successfully")
+      setDialogOpen(false)
+      fetchBudgets()
+    } catch (error) {
+      // toast.error is handled in apiRequest
     }
-    setBudgets([newBudget, ...budgets])
-    toast.success("Budget created successfully")
-    setDialogOpen(false)
   }
 
-  const handleUpdate = (values: BudgetFormValues) => {
+  const handleUpdate = async (values: BudgetFormValues) => {
     if (!editingBudget) return
-    setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...b, ...values, status: values.status as FmsBudgetStatus } : b))
-    toast.success("Budget updated successfully")
-    setDialogOpen(false)
-    setEditingBudget(null)
+    try {
+      await fmsApi.updateBudget(editingBudget.id, {
+        ...values,
+        status: values.status as FmsBudgetStatus
+      })
+      toast.success("Budget updated successfully")
+      setDialogOpen(false)
+      setEditingBudget(null)
+      fetchBudgets()
+    } catch (error) {
+      // toast.error is handled in apiRequest
+    }
   }
 
-  const handleStatusChange = (id: string | number, status: FmsBudgetStatus) => {
-    setBudgets(budgets.map(b => b.id === id ? { ...b, status } : b))
-    toast.success(`Budget marked as ${status}`)
+  const handleStatusChange = async (id: string | number, status: FmsBudgetStatus) => {
+    try {
+      await fmsApi.setBudgetStatus(id, status)
+      toast.success(`Budget marked as ${status}`)
+      fetchBudgets()
+    } catch (error) {
+      // toast.error is handled in apiRequest
+    }
   }
 
   const openCreateDialog = () => {
