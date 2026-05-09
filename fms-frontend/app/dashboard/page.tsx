@@ -107,6 +107,7 @@ export default function DashboardPage() {
       title={`${getGreeting()} ${userName} !`}
       description="Welcome back. Here’s your personalized workspace overview."
       actions={role !== "admin" ? dashboardActions : undefined}
+      hideBreadcrumbs
     >
       {role === "employee" && <EmployeeDashboardView />}
       {role === "manager" && <ManagerDashboardView />}
