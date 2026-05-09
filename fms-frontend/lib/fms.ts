@@ -190,13 +190,18 @@ export function normalizeSummary(payload: unknown): FmsSummary {
 
   const totalBudget = numberValue(
     source.totalBudget ??
+      source.total_budgets ??
       source.total_budget ??
       source.budget ??
       source.total ??
       source.amount
   )
   const totalSpent = numberValue(
-    source.totalSpent ?? source.total_spent ?? source.spent ?? source.used
+    source.totalSpent ?? 
+    source.total_spent ?? 
+    source.total_expenses ??
+    source.spent ?? 
+    source.used
   )
   const activeBudgets = numberValue(
     source.activeBudgets ?? source.active_budgets ?? source.active ?? 0
@@ -227,11 +232,11 @@ export function normalizeReportPoints(payload: unknown): FmsReportPoint[] {
     const point = item as Record<string, unknown>
     return {
       label: normalizeText(
-        point.label ?? point.name ?? point.month,
+        point.label ?? point.name ?? point.month ?? point.category ?? point.department,
         `Item ${index + 1}`
       ),
       budgeted: numberValue(point.budgeted ?? point.budget ?? point.limit ?? 0),
-      spent: numberValue(point.spent ?? point.actual ?? point.used ?? 0),
+      spent: numberValue(point.spent ?? point.actual ?? point.used ?? point.amount ?? 0),
       requests: numberValue(point.requests ?? point.count ?? 0),
     }
   })
@@ -241,12 +246,12 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
   return unwrapList<FmsCashRequest>(payload).map((item, index) => {
     const request = item as Record<string, unknown>
     return {
-      id: normalizeIdentifier(request.id ?? request._id, index),
-      title: (request.title ?? request.name ?? "Cash request") as string,
+      id: normalizeIdentifier(request.id ?? request._id ?? request.request_id, index),
+      title: (request.title ?? request.purpose ?? request.name ?? "Cash request") as string,
       amount: numberValue(request.amount ?? request.total ?? 0),
       status: normalizeCashStatus(request.status),
       purpose: (request.purpose ?? request.reason ?? null) as string | null,
-      requestedBy: (request.requestedBy ?? request.createdBy ?? null) as
+      requestedBy: (request.requestedBy ?? request.requested_by ?? request.createdBy ?? null) as
         | string
         | null,
       budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
@@ -258,18 +263,18 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
   return unwrapList<FmsExpense>(payload).map((item, index) => {
     const expense = item as Record<string, unknown>
     return {
-      id: normalizeIdentifier(expense.id ?? expense._id, index),
-      merchant: (expense.merchant ?? expense.title ?? expense.name ?? "Expense") as string,
+      id: normalizeIdentifier(expense.id ?? expense._id ?? expense.expense_id, index),
+      merchant: (expense.merchant ?? expense.title ?? expense.description ?? expense.name ?? "Expense") as string,
       amount: numberValue(expense.amount ?? expense.total ?? 0),
-      status: normalizeExpenseStatus(expense.status),
+      status: normalizeExpenseStatus(expense.status ?? (expense.verified === true ? "verified" : "pending")),
       category: (expense.category ?? expense.type ?? null) as string | null,
-      receiptUrl: (expense.receiptUrl ?? expense.receipt ?? null) as
+      receiptUrl: (expense.receiptUrl ?? expense.receipt ?? expense.receipt_attached ? "attached" : null) as
         | string
         | null,
       budgetId: (expense.budgetId ?? expense.budget_id ?? null) as string | number | null,
       requestId: (expense.requestId ?? expense.request_id ?? null) as string | number | null,
-      date: (expense.date ?? expense.created_at ?? null) as string | null,
-      submitter: (expense.submitter ?? expense.user_name ?? null) as string | null,
+      date: (expense.date ?? expense.created_at ?? expense.incurred_at ?? null) as string | null,
+      submitter: (expense.submitter ?? expense.user_name ?? expense.created_by ?? null) as string | null,
     }
   })
 }
@@ -289,74 +294,106 @@ export function normalizeUsers(payload: unknown): FmsSessionUser[] {
 
 export const fmsApi = {
   loginUser: (payload: LoginPayload) =>
-    apiRequest<FmsAuthResponse>("/loginUser", {
+    apiRequest<FmsAuthResponse>("/login", {
       method: "POST",
       body: payload,
       skipAuth: true,
     }),
   registerUser: (payload: RegisterPayload) =>
-    apiRequest<FmsAuthResponse>("/registerUser", {
+    apiRequest<FmsAuthResponse>("/register", {
       method: "POST",
       body: payload,
       skipAuth: true,
     }),
-  getBudgetSummary: () => apiRequest<unknown>("/GetBudgetSummary"),
-  getReportOverview: () => apiRequest<unknown>("/ReportOverview"),
-  getBudgets: () => apiRequest<unknown>("/GetALLBudgets"),
+  getBudgetSummary: () => apiRequest<unknown>("/budgets/summary"),
+  getReportOverview: () => apiRequest<unknown>("/reports/overview"),
+  reportBudgets: () => apiRequest<unknown>("/reports/budgets"),
+  reportExpenses: () => apiRequest<unknown>("/reports/expenses"),
+  reportCashRequests: () => apiRequest<unknown>("/reports/cash-requests"),
+  getBudgets: () => apiRequest<unknown>("/budgets/"),
+  getSpecificBudget: (id: string | number) =>
+    apiRequest<unknown>(`/budgets/${id}`),
   createBudget: (payload: BudgetInput) =>
-    apiRequest<unknown>("/createBudget", {
+    apiRequest<unknown>("/budgets/", {
       method: "POST",
-      body: payload,
+      body: {
+        department: payload.department,
+        amount: payload.amount,
+        period: payload.period
+      },
     }),
   updateBudget: (id: string | number, payload: Partial<BudgetInput>) =>
-    apiRequest<unknown>("/UpdateBudget", {
-      method: "POST",
-      body: { ...payload, id },
+    apiRequest<unknown>(`/budgets/${id}`, {
+      method: "PATCH",
+      body: { spent_amount: payload.spent ?? payload.amount },
     }),
-  setBudgetStatus: (id: string | number, status: FmsBudgetStatus) =>
-    apiRequest<unknown>(status === "approved" ? "/ApproveBudget" : "/RejectBudget", {
+  setBudgetStatus: (id: string | number, status: FmsBudgetStatus, reason?: string) =>
+    apiRequest<unknown>(`/budgets/${id}/${status === "approved" ? "approve" : "reject"}`, {
       method: "POST",
-      body: { id },
+      body: status === "rejected" ? { reason } : undefined,
     }),
   getUsers: () => apiRequest<unknown>("/users"),
-  promoteUser: (id: string | number) =>
-    apiRequest<unknown>(`/promoteUser?id=${id}`),
-  getSpecificProfile: (id: string | number) =>
-    apiRequest<unknown>(`/GetspecificProfile?id=${id}`),
-  changeUserRole: (id: string | number, role: string) =>
-    apiRequest<unknown>(`/ChangeUserRole?id=${id}&role=${role}`),
-  updateUserRole: (id: string | number, role: UserRole) =>
-    apiRequest<unknown>("/ChangeUserRole", {
+  promoteUser: (username: string) =>
+    apiRequest<unknown>("/promote", {
       method: "POST",
-      body: { id, role },
+      body: { username }
+    }),
+  getSpecificProfile: () =>
+    apiRequest<unknown>("/users/me"),
+  changeUserRole: (id: string | number, role: string) =>
+    apiRequest<unknown>(`/users/${id}/role`, {
+      method: "PATCH",
+      body: { Role: role }
+    }),
+  updateUserRole: (id: string | number, role: UserRole) =>
+    apiRequest<unknown>(`/users/${id}/role`, {
+      method: "PATCH",
+      body: { Role: role },
     }),
   getMe: () => apiRequest<unknown>("/users/me"),
   createCashRequest: (payload: CashRequestInput) =>
-    apiRequest<unknown>("/CreateCashRequest", {
+    apiRequest<unknown>("/cash-requests/", {
       method: "POST",
-      body: payload,
+      body: {
+        purpose: payload.purpose,
+        amount: payload.amount
+      },
     }),
-  getCashRequests: () => apiRequest<unknown>("/GetAllCashRequests"),
+  getCashRequests: () => apiRequest<unknown>("/cash-requests/"),
+  getSpecificCashRequest: (id: string | number) =>
+    apiRequest<unknown>(`/cash-requests/${id}`),
   approveCashRequest: (id: string | number) =>
-    apiRequest<unknown>("/ApproveCashRequest", {
+    apiRequest<unknown>(`/cash-requests/${id}/approve`, {
       method: "POST",
-      body: { id },
     }),
   disburseCashRequest: (id: string | number) =>
-    apiRequest<unknown>("/DisburseCashRequest", {
+    apiRequest<unknown>(`/cash-requests/${id}/disburse`, {
       method: "POST",
-      body: { id },
     }),
-  createExpense: (payload: ExpenseInput | FormData) =>
-    apiRequest<unknown>("/createExpense", {
+  createExpense: (payload: ExpenseInput) =>
+    apiRequest<unknown>("/expenses", {
       method: "POST",
-      body: payload,
+      body: {
+        budget_id: String(payload.budgetId),
+        title: payload.merchant,
+        category: payload.category,
+        amount: payload.amount,
+        description: payload.notes || "",
+        incurred_at: payload.date
+      },
     }),
-  getExpenses: () => apiRequest<unknown>("/GetAllExpenses"),
+  getExpenses: () => apiRequest<unknown>("/expenses/"),
+  uploadReceipt: (expenseId: string | number, file: File) => {
+    const formData = new FormData()
+    formData.append("receipt", file)
+    return apiRequest<unknown>(`/expenses/${expenseId}/receipts`, {
+      method: "POST",
+      body: formData,
+    })
+  },
   verifyExpense: (id: string | number) =>
-    apiRequest<unknown>("/VerifyExpenses", {
-      method: "POST",
-      body: { id },
+    apiRequest<unknown>(`/expenses/${id}/verify`, {
+      method: "PATCH",
     }),
 }
 

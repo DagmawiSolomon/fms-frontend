@@ -1,151 +1,240 @@
+# Finance Management System (FMS) API Documentation
 
-Public
-ENVIRONMENT
-No Environment
-LAYOUT
-Double Column
-LANGUAGE
-cURL - cURL
-FMS
-Introduction
-POST
-registerUser
-POST
-loginUser
-GET
-promoteUser
-GET
-GetAllUser
-GET
-GetspecificProfile
-GET
-createBudget
-GET
-ChangeUserRole
-GET
-GetALLBudgets
-GET
-DisburseCashRequest
-GET
-GetSpecificBudget
-GET
-UpdateBudget
-GET
-ApproveBudget
-GET
-RejectBudget
-GET
-GetBudgetSummary
-GET
-CreateCashRequest
-GET
-ApproveCashRequest
-GET
-GetAllCashRequests
-GET
-GetSpecificCashRequest
-POST
-GetAllExpenses
-POST
-GetSpecificExpenses
-POST
-VerifyExpenses
-POST
-createExpense
-POST
-UploadReceipt
-POST
-ReadReceiptFile
-GET
-ReportOverview
-GET
-ReportBudgets
-GET
-ReportCashRequests
-GET
-ReportExpenses
-GET
-New Request
-FMS
-GET
-ReportCashRequests
-Example Request
-ReportBudgets Copy
-View More
-curl
-curl --location 'http://localhost:8080/reports/cash-requests' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjk0ZmE1YzViMTU0NDM4Yjg3MTMzYjc1IiwiZW1haWwiOiJmaW5hbmNlMEBnbWFpbC5jb20iLCJyb2xlIjoiRmluYW5jZSBUZWFtIiwiaXNzIjoiZm1zLWFwaSIsImV4cCI6MTc2NzcxNTk1OSwiaWF0IjoxNzY3NjI5NTU5fQ.18mDXcg6fbHq1ugBpCbcHXIVKzZoAkEZWIWv5Irap_M'
-200 OK
-Example Response
-Body
-Headers (3)
-View More
-[
+**Base URL**: `https://fms-app-production-5b62.up.railway.app/`  
+**Authentication**: Bearer Token in `Authorization` header.
+
+---
+
+## 1. Auth & User Management
+
+### Register User
+- **Method**: `POST`
+- **Path**: `/register`
+- **Body**:
+  ```json
   {
-    "request_id": "695162b1ad6d457c9b8e22e1",
-    "purpose": "soaps",
-    "amount": 400,
-    "status": "approved",
-    "requested_by": "elon dusk",
-    "department": "N/A",
-    "created_at": "2025-12-28T17:02:41.152Z"
-  },
-  {
-    "request_id": "69517106ad6d457c9b8e22e3",
-    "purpose": "salary",
-    "amount": 4000,
-    "status": "disbursed",
-    "requested_by": "elon dusk",
-    "department": "N/A",
-    "created_at": "2025-12-28T18:03:50.177Z",
-    "disbursed_at": "2025-12-28T18:09:55.337Z"
+    "name": "string",
+    "role": "string",
+    "email": "string",
+    "password": "string",
+    "department": "string"
   }
-]
-GET
-ReportExpenses
-Example Request
-ReportCashRequests Copy
-View More
-curl
-curl --location 'http://localhost:8080/reports/expenses' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjk0ZmE1YzViMTU0NDM4Yjg3MTMzYjc1IiwiZW1haWwiOiJmaW5hbmNlMEBnbWFpbC5jb20iLCJyb2xlIjoiRmluYW5jZSBUZWFtIiwiaXNzIjoiZm1zLWFwaSIsImV4cCI6MTc2NzcxNTk1OSwiaWF0IjoxNzY3NjI5NTU5fQ.18mDXcg6fbHq1ugBpCbcHXIVKzZoAkEZWIWv5Irap_M'
-200 OK
-Example Response
-Body
-Headers (3)
-View More
-[
+  ```
+
+### Login User
+- **Method**: `POST`
+- **Path**: `/login`
+- **Body**:
+  ```json
   {
-    "expense_id": "6952881a5b93dab4f3295f8e",
-    "description": "Office supplies",
-    "amount": 300,
-    "category": "Stationery",
-    "department": "IT",
-    "verified": false,
-    "created_by": "elon dusk",
-    "created_at": "2025-12-29T13:54:34.174Z",
-    "receipt_attached": false
-  },
-  {
-    "expense_id": "695be5a0b70141a18328c40f",
-    "description": "Catered lunch for sprint review",
-    "amount": 120.5,
-    "category": "Meals",
-    "department": "cleaning",
-    "verified": true,
-    "created_by": "elon dusk",
-    "created_at": "2026-01-05T16:24:00.022Z",
-    "receipt_attached": false
+    "email": "string",
+    "password": "string"
   }
-]
-GET
-New Request
-Example Request
-New Request
-curl
-curl --location ''
-Example Response
-Body
-Headers (0)
-No response body
-This request doesn't return any response body
+  ```
+
+### Promote User
+- **Method**: `POST`
+- **Path**: `/promote`
+- **Body**: `{"username": "string"}`
+
+### List All Users
+- **Method**: `GET`
+- **Path**: `/users`
+
+### Get Current User Profile
+- **Method**: `GET`
+- **Path**: `/users/me`
+
+### Get User Profile
+- **Method**: `GET`
+- **Path**: `/users/{id}`
+
+### Change User Role
+- **Method**: `PATCH`
+- **Path**: `/users/{id}/role`
+- **Body**: `{"Role": "string"}`
+
+---
+
+## 2. Budgets
+
+### Create Budget
+- **Method**: `POST`
+- **Path**: `/budgets/`
+- **Body**:
+  ```json
+  {
+    "department": "string",
+    "amount": number,
+    "period": "string"
+  }
+  ```
+
+### List All Budgets
+- **Method**: `GET`
+- **Path**: `/budgets/`
+
+### Get Specific Budget
+- **Method**: `GET`
+- **Path**: `/budgets/{id}`
+
+### Update Budget
+- **Method**: `PATCH`
+- **Path**: `/budgets/{id}`
+- **Body**: `{"spent_amount": number}`
+
+### Approve Budget
+- **Method**: `POST`
+- **Path**: `/budgets/{id}/approve`
+
+### Reject Budget
+- **Method**: `POST`
+- **Path**: `/budgets/{id}/reject`
+- **Body**: `{"reason": "string"}`
+
+### Budget Summary
+- **Method**: `GET`
+- **Path**: `/budgets/summary`
+
+---
+
+## 3. Cash Requests
+
+### Create Cash Request
+- **Method**: `POST`
+- **Path**: `/cash-requests/`
+- **Body**:
+  ```json
+  {
+    "purpose": "string",
+    "amount": number
+  }
+  ```
+
+### List All Cash Requests
+- **Method**: `GET`
+- **Path**: `/cash-requests/`
+
+### Get Specific Cash Request
+- **Method**: `GET`
+- **Path**: `/cash-requests/{id}`
+
+### Approve Cash Request
+- **Method**: `POST`
+- **Path**: `/cash-requests/{id}/approve`
+
+### Disburse Cash Request
+- **Method**: `POST`
+- **Path**: `/cash-requests/{id}/disburse`
+
+---
+
+## 4. Expenses & Receipts
+
+### Create Expense
+- **Method**: `POST`
+- **Path**: `/expenses`
+- **Body**:
+  ```json
+  {
+    "budget_id": "string",
+    "title": "string",
+    "amount": number,
+    "category": "string",
+    "description": "string",
+    "incurred_at": "ISO Date"
+  }
+  ```
+
+### List All Expenses
+- **Method**: `GET`
+- **Path**: `/expenses`
+
+### Get Specific Expense
+- **Method**: `GET`
+- **Path**: `/expenses/{id}`
+
+### Verify Expense
+- **Method**: `PATCH`
+- **Path**: `/expenses/{id}/verify`
+- **Body**: `{"verified": true}`
+
+### Upload Receipt
+- **Method**: `POST`
+- **Path**: `/expenses/{id}/receipts`
+- **Body**: Multipart form-data with `receipt` file.
+
+---
+
+## 5. Reports
+
+### Overview Report
+- **Method**: `GET`
+- **Path**: `/reports/overview`
+
+### Budgets Report
+- **Method**: `GET`
+- **Path**: `/reports/budgets`
+
+### Expenses Report
+- **Method**: `GET`
+- **Path**: `/reports/expenses`
+
+### Cash Requests Report
+- **Method**: `GET`
+- **Path**: `/reports/cash-requests`
+
+---
+
+## 6. Common Data Structures & Normalization
+
+### Budget Object
+```json
+{
+  "budget_id": "string",
+  "department": "string",
+  "amount": 50000,
+  "spent_amount": 400,
+  "status": "approved",
+  "period": "monthly",
+  "created_at": "ISO Date"
+}
+```
+
+### Cash Request Object
+```json
+{
+  "request_id": "string",
+  "purpose": "soaps",
+  "amount": 400,
+  "status": "approved",
+  "requested_by": "elon dusk",
+  "department": "N/A",
+  "created_at": "ISO Date"
+}
+```
+
+### Expense Object
+```json
+{
+  "expense_id": "string",
+  "description": "Office supplies",
+  "amount": 300,
+  "category": "Stationery",
+  "department": "IT",
+  "verified": false,
+  "created_by": "elon dusk",
+  "created_at": "ISO Date",
+  "receipt_attached": false
+}
+```
+
+### Summary / Overview Response
+```json
+{
+  "total_budgets": 150000,
+  "total_expenses": 45000,
+  "pending_approvals": 5,
+  "budget_utilization": 30
+}
+```

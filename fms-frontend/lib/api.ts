@@ -68,13 +68,7 @@ export async function apiRequest<T>(
   const requestHeaders = new Headers(headers)
 
   if (!skipAuth) {
-    let token = getAuthToken()
-    
-    // TEMPORARY: Inject provided token for user-related paths to bypass auth issues during testing
-    if (path.includes("user") || path.includes("GetAllUser")) {
-      token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjk0ZmE1YzViMTU0NDM4Yjg3MTMzYjc1IiwiZW1haWwiOiJmaW5hbmNlMEBnbWFpbC5jb20iLCJyb2xlIjoiRmluYW5jZSBUZWFtIiwiaXNzIjoiZm1zLWFwaSIsImV4cCI6MTc3ODQzMTM1MywiaWF0IjoxNzc4MzQ0OTUzfQ.KCY_3WiE_rOlQVcAzrKztBi2PQXrtiUOmHg8tlRaO9Y"
-    }
-
+    const token = getAuthToken()
     if (token) {
       requestHeaders.set("Authorization", `Bearer ${token}`)
     }
