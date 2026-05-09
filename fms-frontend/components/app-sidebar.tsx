@@ -91,7 +91,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               tooltip="Log out"
               className="gap-3 group-data-[collapsible=icon]:justify-center text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => {
+              onClick={async () => {
+                await fetch("/auth-bridge/logout", { method: "POST" })
                 clearAuthToken()
                 router.push("/login")
               }}
