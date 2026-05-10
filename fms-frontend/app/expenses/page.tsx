@@ -61,7 +61,7 @@ const expenseSchema = z.object({
   category: z.string().min(2, "Category is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
   incurred_at: z.string().min(8, "Date is required"),
-  budget_id: z.string().optional(),
+  budget_id: z.string().min(1, "Budget is required"),
   description: z.string().optional(),
   receipt: z.any().optional(),
 })
@@ -86,6 +86,7 @@ export default function ExpensesPage() {
 
   const [expenses, setExpenses] = React.useState<FmsExpense[]>([])
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
+  const [budgetsLoading, setBudgetsLoading] = React.useState(true)
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -93,31 +94,30 @@ export default function ExpensesPage() {
 
   const canViewAll = hasPermission("expenses.view_all")
 
+  // Preload budgets independently so they're ready before the dialog opens
+  React.useEffect(() => {
+    setBudgetsLoading(true)
+    fmsApi.getBudgets()
+      .then((data) => setBudgets(normalizeBudgets(data)))
+      .catch((err) => console.error("Failed to fetch budgets:", err))
+      .finally(() => setBudgetsLoading(false))
+  }, [])
+
   const fetchExpenses = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [expenseRes, budgetRes] = await Promise.allSettled([
-        fmsApi.getExpenses(),
-        fmsApi.getBudgets()
-      ])
-      
-      if (expenseRes.status === "fulfilled") {
-        let normalized = normalizeExpenses(expenseRes.value)
-        // Employees only see their own expenses
-        if (!canViewAll && user?.id) {
-          const myId = String(user.id).toLowerCase()
-          normalized = normalized.filter(
-            (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
-          )
-        }
-        setExpenses(normalized)
+      const data = await fmsApi.getExpenses()
+      let normalized = normalizeExpenses(data)
+      // Employees only see their own expenses
+      if (!canViewAll && user?.id) {
+        const myId = String(user.id).toLowerCase()
+        normalized = normalized.filter(
+          (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
+        )
       }
-
-      if (budgetRes.status === "fulfilled") {
-        setBudgets(normalizeBudgets(budgetRes.value))
-      }
+      setExpenses(normalized)
     } catch (error) {
-      console.error("Failed to fetch expenses or budgets:", error)
+      console.error("Failed to fetch expenses:", error)
     } finally {
       setLoading(false)
     }
@@ -148,7 +148,7 @@ export default function ExpensesPage() {
         amount: values.amount,
         category: values.category,
         incurred_at: new Date(values.incurred_at).toISOString(),
-        budget_id: values.budget_id && values.budget_id !== "none" ? values.budget_id : null,
+        budget_id: values.budget_id || null,
         description: values.description ?? "",
       })
 
@@ -337,6 +337,7 @@ export default function ExpensesPage() {
         onOpenChange={setDialogOpen}
         onSubmit={handleCreate}
         budgets={budgets}
+        budgetsLoading={budgetsLoading}
       />
     </DashboardShell>
   )
@@ -347,11 +348,13 @@ function ExpenseDialog({
   onOpenChange,
   onSubmit,
   budgets,
+  budgetsLoading,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: ExpenseFormValues) => void
   budgets: FmsBudget[]
+  budgetsLoading: boolean
 }) {
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
@@ -360,7 +363,7 @@ function ExpenseDialog({
       category: "",
       amount: 0,
       incurred_at: new Date().toISOString().split("T")[0],
-      budget_id: "none",
+      budget_id: "",
       description: "",
     },
   })
@@ -372,7 +375,7 @@ function ExpenseDialog({
         category: "",
         amount: 0,
         incurred_at: new Date().toISOString().split("T")[0],
-        budget_id: "none",
+        budget_id: "",
         description: "",
       })
     }
@@ -428,23 +431,25 @@ function ExpenseDialog({
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
-              label="Linked Budget (Optional)"
+              label="Linked Budget"
               error={form.formState.errors.budget_id?.message}
               control={
                 <Select
                   value={form.watch("budget_id")}
                   onValueChange={(value) =>
-                    form.setValue("budget_id", value)
+                    form.setValue("budget_id", value, { shouldValidate: true })
                   }
+                  disabled={budgetsLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a budget" />
+                    <SelectValue placeholder={budgetsLoading ? "Loading budgets…" : "Select a budget"} />
                   </SelectTrigger>
-                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                  <SelectContent>
                     {budgets.map((budget) => (
-                      <SelectItem key={budget.id} value={String(budget.id)}>
-                        {budget.name || `Budget ${budget.id}`} ({budget.department})
+                      <SelectItem key={String(budget.id)} value={String(budget.id)}>
+                        {budget.department
+                          ? `${budget.department} — ${budget.period ?? budget.id}`
+                          : String(budget.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -171,23 +171,26 @@ export function normalizeBudgets(payload: unknown): FmsBudget[] {
   return unwrapList<FmsBudget>(payload).map((item, index) => {
     const budget = item as Record<string, unknown>
 
+    const department = (budget.department ?? budget.departmentName ?? "") as string
+    const period = (budget.period ?? budget.fiscalYear ?? budget.month ?? null) as string | null
+
     return {
       id: normalizeIdentifier(budget.id ?? budget._id, index),
-      name: (budget.name ?? budget.title ?? "Budget") as string,
-      department: (budget.department ?? budget.departmentName ?? null) as
-        | string
-        | null,
+      // API has no 'name' field — derive a readable label from department + period
+      name: department
+        ? period
+          ? `${department} (${period})`
+          : department
+        : (budget.name ?? budget.title ?? `Budget ${index + 1}`) as string,
+      department: department || null,
       amount: numberValue(budget.amount ?? budget.totalAmount),
-      spent: numberValue(budget.spent ?? budget.usedAmount ?? 0),
+      // API returns spent as 'spent_amount', not 'spent'
+      spent: numberValue(budget.spent_amount ?? budget.spent ?? budget.usedAmount ?? 0),
       status: normalizeBudgetStatus(budget.status),
       owner: (budget.owner ?? budget.createdBy ?? budget.submitted_by ?? null) as string | null,
-      period: (budget.period ?? budget.fiscalYear ?? budget.month ?? null) as
-        | string
-        | null,
+      period,
       notes: (budget.notes ?? budget.description ?? null) as string | null,
-      updatedAt: (budget.updatedAt ?? budget.updated_at ?? null) as
-        | string
-        | null,
+      updatedAt: (budget.updatedAt ?? budget.updated_at ?? null) as string | null,
     }
   })
 }
