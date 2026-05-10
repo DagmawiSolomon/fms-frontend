@@ -108,9 +108,9 @@ const renderDistributionLabel = (props: any) => {
   )
 }
 
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod } from "@/lib/fms"
 
-export function FinanceDashboardView() {
+export function FinanceDashboardView({ period }: { period: string }) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
@@ -142,37 +142,50 @@ export function FinanceDashboardView() {
     fetchData()
   }, [])
 
+  // Filter by selected period
+  const filteredBudgets = React.useMemo(() => {
+    return data.budgets.filter(b => b.period === period)
+  }, [data.budgets, period])
+
+  const filteredRequests = React.useMemo(() => {
+    return filterByPeriod(data.cashRequests, period)
+  }, [data.cashRequests, period])
+
+  const filteredExpenses = React.useMemo(() => {
+    return filterByPeriod(data.expenses, period)
+  }, [data.expenses, period])
+
   // Calculations
-  const totalBudgetAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
-  const totalBudgetUsed = data.budgets.reduce((sum, b) => sum + b.spent, 0)
+  const totalBudgetAllocated = filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalBudgetUsed = filteredBudgets.reduce((sum, b) => sum + b.spent, 0)
   const remainingBudget = Math.max(totalBudgetAllocated - totalBudgetUsed, 0)
 
-  const pendingCashRequests = data.cashRequests.filter(r => r.status === "pending")
+  const pendingCashRequests = filteredRequests.filter(r => r.status === "pending")
   const pendingCashRequestsCount = pendingCashRequests.length
   const pendingCashRequestsAmount = pendingCashRequests.reduce((sum, r) => sum + r.amount, 0)
 
-  const pendingVerifications = data.expenses.filter(e => e.status === "pending").length
+  const pendingVerifications = filteredExpenses.filter(e => e.status === "pending").length
 
   // Charts
   const budgetByDept = React.useMemo(() => {
     const depts: Record<string, { used: number, remaining: number }> = {}
-    data.budgets.forEach(b => {
+    filteredBudgets.forEach(b => {
       const dept = b.department || "Other"
       if (!depts[dept]) depts[dept] = { used: 0, remaining: 0 }
       depts[dept].used += b.spent
       depts[dept].remaining += Math.max(b.amount - b.spent, 0)
     })
     return Object.entries(depts).map(([dept, vals]) => ({ dept, ...vals }))
-  }, [data.budgets])
+  }, [filteredBudgets])
 
   const categories = React.useMemo(() => {
     const cats: Record<string, number> = {}
-    data.expenses.forEach(e => {
+    filteredExpenses.forEach(e => {
       const cat = e.category || "Other"
       cats[cat] = (cats[cat] || 0) + e.amount
     })
     return cats
-  }, [data.expenses])
+  }, [filteredExpenses])
 
   const expenseDistribution = [
     { name: "Expenses", ...categories }

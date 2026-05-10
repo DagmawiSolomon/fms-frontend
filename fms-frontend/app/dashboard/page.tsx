@@ -32,63 +32,41 @@ function getGreeting() {
 export default function DashboardPage() {
   const session = useSession()
   const { role } = useRole()
-  const [periodType, setPeriodType] = React.useState("monthly")
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2026, 0, 1),
-    to: new Date(2026, 11, 31),
-  })
+  const [periodType, setPeriodType] = React.useState("yearly")
+  const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth())
+  const [selectedQuarter, setSelectedQuarter] = React.useState(Math.floor(new Date().getMonth() / 3) + 1)
+  const [selectedYear, setSelectedYear] = React.useState(2026)
+
+  const currentPeriod = React.useMemo(() => {
+    return `Q${selectedQuarter}-${selectedYear}`
+  }, [selectedQuarter, selectedYear])
 
   const userName = session.data?.name ?? "John"
 
   const dashboardActions = (
     <div className="flex items-center gap-2">
-      <Select value={periodType} onValueChange={setPeriodType}>
-        <SelectTrigger className="w-[140px] !h-9 text-sm font-normal rounded-[4px] border border-white/10 bg-white/[0.03]">
-          <SelectValue placeholder="Select Period" />
+      <Select value={selectedQuarter.toString()} onValueChange={(v) => setSelectedQuarter(parseInt(v))}>
+        <SelectTrigger className="w-[100px] !h-9 text-sm font-normal rounded-[4px] border border-white/10 bg-white/[0.03]">
+          <SelectValue placeholder="Quarter" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="monthly">Monthly</SelectItem>
-          <SelectItem value="quarterly">Quarterly</SelectItem>
-          <SelectItem value="yearly">Yearly</SelectItem>
+          <SelectItem value="1">Q1</SelectItem>
+          <SelectItem value="2">Q2</SelectItem>
+          <SelectItem value="3">Q3</SelectItem>
+          <SelectItem value="4">Q4</SelectItem>
         </SelectContent>
       </Select>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={"outline"}
-            className={cn(
-              "h-9 w-[240px] justify-start text-left font-normal rounded-[4px] border",
-              !date && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(date.from, "LLL dd, y")
-              )
-            ) : (
-              <span>Pick a date range</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 rounded-none" align="end">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
+      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+        <SelectTrigger className="w-[90px] !h-9 text-sm font-normal rounded-[4px] border border-white/10 bg-white/[0.03]">
+          <SelectValue placeholder="Year" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="2024">2024</SelectItem>
+          <SelectItem value="2025">2025</SelectItem>
+          <SelectItem value="2026">2026</SelectItem>
+        </SelectContent>
+      </Select>
 
       {role === "leadership" && (
         <Button
@@ -105,15 +83,15 @@ export default function DashboardPage() {
   return (
     <DashboardShell
       title={`${getGreeting()} ${userName} !`}
-      description="Welcome back. Here’s your personalized workspace overview."
+      description={`Viewing performance for ${currentPeriod}.`}
       actions={role !== "admin" ? dashboardActions : undefined}
       hideBreadcrumbs
     >
-      {role === "employee" && <EmployeeDashboardView />}
-      {role === "manager" && <ManagerDashboardView />}
-      {role === "finance" && <FinanceDashboardView />}
+      {role === "employee" && <EmployeeDashboardView period={currentPeriod} />}
+      {role === "manager" && <ManagerDashboardView period={currentPeriod} />}
+      {role === "finance" && <FinanceDashboardView period={currentPeriod} />}
       {role === "admin" && <AdminDashboardView />}
-      {role === "leadership" && <LeadershipDashboardView />}
+      {role === "leadership" && <LeadershipDashboardView period={currentPeriod} />}
     </DashboardShell>
   )
 }

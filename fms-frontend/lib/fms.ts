@@ -59,7 +59,7 @@ export type FmsCashRequest = {
 
 export type FmsExpense = {
   id: string | number
-  merchant: string
+  description: string
   amount: number
   status: "pending" | "approved" | "verified" | "rejected"
   category?: string | null
@@ -127,15 +127,10 @@ export type CashRequestInput = {
 }
 
 export type ExpenseInput = {
-  /** Maps to `title` in the API body */
-  title: string
+  description: string
   amount: number
   category: string
-  /** ISO date string — maps to `incurred_at` */
-  incurred_at: string
   budget_id?: string | null
-  /** Maps to `description` in the API body */
-  description?: string
 }
 
 export function normalizeSessionUser(payload: unknown): FmsSessionUser | null {
@@ -147,13 +142,15 @@ export function normalizeSessionUser(payload: unknown): FmsSessionUser | null {
   const source =
     (candidate.data && typeof candidate.data === "object"
       ? (candidate.data as Record<string, unknown>)
+      : candidate.user && typeof candidate.user === "object"
+      ? (candidate.user as Record<string, unknown>)
       : candidate) ?? candidate
 
-  const id = normalizeIdentifier(source.id ?? source._id ?? source.userId, "me")
-  const name = (source.name ?? source.fullName ?? source.username ?? "User") as
+  const id = normalizeIdentifier(source.id ?? source._id ?? source.userId ?? source.user_id, "me")
+  const name = (source.name ?? source.fullName ?? source.full_name ?? source.username ?? "User") as
     | string
     | undefined
-  const email = (source.email ?? "user@example.com") as string | undefined
+  const email = (source.email ?? source.email_address ?? source.emailAddress ?? "user@example.com") as string | undefined
   const avatar = (source.avatar ?? source.image ?? null) as string | null
   const role = normalizeRole(source.role as string | null | undefined)
 
@@ -187,7 +184,7 @@ export function normalizeBudgets(payload: unknown): FmsBudget[] {
       // API returns spent as 'spent_amount', not 'spent'
       spent: numberValue(budget.spent_amount ?? budget.spent ?? budget.usedAmount ?? 0),
       status: normalizeBudgetStatus(budget.status),
-      owner: (budget.owner ?? budget.createdBy ?? budget.submitted_by ?? null) as string | null,
+      owner: normalizeIdentifier(budget.owner ?? budget.createdBy ?? budget.created_by ?? budget.submitted_by ?? budget.user_id, "") as string || null,
       period,
       notes: (budget.notes ?? budget.description ?? null) as string | null,
       updatedAt: (budget.updatedAt ?? budget.updated_at ?? null) as string | null,
@@ -276,7 +273,7 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
     const expense = item as Record<string, unknown>
     return {
       id: normalizeIdentifier(expense.id ?? expense._id ?? expense.expense_id, index),
-      merchant: (expense.merchant ?? expense.title ?? expense.description ?? expense.name ?? "Expense") as string,
+      description: (expense.description ?? expense.title ?? expense.merchant ?? expense.name ?? "Expense") as string,
       amount: numberValue(expense.amount ?? expense.total ?? 0),
       status: normalizeExpenseStatus(expense.status ?? (expense.verified === true ? "verified" : "pending")),
       category: (expense.category ?? expense.type ?? null) as string | null,
@@ -295,9 +292,9 @@ export function normalizeUsers(payload: unknown): FmsSessionUser[] {
   return unwrapList<FmsSessionUser>(payload).map((item, index) => {
     const user = item as Record<string, unknown>
     return {
-      id: normalizeIdentifier(user.id ?? user._id ?? user.userId, index),
-      name: (user.name ?? user.fullName ?? user.username ?? "User") as string,
-      email: (user.email ?? "user@example.com") as string,
+      id: normalizeIdentifier(user.id ?? user._id ?? user.userId ?? user.user_id, index),
+      name: (user.name ?? user.fullName ?? user.full_name ?? user.username ?? "User") as string,
+      email: (user.email ?? user.email_address ?? user.emailAddress ?? "user@example.com") as string,
       avatar: (user.avatar ?? user.image ?? null) as string | null,
       role: normalizeRole(user.role as string | null | undefined),
       department: (user.department ?? "General") as string,
@@ -419,15 +416,13 @@ export const fmsApi = {
       method: "POST",
     }),
   createExpense: (payload: ExpenseInput) =>
-    apiRequest<unknown>("/expenses", {
+    apiRequest<unknown>("/expenses/", {
       method: "POST",
       body: {
         budget_id: payload.budget_id ?? null,
-        title: payload.title,
+        description: payload.description,
         amount: payload.amount,
         category: payload.category,
-        description: payload.description ?? "",
-        incurred_at: payload.incurred_at,
       },
     }),
   getExpenses: () => apiRequest<unknown>("/expenses"),
@@ -543,4 +538,27 @@ function normalizeText(value: unknown, fallback: string) {
   }
 
   return fallback
+}
+
+/**
+ * Filter items by a standardized quarter string (e.g., 'Q1-2026')
+ */
+export function filterByPeriod<T extends { date?: string | null }>(items: T[], period: string): T[] {
+  if (!period) return items
+
+  // Standardized format: QX-YYYY
+  const match = period.match(/^Q(\d)-(\d{4})$/)
+  if (match) {
+    const quarter = parseInt(match[1])
+    const year = match[2]
+    return items.filter(item => {
+      if (!item.date || !item.date.startsWith(year)) return false
+      const monthPart = item.date.split("-")[1]
+      if (!monthPart) return false
+      const month = parseInt(monthPart)
+      return Math.floor((month - 1) / 3) + 1 === quarter
+    })
+  }
+
+  return items
 }

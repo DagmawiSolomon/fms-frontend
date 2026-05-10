@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary, filterByPeriod } from "@/lib/fms"
 
 // --- Placeholder Trends ---
 const trends = {
@@ -35,7 +35,7 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
-export function ManagerDashboardView() {
+export function ManagerDashboardView({ period }: { period: string }) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
@@ -69,22 +69,32 @@ export function ManagerDashboardView() {
     fetchData()
   }, [])
 
+  // Filter by selected period
+  const filteredBudgets = React.useMemo(() => {
+    return data.budgets.filter(b => b.period === period)
+  }, [data.budgets, period])
+
+  // Filter cash requests by selected period
+  const filteredRequests = React.useMemo(() => {
+    return filterByPeriod(data.cashRequests, period)
+  }, [data.cashRequests, period])
+
   // Calculations
-  const pendingBudgets = data.budgets.filter(b => b.status === "pending")
+  const pendingBudgets = filteredBudgets.filter(b => b.status === "pending")
   const pendingBudgetApprovals = pendingBudgets.length
   
-  const pendingRequests = data.cashRequests.filter(r => r.status === "pending")
+  const pendingRequests = filteredRequests.filter(r => r.status === "pending")
   const pendingCashRequestsCount = pendingRequests.length
   const totalPendingAmount = pendingRequests.reduce((sum, r) => sum + r.amount, 0)
   
-  const totalAllocated = data.summary?.total_budget ?? data.budgets.reduce((sum, b) => sum + b.amount, 0)
-  const totalSpent = data.summary?.total_spent ?? data.budgets.reduce((sum, b) => sum + b.spent, 0)
-  const remainingBudget = data.summary?.remaining_budget ?? Math.max(totalAllocated - totalSpent, 0)
+  const totalAllocated = filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalSpent = filteredBudgets.reduce((sum, b) => sum + b.spent, 0)
+  const remainingBudget = Math.max(totalAllocated - totalSpent, 0)
 
   // Charts
   const approvalPipelineData = React.useMemo(() => {
     const counts = { Approved: 0, Pending: 0, Rejected: 0 }
-    data.cashRequests.forEach(r => {
+    filteredRequests.forEach(r => {
       if (r.status === "approved" || r.status === "disbursed") counts.Approved++
       else if (r.status === "pending") counts.Pending++
       else if (r.status === "rejected") counts.Rejected++
@@ -94,7 +104,7 @@ export function ManagerDashboardView() {
       { status: "Pending", count: counts.Pending, fill: "var(--chart-3)" },
       { status: "Rejected", count: counts.Rejected, fill: "var(--chart-4)" },
     ]
-  }, [data.cashRequests])
+  }, [filteredRequests])
 
   const budgetUtilizationData = [
     { type: "Used", amount: totalSpent, fill: "var(--chart-1)" },

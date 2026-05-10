@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { fmsApi, normalizeBudgets, normalizeExpenses } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeExpenses, filterByPeriod } from "@/lib/fms"
 
 // --- Placeholder for data not yet in API ---
 const mockRevenue = 2450000
@@ -40,7 +40,7 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
-export function LeadershipDashboardView() {
+export function LeadershipDashboardView({ period }: { period: string }) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
@@ -72,18 +72,27 @@ export function LeadershipDashboardView() {
     fetchData()
   }, [])
 
-  const operatingExpenses = data.expenses.reduce((sum, e) => sum + e.amount, 0)
+  // Filter by selected period
+  const filteredBudgets = React.useMemo(() => {
+    return data.budgets.filter(b => b.period === period)
+  }, [data.budgets, period])
+
+  const filteredExpenses = React.useMemo(() => {
+    return filterByPeriod(data.expenses, period)
+  }, [data.expenses, period])
+
+  const operatingExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
 
   const budgetOverviewData = React.useMemo(() => {
     const categories: Record<string, { allocated: number, actual: number }> = {}
-    data.budgets.forEach(b => {
+    filteredBudgets.forEach(b => {
       const cat = b.department || "Other"
       if (!categories[cat]) categories[cat] = { allocated: 0, actual: 0 }
       categories[cat].allocated += b.amount
       categories[cat].actual += b.spent
     })
     return Object.entries(categories).map(([category, vals]) => ({ category, ...vals }))
-  }, [data.budgets])
+  }, [filteredBudgets])
 
   if (loading) {
     return (

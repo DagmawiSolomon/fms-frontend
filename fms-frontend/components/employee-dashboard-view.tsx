@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeExpenses, normalizeBudgets } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod } from "@/lib/fms"
 import { format } from "date-fns"
+import { useRole } from "@/components/role-provider"
 
 // --- Mock Data Trends (Placeholder) ---
 const trends = {
@@ -35,7 +36,8 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
-export function EmployeeDashboardView() {
+export function EmployeeDashboardView({ period }: { period: string }) {
+  const { user } = useRole()
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     expenses: any[]
@@ -50,8 +52,18 @@ export function EmployeeDashboardView() {
           fmsApi.getExpenses(),
           fmsApi.getBudgets()
         ])
+        // Filter by current user
+        const myId = user?.id ? String(user.id).toLowerCase() : null
+        let filteredExpenses = normalizeExpenses(expensesRes)
+        
+        if (myId) {
+          filteredExpenses = filteredExpenses.filter(
+            (e) => e.submitter != null && String(e.submitter).toLowerCase() === myId
+          )
+        }
+
         setData({
-          expenses: normalizeExpenses(expensesRes),
+          expenses: filteredExpenses,
           budgets: normalizeBudgets(budgetsRes)
         })
       } catch (error) {
@@ -61,21 +73,30 @@ export function EmployeeDashboardView() {
       }
     }
     fetchData()
-  }, [])
+  }, [user?.id])
 
-  // Calculations
-  const totalExpenses = data.expenses.length
-  const totalSpent = data.expenses
+  // Filter budgets by selected period
+  const filteredBudgets = React.useMemo(() => {
+    return data.budgets.filter(b => b.period === period)
+  }, [data.budgets, period])
+
+  // Filter expenses by selected period
+  const dateFilteredExpenses = React.useMemo(() => {
+    return filterByPeriod(data.expenses, period)
+  }, [data.expenses, period]);
+
+  const totalExpenses = dateFilteredExpenses.length
+  const totalSpent = dateFilteredExpenses
     .filter(e => e.status === "approved" || e.status === "verified")
     .reduce((sum, e) => sum + e.amount, 0)
   
-  const totalAllocated = data.budgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalAllocated = filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
   const remainingFunds = Math.max(totalAllocated - totalSpent, 0)
 
   // Charts
   const spendingOverTime = React.useMemo(() => {
     const groups: Record<string, number> = {}
-    data.expenses.forEach(e => {
+    dateFilteredExpenses.forEach(e => {
       if (!e.date) return
       const d = new Date(e.date)
       const label = format(d, "MMM dd")
@@ -84,11 +105,11 @@ export function EmployeeDashboardView() {
     return Object.entries(groups)
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  }, [data.expenses])
+  }, [dateFilteredExpenses])
 
   const categories = React.useMemo(() => {
     const cats: Record<string, number> = {}
-    data.expenses.forEach(e => {
+    dateFilteredExpenses.forEach(e => {
       const cat = e.category || "Other"
       cats[cat] = (cats[cat] || 0) + e.amount
     })
@@ -97,7 +118,7 @@ export function EmployeeDashboardView() {
       amount,
       fill: `var(--chart-${(i % 5) + 1})`
     }))
-  }, [data.expenses])
+  }, [dateFilteredExpenses])
 
   if (loading) {
     return (
