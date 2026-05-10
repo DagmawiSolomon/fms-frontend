@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { fmsApi, normalizeBudgets, normalizeExpenses, filterByPeriod } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeExpenses, normalizeSummary, filterByPeriod } from "@/lib/fms"
 
 // --- Placeholder for data not yet in API ---
 const mockRevenue = 2450000
@@ -45,7 +45,8 @@ export function LeadershipDashboardView({ period }: { period: string }) {
   const [data, setData] = React.useState<{
     budgets: any[]
     expenses: any[]
-  }>({ budgets: [], expenses: [] })
+    summary: any | null
+  }>({ budgets: [], expenses: [], summary: null })
 
   const [weeklyLimit, setWeeklyLimit] = React.useState(5000)
   const [isEditingLimit, setIsEditingLimit] = React.useState(false)
@@ -55,13 +56,15 @@ export function LeadershipDashboardView({ period }: { period: string }) {
     async function fetchData() {
       try {
         setLoading(true)
-        const [budgetsRes, expensesRes] = await Promise.all([
+        const [budgetsRes, expensesRes, summaryRes] = await Promise.all([
           fmsApi.getBudgets(),
           fmsApi.getExpenses(),
+          fmsApi.getBudgetSummary(),
         ])
         setData({
           budgets: normalizeBudgets(budgetsRes),
           expenses: normalizeExpenses(expensesRes),
+          summary: normalizeSummary(summaryRes),
         })
       } catch (error) {
         console.error("Leadership dashboard fetch error:", error)
@@ -82,6 +85,16 @@ export function LeadershipDashboardView({ period }: { period: string }) {
   }, [data.expenses, period])
 
   const operatingExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+  
+  // High-level metrics for leadership
+  const totalBudget = data.summary?.totalBudget ?? filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalSpent = data.summary?.totalSpent ?? operatingExpenses
+  
+  // Calculate efficiency: (Total Budget - Total Spent) / Total Budget * 10
+  // Higher is better (less waste)
+  const efficiencyScore = totalBudget > 0 
+    ? Math.max(0, Math.min(10, ((totalBudget - totalSpent) / totalBudget) * 10)).toFixed(1)
+    : "0.0"
 
   const budgetOverviewData = React.useMemo(() => {
     const categories: Record<string, { allocated: number, actual: number }> = {}
@@ -109,25 +122,29 @@ export function LeadershipDashboardView({ period }: { period: string }) {
       <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
-            <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(mockRevenue)}</CardTitle>
+            <CardDescription>Total Budget Allocated</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.revenue}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">vs last qtr</span>
+              <span className="text-[10px] text-muted-foreground uppercase">across all departments</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Aggregate gross performance across all revenue centers</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Aggregate funding for the current fiscal period</CardContent>
         </Card>
 
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Operating Expenses</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(operatingExpenses)}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalSpent)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.expenses}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                totalSpent > totalBudget * 0.8 ? "text-rose-500" : "text-emerald-500"
+              )}>
+                <HugeiconsIcon icon={totalSpent > totalBudget * 0.8 ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> 
+                {((totalSpent / (totalBudget || 1)) * 100).toFixed(1)}%
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
             </div>
@@ -139,7 +156,7 @@ export function LeadershipDashboardView({ period }: { period: string }) {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>Efficiency Score</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">9.4</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{efficiencyScore}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center">
                 <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.efficiency}
