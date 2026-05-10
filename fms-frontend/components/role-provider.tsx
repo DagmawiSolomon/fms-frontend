@@ -3,9 +3,11 @@
 import * as React from "react"
 
 import { Role, ROLE_CONFIGS, RoleConfig } from "@/lib/roles"
+import { useSession } from "@/hooks/use-session"
 
 interface RoleContextType {
   role: Role
+  user: any
   config: RoleConfig
   setRole: (role: Role) => void
   hasPermission: (permission: string) => boolean
@@ -14,20 +16,17 @@ interface RoleContextType {
 const RoleContext = React.createContext<RoleContextType | undefined>(undefined)
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, isLoading } = useSession()
   const [role, setRoleState] = React.useState<Role>("employee")
-  const [isMounted, setIsMounted] = React.useState(false)
 
   React.useEffect(() => {
-    setIsMounted(true)
-    const savedRole = localStorage.getItem("fms-role") as Role | null
-    if (savedRole && Object.keys(ROLE_CONFIGS).includes(savedRole)) {
-      setRoleState(savedRole)
+    if (session?.role) {
+      setRoleState(session.role as Role)
     }
-  }, [])
+  }, [session])
 
   const setRole = React.useCallback((newRole: Role) => {
     setRoleState(newRole)
-    localStorage.setItem("fms-role", newRole)
   }, [])
 
   const hasPermission = React.useCallback((permission: string) => {
@@ -36,8 +35,19 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const config = ROLE_CONFIGS[role]
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-sidebar bg-noise">
+        <div className="flex flex-col items-center gap-2">
+          <div className="size-8 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+          <p className="text-xs text-muted-foreground animate-pulse">Initializing workspace...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <RoleContext.Provider value={{ role, config, setRole, hasPermission }}>
+    <RoleContext.Provider value={{ role, user: session, config, setRole, hasPermission }}>
       {children}
     </RoleContext.Provider>
   )

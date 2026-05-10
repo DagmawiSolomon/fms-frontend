@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useSession } from "@/hooks/use-session"
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -28,13 +28,6 @@ import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { useRole } from "@/components/role-provider"
 import { Role } from "@/lib/roles"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 function formatHeaderDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -66,7 +59,7 @@ export function SiteHeader({
   const [dateLabel, setDateLabel] = React.useState(() =>
     formatHeaderDate(new Date())
   )
-  const { role, setRole } = useRole()
+  const { role } = useRole()
 
   React.useEffect(() => {
     const update = () => setDateLabel(formatHeaderDate(new Date()))
@@ -96,22 +89,6 @@ export function SiteHeader({
           <span className="truncate">{dateLabel}</span>
         </div>
 
-        <div className="flex items-center gap-3">
-
-          <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs bg-sidebar-accent/20 border-sidebar-border/50">
-              <SelectValue placeholder="Select Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="leadership">Leadership (CEO/COO)</SelectItem>
-              <SelectItem value="finance">Finance Team</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="employee">Employee</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         <div>{actions}</div>
 
         <DropdownMenu>
@@ -121,7 +98,6 @@ export function SiteHeader({
               className="h-10 gap-2 rounded-[4px] px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
             >
               <Avatar className="size-7 rounded-full grayscale">
-                <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
                 <AvatarFallback className="rounded-full">
                   {user.name
                     .split(" ")
@@ -144,9 +120,8 @@ export function SiteHeader({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-2 py-2">
-                <Avatar className="size-8 rounded-[4px] grayscale">
-                  <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                  <AvatarFallback className="rounded-[4px]">
+                <Avatar className="size-8 rounded-full grayscale">
+                  <AvatarFallback className="rounded-full">
                     {user.name
                       .split(" ")
                       .map((part) => part[0])

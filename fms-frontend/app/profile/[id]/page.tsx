@@ -4,7 +4,7 @@ import * as React from "react"
 import { use } from "react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon, SearchIcon, AlertCircleIcon, FileTextIcon, WalletIcon, XIcon } from "lucide-react"
 import {
@@ -62,7 +62,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        const data = await fmsApi.getSpecificProfile(resolvedParams.id)
+        const data = await fmsApi.getProfile(resolvedParams.id)
         setProfile(normalizeSessionUser(data))
       } catch (error) {
         console.error("Failed to fetch profile:", error)
@@ -112,7 +112,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
       title="Employee Profile"
       description={`Viewing management profile and activity for ${name}.`}
       breadcrumbs={[
-        { label: "Petty Cash", href: "/petty-cash" },
+        { label: "Users", href: "/users" },
         { label: name }
       ]}
     >
@@ -123,9 +123,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24 rounded-full border border-border/50">
-                  <AvatarImage className="rounded-[4px]" src={`https://i.pravatar.cc/150?u=${email}`} alt={name} />
-                  <AvatarFallback className="rounded-[4px] text-2xl bg-muted text-muted-foreground">{initials(name)}</AvatarFallback>
+                <Avatar className="h-24 w-24 rounded-full grayscale border border-border/50">
+                  <AvatarFallback className="rounded-full text-2xl bg-muted text-muted-foreground">{initials(name)}</AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -136,7 +135,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                     <span>{email}</span>
-                    <span>Department: Operations</span>
+                    <span>Department: {profile?.department ?? "Not set"}</span>
                   </div>
                 </div>
               </div>

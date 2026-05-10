@@ -41,7 +41,9 @@ export function clearAuthToken() {
   document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; max-age=0`
 }
 
-export type UserRole = "admin" | "Finance Team" | "user"
+import type { Role } from "./roles"
+
+export type UserRole = Role
 
 export function normalizeRole(role?: string | null): UserRole {
   const value = (role ?? "").toLowerCase().trim()
@@ -51,8 +53,16 @@ export function normalizeRole(role?: string | null): UserRole {
   }
 
   if (value.includes("finance")) {
-    return "Finance Team"
+    return "finance"
   }
 
-  return "user"
+  if (value.includes("manager")) {
+    return "manager"
+  }
+
+  if (value.includes("leadership") || value.includes("ceo") || value.includes("coo")) {
+    return "leadership"
+  }
+
+  return "employee"
 }

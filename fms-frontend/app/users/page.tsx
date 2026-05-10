@@ -36,7 +36,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -47,7 +47,13 @@ import { fmsApi, normalizeUsers, type FmsSessionUser } from "@/lib/fms"
 
 export default function UsersPage() {
   const router = useRouter()
-  const { role: currentUserRole, hasPermission } = useRole()
+  const { role: currentUserRole, config, hasPermission } = useRole()
+
+  React.useEffect(() => {
+    if (!config.navigation.includes("Users")) {
+      router.push("/dashboard")
+    }
+  }, [config, router])
 
   const [users, setUsers] = React.useState<FmsSessionUser[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -167,8 +173,10 @@ export default function UsersPage() {
                     <SelectContent>
                       <SelectItem value="all">All Roles</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="Finance Team">Finance Team</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="finance">Finance Team</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="leadership">Leadership</SelectItem>
+                      <SelectItem value="employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -251,8 +259,7 @@ export default function UsersPage() {
                   </SheetHeader>
                   <div className="grid gap-6 px-4 pb-4">
                     <div className="flex items-center gap-4 py-2 border-b border-border/50">
-                      <Avatar className="h-12 w-12 rounded-full border border-border/50">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${selectedUser.email}`} alt={selectedUser.name} />
+                      <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
                         <AvatarFallback className="rounded-full">{initials(selectedUser.name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
@@ -277,8 +284,10 @@ export default function UsersPage() {
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="user">User</SelectItem>
-                            <SelectItem value="Finance Team">Finance Team</SelectItem>
+                            <SelectItem value="employee">Employee</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="finance">Finance Team</SelectItem>
+                            <SelectItem value="leadership">Leadership</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>

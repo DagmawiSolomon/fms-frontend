@@ -54,7 +54,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   finance: {
     name: "Finance Team",
     description: "Financial oversight, budget creation, and disbursement.",
-    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses", "Users"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -63,9 +63,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "budgets.create",
       "budgets.update",
       "budgets.summary",
-      "petty_cash.view",
-      "petty_cash.record_transaction",
-      "petty_cash.verify",
+
       "cash_requests.view_all",
       "cash_requests.view_specific",
       "cash_requests.disburse",
@@ -103,10 +101,9 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   employee: {
     name: "General Employee",
     description: "Submit expenses and request cash for operations.",
-    navigation: ["Dashboard", "Petty Cash", "Cash Requests", "Expenses"],
+    navigation: ["Dashboard", "Cash Requests", "Expenses", "Profile"],
     permissions: [
-      "petty_cash.view",
-      "petty_cash.record_transaction",
+
       "cash_requests.create",
       "cash_requests.view_specific",
       "cash_requests.view_self",
@@ -120,8 +117,8 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   leadership: {
     name: "Leadership (CEO/COO)",
-    description: "Executive oversight, high-value approvals, and petty cash limits.",
-    navigation: ["Dashboard", "Budgets", "Petty Cash", "Cash Requests", "Expenses"],
+    description: "Executive oversight and high-value approvals.",
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
@@ -129,8 +126,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "budgets.approve",
       "budgets.reject",
       "budgets.summary",
-      "petty_cash.view",
-      "petty_cash.set_limit",
+
       "cash_requests.view_all",
       "cash_requests.approve",
       "expenses.view_all",
@@ -151,11 +147,7 @@ export const ALL_NAV_ITEMS = [
     url: "/budgets",
     icon: Invoice04Icon,
   },
-  {
-    title: "Petty Cash",
-    url: "/petty-cash",
-    icon: MoneyBag01Icon,
-  },
+
   {
     title: "Cash Requests",
     url: "/cash-requests",

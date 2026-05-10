@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { z } from "zod"
 import Image from "next/image"
@@ -54,6 +54,8 @@ function AuthContent() {
     defaultValues: { name: "", email: "", password: "", role: "Employee", department: "Finance" },
   })
 
+  const queryClient = useQueryClient()
+
   const loginMutation = useMutation({
     mutationFn: (values: LoginValues) => fmsApi.loginUser(values),
     onSuccess: async (payload) => {
@@ -61,7 +63,7 @@ function AuthContent() {
       if (token) {
         setAuthToken(token)
       }
-      normalizeSessionUser(payload)
+      queryClient.invalidateQueries({ queryKey: ["session"] })
       toast.success("Signed in successfully")
       router.push("/dashboard")
     },

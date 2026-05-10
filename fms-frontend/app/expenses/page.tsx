@@ -57,18 +57,28 @@ import type { FmsExpense } from "@/lib/fms"
 
 
 const expenseSchema = z.object({
-  merchant: z.string().min(2, "Merchant name is required"),
+  title: z.string().min(2, "Title / merchant name is required"),
   category: z.string().min(2, "Category is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
-  date: z.string().min(8, "Date is required"),
-  budgetId: z.string().optional(),
-  requestId: z.string().optional(),
+  incurred_at: z.string().min(8, "Date is required"),
+  budget_id: z.string().optional(),
+  description: z.string().optional(),
+  receipt: z.any().optional(),
 })
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>
 
+import { useRouter } from "next/navigation"
+
 export default function ExpensesPage() {
-  const { role, hasPermission } = useRole()
+  const { user, role, config, hasPermission } = useRole()
+  const router = useRouter()
+
+  React.useEffect(() => {
+    if (!config.navigation.includes("Expenses")) {
+      router.push("/dashboard")
+    }
+  }, [config, router])
   
   const canCreateExpense = hasPermission("expenses.create")
   const canApproveExpense = hasPermission("expenses.approve")
@@ -80,17 +90,27 @@ export default function ExpensesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState("all")
 
+  const canViewAll = hasPermission("expenses.view_all")
+
   const fetchExpenses = React.useCallback(async () => {
     try {
       setLoading(true)
       const data = await fmsApi.getExpenses()
-      setExpenses(normalizeExpenses(data))
+      let normalized = normalizeExpenses(data)
+      // Employees only see their own expenses
+      if (!canViewAll && user?.name) {
+        normalized = normalized.filter(
+          (exp) =>
+            exp.submitter?.toLowerCase() === user.name.toLowerCase()
+        )
+      }
+      setExpenses(normalized)
     } catch (error) {
       console.error("Failed to fetch expenses:", error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [canViewAll, user?.name])
 
   React.useEffect(() => {
     fetchExpenses()
@@ -113,15 +133,19 @@ export default function ExpensesPage() {
   const handleCreate = async (values: ExpenseFormValues) => {
     try {
       const response = await fmsApi.createExpense({
-        ...values,
-        merchant: values.merchant,
-        category: values.category
+        title: values.title,
+        amount: values.amount,
+        category: values.category,
+        incurred_at: new Date(values.incurred_at).toISOString(),
+        budget_id: values.budget_id && values.budget_id !== "none" ? values.budget_id : null,
+        description: values.description ?? "",
       })
-      
-      // If there's a file, we would upload it here if we had the ID from the response
-      // For now, let's assume createExpense returns the created expense with an ID
+
+      // Upload receipt if provided and we got an ID back
       const newExpense = response as any
-      if (newExpense?.id && values.receipt) {
+      if (newExpense?.expense_id && values.receipt) {
+        await fmsApi.uploadReceipt(newExpense.expense_id, values.receipt)
+      } else if (newExpense?.id && values.receipt) {
         await fmsApi.uploadReceipt(newExpense.id, values.receipt)
       }
 
@@ -318,23 +342,28 @@ function ExpenseDialog({
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
     defaultValues: {
-      merchant: "",
+      title: "",
       category: "",
       amount: 0,
-      date: new Date().toISOString().split("T")[0],
+      incurred_at: new Date().toISOString().split("T")[0],
+      budget_id: "none",
+      description: "",
     },
   })
 
   React.useEffect(() => {
     if (!open) {
       form.reset({
-        merchant: "",
+        title: "",
         category: "",
         amount: 0,
-        date: new Date().toISOString().split("T")[0],
+        incurred_at: new Date().toISOString().split("T")[0],
+        budget_id: "none",
+        description: "",
       })
     }
   }, [form, open])
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -353,10 +382,10 @@ function ExpenseDialog({
           )}
         >
           <Field
-            label="Merchant"
-            error={form.formState.errors.merchant?.message}
+            label="Title / Merchant"
+            error={form.formState.errors.title?.message}
             control={
-              <Input placeholder="Amazon, Delta, etc." {...form.register("merchant")} />
+              <Input placeholder="Amazon, Delta, Office supplies..." {...form.register("title")} />
             }
           />
           <div className="grid gap-4 md:grid-cols-2">
@@ -373,25 +402,25 @@ function ExpenseDialog({
               }
             />
             <Field
-              label="Date"
-              error={form.formState.errors.date?.message}
+              label="Date incurred"
+              error={form.formState.errors.incurred_at?.message}
               control={
                 <Input
                   type="date"
-                  {...form.register("date")}
+                  {...form.register("incurred_at")}
                 />
               }
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
-              label="Linked Budget"
-              error={form.formState.errors.budgetId?.message}
+              label="Linked Budget (Optional)"
+              error={form.formState.errors.budget_id?.message}
               control={
                 <Select
-                  value={form.watch("budgetId")}
+                  value={form.watch("budget_id")}
                   onValueChange={(value) =>
-                    form.setValue("budgetId", value)
+                    form.setValue("budget_id", value)
                   }
                 >
                   <SelectTrigger>
@@ -399,9 +428,6 @@ function ExpenseDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {/* Budgets will be populated here in a real scenario, for now keeping static options consistent with UI */}
-                    <SelectItem value="BUD-01">Q1 Engineering Ops</SelectItem>
-                    <SelectItem value="BUD-02">Global Marketing</SelectItem>
                   </SelectContent>
                 </Select>
               }
@@ -445,6 +471,15 @@ function ExpenseDialog({
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            }
+          />
+          <Field
+            label="Description (Optional)"
+            control={
+              <Input
+                placeholder="Additional details..."
+                {...form.register("description")}
+              />
             }
           />
 

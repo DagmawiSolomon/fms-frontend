@@ -22,6 +22,7 @@ export type FmsSessionUser = {
   email: string
   avatar?: string | null
   role: UserRole
+  department?: string | null
 }
 
 export type FmsSummary = {
@@ -117,19 +118,22 @@ export type BudgetInput = {
 }
 
 export type CashRequestInput = {
-  title: string
-  amount: number
   purpose: string
+  amount: number
+  /** The authenticated user's ID (from JWT user_id claim) */
+  userId?: string
 }
 
 export type ExpenseInput = {
-  merchant: string
+  /** Maps to `title` in the API body */
+  title: string
   amount: number
   category: string
-  date: string
-  budgetId?: string | number
-  requestId?: string | number
-  notes?: string
+  /** ISO date string — maps to `incurred_at` */
+  incurred_at: string
+  budget_id?: string | null
+  /** Maps to `description` in the API body */
+  description?: string
 }
 
 export function normalizeSessionUser(payload: unknown): FmsSessionUser | null {
@@ -157,6 +161,7 @@ export function normalizeSessionUser(payload: unknown): FmsSessionUser | null {
     email: email ?? "user@example.com",
     avatar,
     role,
+    department: (source.department ?? null) as string | null,
   }
 }
 
@@ -270,7 +275,7 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
       amount: numberValue(expense.amount ?? expense.total ?? 0),
       status: normalizeExpenseStatus(expense.status ?? (expense.verified === true ? "verified" : "pending")),
       category: (expense.category ?? expense.type ?? null) as string | null,
-      receiptUrl: (expense.receiptUrl ?? expense.receipt ?? expense.receipt_attached ? "attached" : null) as
+      receiptUrl: (expense.receiptUrl ?? expense.receipt ?? (expense.receipt_attached ? "attached" : null)) as
         | string
         | null,
       budgetId: (expense.budgetId ?? expense.budget_id ?? null) as string | number | null,
@@ -290,8 +295,16 @@ export function normalizeUsers(payload: unknown): FmsSessionUser[] {
       email: (user.email ?? "user@example.com") as string,
       avatar: (user.avatar ?? user.image ?? null) as string | null,
       role: normalizeRole(user.role as string | null | undefined),
+      department: (user.department ?? "General") as string,
     }
   })
+}
+
+/** Generate a random 24-char hex string to satisfy the backend's BSON ObjectId requirement */
+function generateFmsId() {
+  return Array.from({ length: 24 }, () =>
+    Math.floor(Math.random() * 16).toString(16)
+  ).join("")
 }
 
 export const fmsApi = {
@@ -319,6 +332,7 @@ export const fmsApi = {
     apiRequest<unknown>("/budgets/", {
       method: "POST",
       body: {
+        name: payload.name,
         department: payload.department,
         amount: payload.amount,
         period: payload.period
@@ -354,14 +368,26 @@ export const fmsApi = {
       method: "PATCH",
       body: { Role: role },
     }),
-  createCashRequest: (payload: CashRequestInput) =>
-    apiRequest<unknown>("/cash-requests/", {
+  createCashRequest: (payload: CashRequestInput) => {
+    const now = new Date().toISOString()
+    // User ID must be a valid 24-char hex ObjectId for the backend
+    const validUserId =
+      payload.userId && /^[a-fA-F0-9]{24}$/.test(payload.userId)
+        ? payload.userId
+        : "000000000000000000000000"
+    return apiRequest<unknown>("/cash-requests/", {
       method: "POST",
       body: {
+        id: generateFmsId(),
         purpose: payload.purpose,
-        amount: payload.amount
+        amount: payload.amount,
+        requested_by: validUserId,
+        status: "pending",
+        created_at: now,
+        updated_at: now,
       },
-    }),
+    })
+  },
   getCashRequests: () => apiRequest<unknown>("/cash-requests/"),
   getSpecificCashRequest: (id: string | number) =>
     apiRequest<unknown>(`/cash-requests/${id}`),
@@ -377,21 +403,28 @@ export const fmsApi = {
     apiRequest<unknown>("/expenses", {
       method: "POST",
       body: {
-        budget_id: String(payload.budgetId),
-        title: payload.merchant,
-        category: payload.category,
+        budget_id: payload.budget_id ?? null,
+        title: payload.title,
         amount: payload.amount,
-        description: payload.notes || "",
-        incurred_at: payload.date
+        category: payload.category,
+        description: payload.description ?? "",
+        incurred_at: payload.incurred_at,
       },
     }),
-  getExpenses: () => apiRequest<unknown>("/expenses/"),
+  getExpenses: () => apiRequest<unknown>("/expenses"),
   getSpecificExpense: (id: string | number) =>
     apiRequest<unknown>(`/expenses/${id}`),
-  getReceipt: (expenseId: string | number) =>
-    apiRequest<Blob>(`/expenses/${expenseId}/receipts`, {
-      headers: { Accept: "image/*, application/pdf" }
-    }),
+  /**
+   * Returns the proxied URL for the receipt file so it can be used in an
+   * <a href> or <img src> tag directly. The browser will send cookies
+   * automatically, but the auth token also needs to be in the URL for the
+   * Next.js rewrite to forward the Authorization header.
+   *
+   * For simplicity we just return the proxy path — the page component is
+   * responsible for opening / fetching it.
+   */
+  getReceiptUrl: (expenseId: string | number): string =>
+    `/fms-proxy/expenses/${expenseId}/receipts`,
   uploadReceipt: (expenseId: string | number, file: File) => {
     const formData = new FormData()
     formData.append("receipt", file)
@@ -403,6 +436,7 @@ export const fmsApi = {
   verifyExpense: (id: string | number) =>
     apiRequest<unknown>(`/expenses/${id}/verify`, {
       method: "PATCH",
+      body: { verified: true },
     }),
 }
 

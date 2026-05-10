@@ -67,8 +67,17 @@ const budgetSchema = z.object({
 
 type BudgetFormValues = z.infer<typeof budgetSchema>
 
+import { useRouter } from "next/navigation"
+
 export default function BudgetsPage() {
-  const { role, hasPermission } = useRole()
+  const { role, config, hasPermission } = useRole()
+  const router = useRouter()
+
+  React.useEffect(() => {
+    if (!config.navigation.includes("Budgets")) {
+      router.push("/dashboard")
+    }
+  }, [config, router])
   
   const canCreateBudgets = hasPermission("budgets.create")
   const canUpdateBudgets = hasPermission("budgets.update")
