@@ -70,6 +70,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { body, headers, skipAuth, ...requestInit } = options
   const requestHeaders = new Headers(headers)
+  requestHeaders.set("Accept", "application/json")
 
   if (!skipAuth) {
     const token = getAuthToken()

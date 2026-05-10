@@ -330,7 +330,7 @@ export const fmsApi = {
   reportBudgets: () => apiRequest<unknown>("/reports/budgets"),
   reportExpenses: () => apiRequest<unknown>("/reports/expenses"),
   reportCashRequests: () => apiRequest<unknown>("/reports/cash-requests"),
-  getBudgets: () => apiRequest<unknown>("/budgets/"),
+  getBudgets: () => apiRequest<unknown>("/budgets"),
   getSpecificBudget: (id: string | number) =>
     apiRequest<unknown>(`/budgets/${id}`),
   createBudget: (payload: BudgetInput) => {
@@ -340,7 +340,7 @@ export const fmsApi = {
         ? payload.userId
         : "000000000000000000000000"
     
-    return apiRequest<unknown>("/budgets/", {
+    return apiRequest<unknown>("/budgets", {
       method: "POST",
       body: {
         id: generateFmsId(),
@@ -430,7 +430,7 @@ export const fmsApi = {
         incurred_at: payload.incurred_at,
       },
     }),
-  getExpenses: () => apiRequest<unknown>("/expenses/"),
+  getExpenses: () => apiRequest<unknown>("/expenses"),
   getSpecificExpense: (id: string | number) =>
     apiRequest<unknown>(`/expenses/${id}`),
   /**
