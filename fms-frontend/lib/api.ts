@@ -106,6 +106,9 @@ export async function apiRequest<T>(
     throw new ApiError(message, response.status, payload)
   }
 
+  // Debug: log raw API responses so we can see the envelope shape
+  console.log(`[API] Response from ${path}:`, payload)
+
   return payload as T
 }
 
@@ -124,10 +127,23 @@ export function unwrapList<T>(payload: unknown): T[] {
 
   if (payload && typeof payload === "object") {
     const candidate = payload as Record<string, unknown>
-    const keys = ["data", "items", "results", "payload"]
 
-    for (const key of keys) {
+    // Named keys — ordered from most to least specific
+    const knownKeys = [
+      "data", "items", "results", "payload",
+      "budgets", "expenses", "cash_requests", "cashRequests",
+      "users", "list", "records", "rows", "collection",
+    ]
+
+    for (const key of knownKeys) {
       const value = candidate[key]
+      if (Array.isArray(value)) {
+        return value as T[]
+      }
+    }
+
+    // Last resort: return the first array-valued property found
+    for (const value of Object.values(candidate)) {
       if (Array.isArray(value)) {
         return value as T[]
       }
