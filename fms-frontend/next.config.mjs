@@ -1,13 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/fms-proxy/:path*",
-        destination: "https://fms-app-production-5b62.up.railway.app/:path*",
-      },
-    ]
-  },
+  // /fms-proxy/* is handled by the App Router catch-all route handler at
+  // app/fms-proxy/[...path]/route.ts which runs in the Node.js runtime
+  // (full DNS resolution, all HTTP methods).
 }
 
 export default nextConfig

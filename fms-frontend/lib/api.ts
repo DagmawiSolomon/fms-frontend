@@ -8,8 +8,8 @@ export const API_BASE_URL =
   typeof window !== "undefined"
     ? window.location.origin + "/fms-proxy/"
     : (process.env.NEXT_PUBLIC_FMS_API_BASE_URL ??
-        "https://fms-app-production-5b62.up.railway.app")
-        .replace(/\/$/, "") + "/"
+      "https://fms-app-production-5b62.up.railway.app")
+      .replace(/\/$/, "") + "/"
 
 export class ApiError extends Error {
   status: number
@@ -17,7 +17,6 @@ export class ApiError extends Error {
 
   constructor(message: string, status: number, details: unknown) {
     super(message)
-    this.name = "ApiError"
     this.status = status
     this.details = details
   }
