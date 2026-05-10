@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
       method: request.method,
       headers: forwardHeaders,
       body: hasBody && body && body.length > 0 ? body : undefined,
+      redirect: "follow", // follow redirects but forward the final response
     })
 
     const responseHeaders = new Headers()
