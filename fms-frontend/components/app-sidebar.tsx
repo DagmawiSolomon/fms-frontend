@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible="icon"
       {...props}
       className={cn(
-        "border-r border-sidebar-border/70 bg-sidebar bg-noise",
+        "border-r border-sidebar-border/70 bg-sidebar",
         props.className
       )}
     >

@@ -74,9 +74,10 @@ function AuthContent() {
 
   const registerMutation = useMutation({
     mutationFn: (values: RegisterValues) => fmsApi.registerUser(values),
-    onSuccess: (payload) => {
+    onSuccess: (payload, variables) => {
       toast.success("Account created successfully. Please log in.")
       setMode("login")
+      loginForm.setValue("email", variables.email)
     },
     onError: () => {
       toast.error("Registration failed. Email might already be in use.")
@@ -103,7 +104,7 @@ function AuthContent() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex w-full flex-col items-center justify-center lg:w-[35%] bg-sidebar bg-noise text-sidebar-foreground p-6 sm:p-8">
+      <div className="flex w-full flex-col items-center justify-center lg:w-[35%] bg-sidebar text-sidebar-foreground p-6 sm:p-8">
         <div className="w-full max-w-sm flex flex-col gap-4">
           <div className="flex flex-col gap-0 text-center lg:text-left transition-all duration-300">
             <h1 className="text-3xl tracking-tight text-foreground font-heading">
