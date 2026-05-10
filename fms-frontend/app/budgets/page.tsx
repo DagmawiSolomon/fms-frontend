@@ -8,11 +8,13 @@ import { z } from "zod"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ArrowUpRight,
   CheckIcon,
   PlusIcon,
   SearchIcon,
   XIcon,
 } from "lucide-react"
+import Link from "next/link"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { cn } from "@/lib/utils"
@@ -51,8 +53,8 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeBudgets } from "@/lib/fms"
-import type { FmsBudget, FmsBudgetStatus } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeUsers } from "@/lib/fms"
+import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
 
 
 const budgetSchema = z.object({
@@ -79,13 +81,14 @@ export default function BudgetsPage() {
       router.push("/dashboard")
     }
   }, [config, router])
-  
+
   const canCreateBudgets = hasPermission("budgets.create")
   const canUpdateBudgets = hasPermission("budgets.update")
   const canApproveBudgets = hasPermission("budgets.approve")
   const canRejectBudgets = hasPermission("budgets.reject")
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
+  const [usersMap, setUsersMap] = React.useState<Record<string, FmsSessionUser>>({})
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
@@ -95,8 +98,32 @@ export default function BudgetsPage() {
   const fetchBudgets = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = await fmsApi.getBudgets()
-      setBudgets(normalizeBudgets(data))
+      const [budgetsData, usersData] = await Promise.all([
+        fmsApi.getBudgets(),
+        fmsApi.getUsers().catch(() => []) // Gracefully handle if users fetch fails
+      ])
+      
+      const normalizedBudgets = normalizeBudgets(budgetsData)
+      const normalizedUsers = normalizeUsers(usersData)
+      
+      const uMap: Record<string, FmsSessionUser> = {}
+      // Add current user as first entry in the map
+      if (user?.id) {
+        uMap[String(user.id)] = {
+          id: user.id,
+          name: user.name ?? "Unknown User",
+          email: user.email ?? "No email provided",
+          role: role as any,
+          department: user.department || "General"
+        }
+      }
+      
+      normalizedUsers.forEach(u => {
+        uMap[String(u.id)] = u
+      })
+      
+      setUsersMap(uMap)
+      setBudgets(normalizedBudgets)
     } catch (error) {
       console.error("Failed to fetch budgets:", error)
     } finally {
@@ -109,8 +136,8 @@ export default function BudgetsPage() {
   }, [fetchBudgets])
 
   const filteredBudgets = budgets.filter(budget => {
-    const matchesSearch = (budget.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
-                         String(budget.id).toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = (budget.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      String(budget.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = deptFilter === "all" || budget.department === deptFilter
     return matchesSearch && matchesDept
   })
@@ -221,8 +248,8 @@ export default function BudgetsPage() {
           <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search budgets..." 
+              <Input
+                placeholder="Search budgets..."
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -254,7 +281,7 @@ export default function BudgetsPage() {
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Spent</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Owner</TableHead>
+                  {role !== "manager" && <TableHead className="text-xs text-muted-foreground/50">Owner</TableHead>}
                   {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -264,9 +291,6 @@ export default function BudgetsPage() {
                     <TableRow key={budget.id}>
                       <TableCell>
                         <div className="text-sm font-normal text-foreground">{budget.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {budget.period || "No period"}
-                        </div>
                       </TableCell>
                       <TableCell>{budget.department || "Unassigned"}</TableCell>
                       <TableCell className="text-right tabular-nums">
@@ -278,7 +302,25 @@ export default function BudgetsPage() {
                       <TableCell>
                         <StatusBadge status={budget.status} />
                       </TableCell>
-                      <TableCell>{budget.owner || "System"}</TableCell>
+                      {role !== "manager" && (
+                        <TableCell>
+                          <div className="flex items-center justify-between">
+                            <span className="truncate max-w-[120px]">
+                              {budget.owner && usersMap[budget.owner] 
+                                ? usersMap[budget.owner].name 
+                                : budget.owner || "System"}
+                            </span>
+                            {budget.owner && (
+                              <Link href={`/profile/${budget.owner}`} className="ml-2">
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                  <ArrowUpRight className="size-3" />
+                                  <span className="sr-only">View Profile</span>
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                       {showActions && (
                         <TableCell>
                           <div className="flex justify-end gap-2">
@@ -377,6 +419,8 @@ function BudgetDialog({
     },
   })
 
+  const [isEditingPeriod, setIsEditingPeriod] = React.useState(false)
+
   React.useEffect(() => {
     if (!open) {
       form.reset({
@@ -389,6 +433,7 @@ function BudgetDialog({
         status: "pending",
         notes: "",
       })
+      setIsEditingPeriod(false)
       return
     }
 
@@ -403,6 +448,14 @@ function BudgetDialog({
         status: budget.status,
         notes: budget.notes ?? "",
       })
+    } else {
+      // Auto-calculate current quarter and year for new budget
+      const now = new Date()
+      const q = Math.floor(now.getMonth() / 3) + 1
+      const y = now.getFullYear()
+      const p = `Q${q}-${y}`
+      form.setValue("period", p)
+      form.setValue("year", y)
     }
   }, [budget, form, open])
 
@@ -449,63 +502,89 @@ function BudgetDialog({
                 />
               }
             />
-            <Field
-              label="Spent"
-              error={form.formState.errors.spent?.message}
-              control={
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  {...form.register("spent", { valueAsNumber: true })}
-                />
-              }
-            />
+            {budget && (
+              <Field
+                label="Spent"
+                error={form.formState.errors.spent?.message}
+                control={
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...form.register("spent", { valueAsNumber: true })}
+                  />
+                }
+              />
+            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
-              label="Period"
+              label="Period (Quarter)"
               error={form.formState.errors.period?.message}
               control={
-                <Input placeholder="FY2026 / Q1" {...form.register("period")} />
-              }
-            />
-            <Field
-              label="Year"
-              error={form.formState.errors.year?.message}
-              control={
-                <Input type="number" {...form.register("year", { valueAsNumber: true })} />
-              }
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Status"
-              error={form.formState.errors.status?.message}
-              control={
-                <Select
-                  value={form.watch("status")}
-                  onValueChange={(value) =>
-                    form.setValue(
-                      "status",
-                      value as BudgetFormValues["status"],
-                      { shouldValidate: true }
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={form.watch("period")?.split("-")[0] || "Q1"}
+                    onValueChange={(v) => {
+                      const y = form.getValues("period")?.split("-")[1] || new Date().getFullYear()
+                      form.setValue("period", `${v}-${y}`)
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Q1">Q1</SelectItem>
+                      <SelectItem value="Q2">Q2</SelectItem>
+                      <SelectItem value="Q3">Q3</SelectItem>
+                      <SelectItem value="Q4">Q4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    value={form.watch("period")?.split("-")[1] || new Date().getFullYear()}
+                    onChange={(e) => {
+                      const y = e.target.value
+                      const q = form.getValues("period")?.split("-")[0] || "Q1"
+                      form.setValue("period", `${q}-${y}`)
+                      form.setValue("year", parseInt(y))
+                    }}
+                  />
+                </div>
               }
             />
           </div>
+          {budget && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label="Status"
+                error={form.formState.errors.status?.message}
+                control={
+                  <Select
+                    value={form.watch("status")}
+                    onValueChange={(value) =>
+                      form.setValue(
+                        "status",
+                        value as BudgetFormValues["status"],
+                        { shouldValidate: true }
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+              />
+            </div>
+          )}
           <Field
             label="Notes"
             error={form.formState.errors.notes?.message}

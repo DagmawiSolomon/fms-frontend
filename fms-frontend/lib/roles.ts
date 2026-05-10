@@ -78,7 +78,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   manager: {
     name: "Department Manager",
     description: "Budget submission, approval, and cash request verification.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
