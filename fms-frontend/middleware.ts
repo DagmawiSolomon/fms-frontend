@@ -61,6 +61,8 @@ export async function middleware(request: NextRequest) {
     })
 
     const responseBody = await upstream.text()
+    const contentType = upstream.headers.get("content-type")
+    console.log(`[fms-proxy] Upstream response: ${upstream.status} ${contentType} for ${targetUrl}`)
 
     return new NextResponse(responseBody, {
       status: upstream.status,
