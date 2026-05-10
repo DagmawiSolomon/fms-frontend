@@ -8,13 +8,11 @@ import { z } from "zod"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  ArrowUpRight,
   CheckIcon,
   PlusIcon,
   SearchIcon,
   XIcon,
 } from "lucide-react"
-import Link from "next/link"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { cn } from "@/lib/utils"
@@ -53,7 +51,7 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeBudgets, normalizeUsers } from "@/lib/fms"
+import { fmsApi, normalizeBudgets } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
 
 
@@ -88,7 +86,6 @@ export default function BudgetsPage() {
   const canRejectBudgets = hasPermission("budgets.reject")
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
-  const [usersMap, setUsersMap] = React.useState<Record<string, FmsSessionUser>>({})
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
@@ -98,31 +95,8 @@ export default function BudgetsPage() {
   const fetchBudgets = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [budgetsData, usersData] = await Promise.all([
-        fmsApi.getBudgets(),
-        fmsApi.getUsers().catch(() => []) // Gracefully handle if users fetch fails
-      ])
-      
+      const budgetsData = await fmsApi.getBudgets()
       const normalizedBudgets = normalizeBudgets(budgetsData)
-      const normalizedUsers = normalizeUsers(usersData)
-      
-      const uMap: Record<string, FmsSessionUser> = {}
-      // Add current user as first entry in the map
-      if (user?.id) {
-        uMap[String(user.id)] = {
-          id: user.id,
-          name: user.name ?? "Unknown User",
-          email: user.email ?? "No email provided",
-          role: role as any,
-          department: user.department || "General"
-        }
-      }
-      
-      normalizedUsers.forEach(u => {
-        uMap[String(u.id)] = u
-      })
-      
-      setUsersMap(uMap)
       setBudgets(normalizedBudgets)
     } catch (error) {
       console.error("Failed to fetch budgets:", error)
@@ -281,7 +255,6 @@ export default function BudgetsPage() {
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Spent</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  {role !== "manager" && <TableHead className="text-xs text-muted-foreground/50">Owner</TableHead>}
                   {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -302,25 +275,6 @@ export default function BudgetsPage() {
                       <TableCell>
                         <StatusBadge status={budget.status} />
                       </TableCell>
-                      {role !== "manager" && (
-                        <TableCell>
-                          <div className="flex items-center justify-between">
-                            <span className="truncate max-w-[120px]">
-                              {budget.owner && usersMap[budget.owner] 
-                                ? usersMap[budget.owner].name 
-                                : budget.owner || "System"}
-                            </span>
-                            {budget.owner && (
-                              <Link href={`/profile/${budget.owner}`} className="ml-2">
-                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                  <ArrowUpRight className="size-3" />
-                                  <span className="sr-only">View Profile</span>
-                                </Button>
-                              </Link>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
                       {showActions && (
                         <TableCell>
                           <div className="flex justify-end gap-2">
@@ -362,7 +316,7 @@ export default function BudgetsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 7 : 6} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
                       No budgets found.
                     </TableCell>
                   </TableRow>

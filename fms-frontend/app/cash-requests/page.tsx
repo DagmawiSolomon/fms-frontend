@@ -102,13 +102,20 @@ export default function CashRequestsPage() {
           (req) => req.requestedBy != null && String(req.requestedBy).toLowerCase() === myId
         )
       }
+      // Debug: help track why data might disappear
+      if (normalized.length > 0 && canViewSelf && !canViewAll) {
+        console.log(`[CashRequests] Filtering for user ID: ${user?.id}. Total before filter: ${normalized.length}`);
+        const sampleReq = normalized[0];
+        console.log(`[CashRequests] Sample request ID: ${sampleReq.id}, requestedBy: ${sampleReq.requestedBy}`);
+      }
+
       setRequests(normalized)
     } catch (error) {
       console.error("Failed to fetch cash requests:", error)
     } finally {
       setLoading(false)
     }
-  }, [canViewAll, canViewSelf, user?.name])
+  }, [canViewAll, canViewSelf, user?.id])
 
   React.useEffect(() => {
     fetchRequests()
@@ -236,21 +243,28 @@ export default function CashRequestsPage() {
                 <TableRow>
                   <TableHead className="text-xs text-muted-foreground/50">Request</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Purpose</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Requested By</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.length ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <div className="size-4 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+                        <span>Loading requests...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRequests.length ? (
                   filteredRequests.map((req) => (
                     <TableRow key={req.id}>
                       <TableCell className="text-sm font-normal text-foreground">{req.title}</TableCell>
                       <TableCell className="max-w-[250px] truncate text-muted-foreground">
                         {req.purpose || "No details"}
                       </TableCell>
-                      <TableCell>{req.requestedBy || "Unknown"}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(req.amount)}
                       </TableCell>
@@ -298,7 +312,7 @@ export default function CashRequestsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
                       No cash requests found.
                     </TableCell>
                   </TableRow>

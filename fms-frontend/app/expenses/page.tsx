@@ -113,6 +113,13 @@ export default function ExpensesPage() {
           (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
         )
       }
+      // Debug: help track why data might disappear
+      if (normalized.length > 0 && !canViewAll) {
+        console.log(`[Expenses] Filtering for user ID: ${user?.id}. Total before filter: ${normalized.length}`);
+        const sampleExp = normalized[0];
+        console.log(`[Expenses] Sample expense ID: ${sampleExp.id}, submitter: ${sampleExp.submitter}`);
+      }
+
       setExpenses(normalized)
     } catch (error) {
       console.error("Failed to fetch expenses:", error)
@@ -261,14 +268,22 @@ export default function ExpensesPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Description</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Category</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
-                  {canViewAll && <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>}
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredExpenses.length ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <div className="size-4 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+                        <span>Loading expenses...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredExpenses.length ? (
                   filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell className="">
@@ -279,7 +294,6 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell>{expense.category}</TableCell>
                       <TableCell>{expense.date}</TableCell>
-                      {canViewAll && <TableCell>{expense.submitter || "Unknown"}</TableCell>}
                       <TableCell className="text-right">
                         {formatMoney(expense.amount)}
                       </TableCell>
@@ -327,7 +341,7 @@ export default function ExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? (canViewAll ? 7 : 6) : (canViewAll ? 6 : 5)} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
