@@ -130,12 +130,18 @@ export default function CashRequestsPage() {
 
   const handleCreate = async (values: RequestFormValues) => {
     try {
-      await fmsApi.createCashRequest({
+      const response = await fmsApi.createCashRequest({
         purpose: values.purpose,
         amount: values.amount,
       })
       toast.success("Cash request submitted successfully")
       setDialogOpen(false)
+      
+      const newRequests = normalizeCashRequests([response])
+      if (newRequests.length > 0) {
+        setRequests((prev) => [newRequests[0], ...prev])
+      }
+      
       fetchRequests()
     } catch (error) {
       // Handled in apiRequest

@@ -73,8 +73,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     fetchProfile()
   }, [resolvedParams.id])
 
-  const name = profile?.name ?? formatNameFromSlug(resolvedParams.id)
-  const email = profile?.email ?? `${resolvedParams.id.replace("-", ".")}@fms.inc`
+  const name = profile?.name ?? (resolvedParams.id === "me" ? "My Profile" : `User ${resolvedParams.id.slice(-6)}`)
+  const email = profile?.email ?? (resolvedParams.id === "me" ? "Loading..." : "Email not available")
 
   const stats = {
     totalSpent: 0,

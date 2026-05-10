@@ -57,12 +57,10 @@ import type { FmsExpense, FmsBudget } from "@/lib/fms"
 
 
 const expenseSchema = z.object({
-  title: z.string().min(2, "Title / merchant name is required"),
+  description: z.string().min(2, "Description is required"),
   category: z.string().min(2, "Category is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
-  incurred_at: z.string().min(8, "Date is required"),
   budget_id: z.string().min(1, "Budget is required"),
-  description: z.string().optional(),
   receipt: z.any().optional(),
 })
 
@@ -79,7 +77,7 @@ export default function ExpensesPage() {
       router.push("/dashboard")
     }
   }, [config, router])
-  
+
   const canCreateExpense = hasPermission("expenses.create")
   const canApproveExpense = hasPermission("expenses.approve")
   const canVerifyExpense = hasPermission("expenses.verify")
@@ -135,8 +133,8 @@ export default function ExpensesPage() {
   }, { total: 0, pending: 0, approved: 0 })
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = (expense.merchant?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
-                         String(expense.id).toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = (expense.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      String(expense.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -144,12 +142,10 @@ export default function ExpensesPage() {
   const handleCreate = async (values: ExpenseFormValues) => {
     try {
       const response = await fmsApi.createExpense({
-        title: values.title,
+        description: values.description,
         amount: values.amount,
         category: values.category,
-        incurred_at: new Date(values.incurred_at).toISOString(),
         budget_id: values.budget_id || null,
-        description: values.description ?? "",
       })
 
       // Upload receipt if provided and we got an ID back
@@ -162,6 +158,13 @@ export default function ExpensesPage() {
 
       toast.success("Expense submitted successfully")
       setDialogOpen(false)
+      
+      const newExpenses = normalizeExpenses([response])
+      if (newExpenses.length > 0) {
+        setExpenses((prev) => [newExpenses[0], ...prev])
+      }
+      
+      // Also fetch in the background to ensure consistency
       fetchExpenses()
     } catch (error) {
       // Handled in apiRequest
@@ -225,8 +228,8 @@ export default function ExpensesPage() {
           <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search merchant or ID..." 
+              <Input
+                placeholder="Search description or ID..."
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -239,10 +242,13 @@ export default function ExpensesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Software">Software</SelectItem>
                   <SelectItem value="Travel">Travel</SelectItem>
                   <SelectItem value="Meals">Meals</SelectItem>
+                  <SelectItem value="Software">Software</SelectItem>
                   <SelectItem value="Hardware">Hardware</SelectItem>
+                  <SelectItem value="Stationery">Stationery</SelectItem>
+                  <SelectItem value="Office">Office Supplies</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -252,10 +258,10 @@ export default function ExpensesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs text-muted-foreground/50">Merchant</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Description</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Category</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
+                  {canViewAll && <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>}
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
@@ -266,14 +272,14 @@ export default function ExpensesPage() {
                   filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell className="">
-                        {expense.merchant}
+                        {expense.description}
                         {expense.receiptUrl && (
                           <span className="ml-2 text-xs text-muted-foreground">(Receipt attached)</span>
                         )}
                       </TableCell>
                       <TableCell>{expense.category}</TableCell>
                       <TableCell>{expense.date}</TableCell>
-                      <TableCell>{expense.submitter || "Unknown"}</TableCell>
+                      {canViewAll && <TableCell>{expense.submitter || "Unknown"}</TableCell>}
                       <TableCell className="text-right">
                         {formatMoney(expense.amount)}
                       </TableCell>
@@ -321,7 +327,7 @@ export default function ExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 7 : 6} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? (canViewAll ? 7 : 6) : (canViewAll ? 6 : 5)} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
@@ -359,24 +365,20 @@ function ExpenseDialog({
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
     defaultValues: {
-      title: "",
+      description: "",
       category: "",
       amount: 0,
-      incurred_at: new Date().toISOString().split("T")[0],
       budget_id: "",
-      description: "",
     },
   })
 
   React.useEffect(() => {
     if (!open) {
       form.reset({
-        title: "",
+        description: "",
         category: "",
         amount: 0,
-        incurred_at: new Date().toISOString().split("T")[0],
         budget_id: "",
-        description: "",
       })
     }
   }, [form, open])
@@ -399,10 +401,10 @@ function ExpenseDialog({
           )}
         >
           <Field
-            label="Title / Merchant"
-            error={form.formState.errors.title?.message}
+            label="Description"
+            error={form.formState.errors.description?.message}
             control={
-              <Input placeholder="Amazon, Delta, Office supplies..." {...form.register("title")} />
+              <Input placeholder="Office supplies, Travel to NY..." {...form.register("description")} />
             }
           />
           <div className="grid gap-4 md:grid-cols-2">
@@ -419,12 +421,18 @@ function ExpenseDialog({
               }
             />
             <Field
-              label="Date incurred"
-              error={form.formState.errors.incurred_at?.message}
+              label="Receipt (Optional)"
               control={
                 <Input
-                  type="date"
-                  {...form.register("incurred_at")}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      form.setValue("receipt", file)
+                      toast.success("Receipt attached")
+                    }
+                  }}
                 />
               }
             />
@@ -447,9 +455,7 @@ function ExpenseDialog({
                   <SelectContent>
                     {budgets.map((budget) => (
                       <SelectItem key={String(budget.id)} value={String(budget.id)}>
-                        {budget.department
-                          ? `${budget.department} — ${budget.period ?? budget.id}`
-                          : String(budget.id)}
+                        {budget.name || String(budget.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -457,55 +463,32 @@ function ExpenseDialog({
               }
             />
             <Field
-              label="Receipt (Optional)"
+              label="Category"
+              error={form.formState.errors.category?.message}
               control={
-                <Input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      form.setValue("receipt", file)
-                      toast.success("Receipt attached")
-                    }
-                  }}
-                />
+                <Select
+                  value={form.watch("category")}
+                  onValueChange={(value) =>
+                    form.setValue("category", value, { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Travel">Travel</SelectItem>
+                    <SelectItem value="Meals">Meals</SelectItem>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="Hardware">Hardware</SelectItem>
+                    <SelectItem value="Stationery">Stationery</SelectItem>
+                    <SelectItem value="Office">Office Supplies</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               }
             />
           </div>
-          <Field
-            label="Category"
-            error={form.formState.errors.category?.message}
-            control={
-              <Select
-                value={form.watch("category")}
-                onValueChange={(value) =>
-                  form.setValue("category", value, { shouldValidate: true })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Travel">Travel</SelectItem>
-                  <SelectItem value="Meals">Meals</SelectItem>
-                  <SelectItem value="Software">Software</SelectItem>
-                  <SelectItem value="Hardware">Hardware</SelectItem>
-                  <SelectItem value="Office">Office Supplies</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            }
-          />
-          <Field
-            label="Description (Optional)"
-            control={
-              <Input
-                placeholder="Additional details..."
-                {...form.register("description")}
-              />
-            }
-          />
+
 
           <DialogFooter>
             <Button

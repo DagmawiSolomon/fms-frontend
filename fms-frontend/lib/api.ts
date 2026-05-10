@@ -91,6 +91,7 @@ export async function apiRequest<T>(
   const response = await fetch(joinPath(path), {
     ...requestInit,
     mode: "cors",
+    cache: "no-store",
     body: requestBody,
     headers: requestHeaders,
   })
@@ -99,10 +100,15 @@ export async function apiRequest<T>(
   const payload = text ? safeParseJson(text) : null
 
   if (!response.ok) {
-    const message = extractErrorMessage(
-      payload,
-      `Request failed with status ${response.status}`
-    )
+    const isServerError = response.status >= 500;
+    const fallbackMessage = isServerError 
+      ? "An unexpected error occurred. Please try again later." 
+      : `Request failed with status ${response.status}`;
+      
+    const message = isServerError 
+      ? fallbackMessage 
+      : extractErrorMessage(payload, fallbackMessage);
+      
     toast.error(message)
     throw new ApiError(message, response.status, payload)
   }

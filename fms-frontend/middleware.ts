@@ -6,10 +6,35 @@ const FMS_BASE = "https://fms-app-production-5b62.up.railway.app"
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
-  // Only proxy /fms-proxy/* requests
+  // 1. Auth Protection Logic
   if (!pathname.startsWith("/fms-proxy")) {
+    const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password"
+    const token = request.cookies.get("fms_token")?.value
+
+    if (!isAuthPage) {
+      // If not logged in and trying to access a protected page
+      if (!token) {
+        const loginUrl = new URL("/login", request.url)
+        return NextResponse.redirect(loginUrl)
+      }
+      
+      // If visiting root, redirect to dashboard
+      if (pathname === "/") {
+        const dashboardUrl = new URL("/dashboard", request.url)
+        return NextResponse.redirect(dashboardUrl)
+      }
+    } else {
+      // If logged in and trying to access an auth page
+      if (token) {
+        const dashboardUrl = new URL("/dashboard", request.url)
+        return NextResponse.redirect(dashboardUrl)
+      }
+    }
+
     return NextResponse.next()
   }
+
+  // 2. Proxy Logic for /fms-proxy/*
 
   // Strip the /fms-proxy prefix to get the upstream path
   const upstreamPath = pathname.replace(/^\/fms-proxy/, "")
@@ -82,5 +107,16 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/fms-proxy/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - auth-bridge (Local auth endpoints)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - static media extensions
+     */
+    '/((?!api|auth-bridge|_next/static|_next/image|favicon.ico|.*\\.(?:mp4|png|jpg|jpeg|svg|gif|webp)$).*)',
+  ],
 }

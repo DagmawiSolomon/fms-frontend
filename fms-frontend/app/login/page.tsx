@@ -75,12 +75,8 @@ function AuthContent() {
   const registerMutation = useMutation({
     mutationFn: (values: RegisterValues) => fmsApi.registerUser(values),
     onSuccess: (payload) => {
-      const token = extractAuthToken(payload)
-      if (token) {
-        setAuthToken(token)
-      }
-      toast.success("Account created successfully")
-      router.push("/dashboard")
+      toast.success("Account created successfully. Please log in.")
+      setMode("login")
     },
     onError: () => {
       toast.error("Registration failed. Email might already be in use.")
