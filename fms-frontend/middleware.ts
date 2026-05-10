@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
   // Only proxy /fms-proxy/* requests
-  if (!pathname.startsWith("/fms-proxy/")) {
+  if (!pathname.startsWith("/fms-proxy")) {
     return NextResponse.next()
   }
 

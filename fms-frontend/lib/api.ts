@@ -33,9 +33,9 @@ function joinPath(path: string) {
     return path
   }
 
-  // If path starts with /, remove it to avoid reset to root if API_BASE_URL has a subpath
-  const cleanPath = path.startsWith("/") ? path.slice(1) : path
-  return new URL(cleanPath, API_BASE_URL).toString()
+  const base = API_BASE_URL.replace(/\/$/, "")
+  const cleanPath = path.startsWith("/") ? path : `/${path}`
+  return `${base}${cleanPath}`
 }
 
 function extractErrorMessage(payload: unknown, fallback: string) {
