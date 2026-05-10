@@ -52,8 +52,8 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeExpenses } from "@/lib/fms"
-import type { FmsExpense } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets } from "@/lib/fms"
+import type { FmsExpense, FmsBudget } from "@/lib/fms"
 
 
 const expenseSchema = z.object({
@@ -85,6 +85,7 @@ export default function ExpensesPage() {
   const canVerifyExpense = hasPermission("expenses.verify")
 
   const [expenses, setExpenses] = React.useState<FmsExpense[]>([])
+  const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -95,18 +96,23 @@ export default function ExpensesPage() {
   const fetchExpenses = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = await fmsApi.getExpenses()
-      let normalized = normalizeExpenses(data)
+      const [expenseData, budgetData] = await Promise.all([
+        fmsApi.getExpenses(),
+        fmsApi.getBudgets()
+      ])
+      
+      let normalized = normalizeExpenses(expenseData)
       // Employees only see their own expenses
-      if (!canViewAll && user?.name) {
+      if (!canViewAll && user?.id) {
+        const myId = String(user.id).toLowerCase()
         normalized = normalized.filter(
-          (exp) =>
-            exp.submitter?.toLowerCase() === user.name.toLowerCase()
+          (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
         )
       }
       setExpenses(normalized)
+      setBudgets(normalizeBudgets(budgetData))
     } catch (error) {
-      console.error("Failed to fetch expenses:", error)
+      console.error("Failed to fetch expenses or budgets:", error)
     } finally {
       setLoading(false)
     }
@@ -325,6 +331,7 @@ export default function ExpensesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleCreate}
+        budgets={budgets}
       />
     </DashboardShell>
   )
@@ -334,10 +341,12 @@ function ExpenseDialog({
   open,
   onOpenChange,
   onSubmit,
+  budgets,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: ExpenseFormValues) => void
+  budgets: FmsBudget[]
 }) {
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormValues>,
@@ -426,8 +435,13 @@ function ExpenseDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select a budget" />
                   </SelectTrigger>
-                  <SelectContent>
+                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
+                    {budgets.map((budget) => (
+                      <SelectItem key={budget.id} value={String(budget.id)}>
+                        {budget.name || `Budget ${budget.id}`} ({budget.department})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               }

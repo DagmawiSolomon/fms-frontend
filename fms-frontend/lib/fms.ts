@@ -113,8 +113,10 @@ export type BudgetInput = {
   amount: number
   spent: number
   period: string
+  year: number
   status: FmsBudgetStatus
   notes?: string
+  userId?: string
 }
 
 export type CashRequestInput = {
@@ -178,7 +180,7 @@ export function normalizeBudgets(payload: unknown): FmsBudget[] {
       amount: numberValue(budget.amount ?? budget.totalAmount),
       spent: numberValue(budget.spent ?? budget.usedAmount ?? 0),
       status: normalizeBudgetStatus(budget.status),
-      owner: (budget.owner ?? budget.createdBy ?? null) as string | null,
+      owner: (budget.owner ?? budget.createdBy ?? budget.submitted_by ?? null) as string | null,
       period: (budget.period ?? budget.fiscalYear ?? budget.month ?? null) as
         | string
         | null,
@@ -281,7 +283,7 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
       budgetId: (expense.budgetId ?? expense.budget_id ?? null) as string | number | null,
       requestId: (expense.requestId ?? expense.request_id ?? null) as string | number | null,
       date: (expense.date ?? expense.created_at ?? expense.incurred_at ?? null) as string | null,
-      submitter: (expense.submitter ?? expense.user_name ?? expense.created_by ?? null) as string | null,
+      submitter: (expense.submitter ?? expense.user_name ?? expense.created_by ?? expense.submitted_by ?? null) as string | null,
     }
   })
 }
@@ -328,16 +330,30 @@ export const fmsApi = {
   getBudgets: () => apiRequest<unknown>("/budgets/"),
   getSpecificBudget: (id: string | number) =>
     apiRequest<unknown>(`/budgets/${id}`),
-  createBudget: (payload: BudgetInput) =>
-    apiRequest<unknown>("/budgets/", {
+  createBudget: (payload: BudgetInput) => {
+    const now = new Date().toISOString()
+    const validUserId =
+      payload.userId && /^[a-fA-F0-9]{24}$/.test(payload.userId)
+        ? payload.userId
+        : "000000000000000000000000"
+    
+    return apiRequest<unknown>("/budgets/", {
       method: "POST",
       body: {
-        name: payload.name,
+        id: generateFmsId(),
         department: payload.department,
         amount: payload.amount,
-        period: payload.period
+        period: payload.period,
+        year: payload.year || new Date().getFullYear(),
+        submitted_by: validUserId,
+        status: payload.status || "pending",
+        spent_amount: payload.spent || 0,
+        remaining_balance: payload.amount - (payload.spent || 0),
+        created_at: now,
+        updated_at: now,
       },
-    }),
+    })
+  },
   updateBudget: (id: string | number, payload: Partial<BudgetInput>) =>
     apiRequest<unknown>(`/budgets/${id}`, {
       method: "PATCH",

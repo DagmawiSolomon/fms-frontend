@@ -61,6 +61,7 @@ const budgetSchema = z.object({
   amount: z.coerce.number().positive("Amount must be greater than zero"),
   spent: z.coerce.number().min(0, "Spent value cannot be negative"),
   period: z.string().min(2, "Period is required"),
+  year: z.coerce.number().int().min(2020, "Invalid year"),
   status: z.enum(["draft", "pending", "approved", "rejected"]),
   notes: z.string().optional(),
 })
@@ -70,7 +71,7 @@ type BudgetFormValues = z.infer<typeof budgetSchema>
 import { useRouter } from "next/navigation"
 
 export default function BudgetsPage() {
-  const { role, config, hasPermission } = useRole()
+  const { user, role, config, hasPermission } = useRole()
   const router = useRouter()
 
   React.useEffect(() => {
@@ -128,7 +129,8 @@ export default function BudgetsPage() {
     try {
       await fmsApi.createBudget({
         ...values,
-        status: values.status as FmsBudgetStatus
+        status: values.status as FmsBudgetStatus,
+        userId: user?.id as string | undefined
       })
       toast.success("Budget created successfully")
       setDialogOpen(false)
@@ -369,6 +371,7 @@ function BudgetDialog({
       amount: 0,
       spent: 0,
       period: "",
+      year: new Date().getFullYear(),
       status: "pending",
       notes: "",
     },
@@ -382,6 +385,7 @@ function BudgetDialog({
         amount: 0,
         spent: 0,
         period: "",
+        year: new Date().getFullYear(),
         status: "pending",
         notes: "",
       })
@@ -395,6 +399,7 @@ function BudgetDialog({
         amount: budget.amount,
         spent: budget.spent,
         period: budget.period ?? "",
+        year: budget.updatedAt ? new Date(budget.updatedAt).getFullYear() : new Date().getFullYear(),
         status: budget.status,
         notes: budget.notes ?? "",
       })
@@ -465,6 +470,15 @@ function BudgetDialog({
                 <Input placeholder="FY2026 / Q1" {...form.register("period")} />
               }
             />
+            <Field
+              label="Year"
+              error={form.formState.errors.year?.message}
+              control={
+                <Input type="number" {...form.register("year", { valueAsNumber: true })} />
+              }
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
             <Field
               label="Status"
               error={form.formState.errors.status?.message}
