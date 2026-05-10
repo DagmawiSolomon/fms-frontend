@@ -57,16 +57,23 @@ import type { FmsCashRequest } from "@/lib/fms"
 
 
 const requestSchema = z.object({
-  title: z.string().min(2, "Request title is required"),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
-  purpose: z.string().min(5, "Purpose is required"),
-  budgetId: z.string().optional(),
+  purpose: z.string().min(5, "Please provide a detailed purpose (min 5 characters)"),
 })
 
 type RequestFormValues = z.infer<typeof requestSchema>
 
+import { useRouter } from "next/navigation"
+
 export default function CashRequestsPage() {
-  const { role, hasPermission } = useRole()
+  const { user, role, config, hasPermission } = useRole()
+  const router = useRouter()
+
+  React.useEffect(() => {
+    if (!config.navigation.includes("Cash Requests")) {
+      router.push("/dashboard")
+    }
+  }, [config, router])
   
   const canCreateRequest = hasPermission("cash_requests.create")
   const canApproveRequest = hasPermission("cash_requests.approve")
@@ -78,17 +85,30 @@ export default function CashRequestsPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
 
+  const canViewSelf = hasPermission("cash_requests.view_self")
+  const canViewAll = hasPermission("cash_requests.view_all")
+
   const fetchRequests = React.useCallback(async () => {
     try {
       setLoading(true)
       const data = await fmsApi.getCashRequests()
-      setRequests(normalizeCashRequests(data))
+      let normalized = normalizeCashRequests(data)
+      // Employees only see their own requests
+      // Compare against user.id (a MongoDB ObjectId) because the API stores
+      // the user's ID in `requested_by`, not their display name.
+      if (canViewSelf && !canViewAll && user?.id) {
+        const myId = String(user.id).toLowerCase()
+        normalized = normalized.filter(
+          (req) => req.requestedBy != null && String(req.requestedBy).toLowerCase() === myId
+        )
+      }
+      setRequests(normalized)
     } catch (error) {
       console.error("Failed to fetch cash requests:", error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [canViewAll, canViewSelf, user?.name])
 
   React.useEffect(() => {
     fetchRequests()
@@ -111,8 +131,8 @@ export default function CashRequestsPage() {
   const handleCreate = async (values: RequestFormValues) => {
     try {
       await fmsApi.createCashRequest({
-        ...values,
-        purpose: values.purpose
+        purpose: values.purpose,
+        amount: values.amount,
       })
       toast.success("Cash request submitted successfully")
       setDialogOpen(false)
@@ -304,7 +324,6 @@ function RequestDialog({
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestSchema) as Resolver<RequestFormValues>,
     defaultValues: {
-      title: "",
       amount: 0,
       purpose: "",
     },
@@ -333,13 +352,6 @@ function RequestDialog({
           )}
         >
           <Field
-            label="Title"
-            error={form.formState.errors.title?.message}
-            control={
-              <Input placeholder="Office equipment" {...form.register("title")} />
-            }
-          />
-          <Field
             label="Amount needed"
             error={form.formState.errors.amount?.message}
             control={
@@ -347,29 +359,9 @@ function RequestDialog({
                 type="number"
                 min="0"
                 step="0.01"
+                placeholder="e.g. 500"
                 {...form.register("amount", { valueAsNumber: true })}
               />
-            }
-          />
-          <Field
-            label="Linked Budget"
-            error={form.formState.errors.budgetId?.message}
-            control={
-              <Select
-                value={form.watch("budgetId")}
-                onValueChange={(value) =>
-                  form.setValue("budgetId", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a budget (Optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (Out-of-budget)</SelectItem>
-                  <SelectItem value="BUD-01">Q1 Engineering Ops</SelectItem>
-                  <SelectItem value="BUD-02">Global Marketing</SelectItem>
-                </SelectContent>
-              </Select>
             }
           />
           <Field
@@ -377,7 +369,7 @@ function RequestDialog({
             error={form.formState.errors.purpose?.message}
             control={
               <Input
-                placeholder="Reason for funding..."
+                placeholder="Reason for the cash advance..."
                 {...form.register("purpose")}
               />
             }
