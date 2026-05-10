@@ -260,9 +260,10 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
       amount: numberValue(request.amount ?? request.total ?? 0),
       status: normalizeCashStatus(request.status),
       purpose: (request.purpose ?? request.reason ?? null) as string | null,
-      requestedBy: (request.requestedBy ?? request.requested_by ?? request.createdBy ?? null) as
-        | string
-        | null,
+      requestedBy: normalizeIdentifier(
+        request.requestedBy ?? request.requested_by ?? request.createdBy ?? null,
+        null
+      ) as string | null,
       budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
     }
   })
@@ -283,7 +284,10 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
       budgetId: (expense.budgetId ?? expense.budget_id ?? null) as string | number | null,
       requestId: (expense.requestId ?? expense.request_id ?? null) as string | number | null,
       date: (expense.date ?? expense.created_at ?? expense.incurred_at ?? null) as string | null,
-      submitter: (expense.submitter ?? expense.user_name ?? expense.created_by ?? expense.submitted_by ?? null) as string | null,
+      submitter: normalizeIdentifier(
+        expense.submitter ?? expense.user_name ?? expense.created_by ?? expense.submitted_by ?? null,
+        null
+      ) as string | null,
     }
   })
 }
@@ -511,8 +515,8 @@ function normalizeExpenseStatus(value: unknown) {
 
 function normalizeIdentifier(
   value: unknown,
-  fallback: string | number
-): string | number {
+  fallback: string | number | null
+): string | number | null {
   if (typeof value === "string" || typeof value === "number") {
     return value
   }
