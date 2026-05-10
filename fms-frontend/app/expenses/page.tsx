@@ -96,27 +96,32 @@ export default function ExpensesPage() {
   const fetchExpenses = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [expenseData, budgetData] = await Promise.all([
+      const [expenseRes, budgetRes] = await Promise.allSettled([
         fmsApi.getExpenses(),
         fmsApi.getBudgets()
       ])
       
-      let normalized = normalizeExpenses(expenseData)
-      // Employees only see their own expenses
-      if (!canViewAll && user?.id) {
-        const myId = String(user.id).toLowerCase()
-        normalized = normalized.filter(
-          (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
-        )
+      if (expenseRes.status === "fulfilled") {
+        let normalized = normalizeExpenses(expenseRes.value)
+        // Employees only see their own expenses
+        if (!canViewAll && user?.id) {
+          const myId = String(user.id).toLowerCase()
+          normalized = normalized.filter(
+            (exp) => exp.submitter != null && String(exp.submitter).toLowerCase() === myId
+          )
+        }
+        setExpenses(normalized)
       }
-      setExpenses(normalized)
-      setBudgets(normalizeBudgets(budgetData))
+
+      if (budgetRes.status === "fulfilled") {
+        setBudgets(normalizeBudgets(budgetRes.value))
+      }
     } catch (error) {
       console.error("Failed to fetch expenses or budgets:", error)
     } finally {
       setLoading(false)
     }
-  }, [canViewAll, user?.name])
+  }, [canViewAll, user?.id])
 
   React.useEffect(() => {
     fetchExpenses()

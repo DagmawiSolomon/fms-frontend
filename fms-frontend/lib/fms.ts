@@ -327,7 +327,7 @@ export const fmsApi = {
   reportBudgets: () => apiRequest<unknown>("/reports/budgets"),
   reportExpenses: () => apiRequest<unknown>("/reports/expenses"),
   reportCashRequests: () => apiRequest<unknown>("/reports/cash-requests"),
-  getBudgets: () => apiRequest<unknown>("/budgets/"),
+  getBudgets: () => apiRequest<unknown>("/budgets"),
   getSpecificBudget: (id: string | number) =>
     apiRequest<unknown>(`/budgets/${id}`),
   createBudget: (payload: BudgetInput) => {
@@ -337,7 +337,7 @@ export const fmsApi = {
         ? payload.userId
         : "000000000000000000000000"
     
-    return apiRequest<unknown>("/budgets/", {
+    return apiRequest<unknown>("/budgets", {
       method: "POST",
       body: {
         id: generateFmsId(),
@@ -517,6 +517,18 @@ function normalizeIdentifier(
 ): string | number {
   if (typeof value === "string" || typeof value === "number") {
     return value
+  }
+
+  // Handle Mongo-style ObjectId objects
+  if (value && typeof value === "object") {
+    const candidate = value as Record<string, unknown>
+    if (typeof candidate.$oid === "string") return candidate.$oid
+    if (typeof candidate.id === "string") return candidate.id
+    if (typeof candidate._id === "string") return candidate._id
+    
+    // Fallback to toString if it's a custom object but not a plain one
+    const str = String(value)
+    if (str && str !== "[object Object]") return str
   }
 
   return fallback
