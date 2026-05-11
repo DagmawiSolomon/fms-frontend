@@ -62,9 +62,17 @@ export function EmployeeDashboardView({ period }: { period: string }) {
           )
         }
 
+        let filteredBudgets = normalizeBudgets(budgetsRes)
+        if (user?.department) {
+          const dept = user.department.toLowerCase()
+          filteredBudgets = filteredBudgets.filter(
+            (b) => b.department?.toLowerCase() === dept
+          )
+        }
+
         setData({
           expenses: filteredExpenses,
-          budgets: normalizeBudgets(budgetsRes)
+          budgets: filteredBudgets
         })
       } catch (error) {
         console.error("Employee dashboard fetch error:", error)

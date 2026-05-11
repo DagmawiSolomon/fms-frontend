@@ -96,10 +96,20 @@ export default function ExpensesPage() {
   React.useEffect(() => {
     setBudgetsLoading(true)
     fmsApi.getBudgets()
-      .then((data) => setBudgets(normalizeBudgets(data)))
+      .then((data) => {
+        let normalized = normalizeBudgets(data)
+        // Employees only see budgets for their department
+        if (role === "employee" && user?.department) {
+          const dept = user.department.toLowerCase()
+          normalized = normalized.filter(
+            (b) => b.department?.toLowerCase() === dept
+          )
+        }
+        setBudgets(normalized)
+      })
       .catch((err) => console.error("Failed to fetch budgets:", err))
       .finally(() => setBudgetsLoading(false))
-  }, [])
+  }, [role, user?.department])
 
   const fetchExpenses = React.useCallback(async () => {
     try {
@@ -174,7 +184,7 @@ export default function ExpensesPage() {
       // Also fetch in the background to ensure consistency
       fetchExpenses()
     } catch (error) {
-      // Handled in apiRequest
+      toast.error("Failed to submit expense. Please check your inputs and receipt.")
     }
   }
 
@@ -186,7 +196,7 @@ export default function ExpensesPage() {
       toast.success(`Expense marked as ${status}`)
       fetchExpenses()
     } catch (error) {
-      // Handled in apiRequest
+      toast.error("Failed to update expense status.")
     }
   }
 
