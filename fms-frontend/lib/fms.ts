@@ -23,6 +23,7 @@ export type FmsSessionUser = {
   avatar?: string | null
   role: UserRole
   department?: string | null
+  status?: "active" | "inactive"
 }
 
 export type FmsSummary = {
@@ -302,6 +303,7 @@ export function normalizeUsers(payload: unknown): FmsSessionUser[] {
       avatar: (user.avatar ?? user.image ?? null) as string | null,
       role: normalizeRole(user.role as string | null | undefined),
       department: (user.department ?? "General") as string,
+      status: (user.status ?? user.isActive ?? true) ? "active" : "inactive",
     }
   })
 }
@@ -392,6 +394,11 @@ export const fmsApi = {
     apiRequest<unknown>(`/users/${id}/role`, {
       method: "PATCH",
       body: { Role: role },
+    }),
+  updateUserStatus: (id: string | number, status: "active" | "inactive") =>
+    apiRequest<unknown>(`/users/${id}`, {
+      method: "PATCH",
+      body: { status: status === "active" },
     }),
   createCashRequest: (payload: CashRequestInput) => {
     const now = new Date().toISOString()

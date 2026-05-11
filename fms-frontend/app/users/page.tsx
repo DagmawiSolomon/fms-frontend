@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useRole } from "@/components/role-provider"
@@ -62,8 +63,10 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = React.useState("all")
   const [selectedUser, setSelectedUser] = React.useState<FmsSessionUser | null>(null)
 
-  // Local state for the dropdown in the sidebar
+  // Local state for the sidebar
   const [draftRole, setDraftRole] = React.useState<string | null>(null)
+  const [draftStatus, setDraftStatus] = React.useState<"active" | "inactive">("active")
+  const [saving, setSaving] = React.useState(false)
 
   const fetchUsers = async () => {
     try {
@@ -94,35 +97,31 @@ export default function UsersPage() {
   const canView = hasPermission("users.view_all")
   const canManage = hasPermission("users.change_role")
 
-  const handlePromote = async () => {
-    if (selectedUser) {
-      try {
-        await fmsApi.promoteUser(selectedUser.id)
-        toast.success("User promoted successfully")
-        fetchUsers()
-      } catch (error) {
-        console.error("Failed to promote user:", error)
-      }
+  const handleSaveChanges = async () => {
+    if (!selectedUser || !draftRole) return
+
+    try {
+      setSaving(true)
+      await Promise.all([
+        fmsApi.changeUserRole(selectedUser.id, draftRole),
+        fmsApi.updateUserStatus(selectedUser.id, draftStatus)
+      ])
+      toast.success("User updated successfully")
+      fetchUsers()
+      setSelectedUser(null)
+    } catch (error) {
+      console.error("Failed to update user:", error)
+      toast.error("Failed to save changes")
+    } finally {
+      setSaving(false)
     }
   }
 
-  const handleRoleChange = async (newRole: string) => {
-    if (selectedUser) {
-      try {
-        await fmsApi.changeUserRole(selectedUser.id, newRole)
-        toast.success("User role updated")
-        setDraftRole(newRole)
-        fetchUsers()
-      } catch (error) {
-        console.error("Failed to update role:", error)
-      }
-    }
-  }
-
-  // When a new user is selected, reset draft role
+  // When a new user is selected, reset draft states
   React.useEffect(() => {
     if (selectedUser) {
       setDraftRole(selectedUser.role)
+      setDraftStatus(selectedUser.status || "active")
     }
   }, [selectedUser])
 
@@ -189,13 +188,14 @@ export default function UsersPage() {
                       <TableHead className="text-xs text-muted-foreground/50">User</TableHead>
                       <TableHead className="text-xs text-muted-foreground/50">Email</TableHead>
                       <TableHead className="text-xs text-muted-foreground/50">Role</TableHead>
+                      <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                       <TableHead className="text-right text-xs text-muted-foreground/50"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                             Loading users...
@@ -204,7 +204,7 @@ export default function UsersPage() {
                       </TableRow>
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center text-rose-500">
+                        <TableCell colSpan={5} className="h-24 text-center text-rose-500">
                           <div className="flex flex-col items-center gap-2">
                             <ShieldAlertIcon className="size-8 opacity-50" />
                             <p>{error}</p>
@@ -222,6 +222,14 @@ export default function UsersPage() {
                           </TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell className="capitalize">{user.role}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn(
+                              "rounded-[4px] capitalize",
+                              user.status === "active" ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5" : "border-slate-500/20 text-slate-500 bg-slate-500/5"
+                            )}>
+                              {user.status || "active"}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -236,7 +244,7 @@ export default function UsersPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                           No users found.
                         </TableCell>
                       </TableRow>
@@ -248,57 +256,85 @@ export default function UsersPage() {
           </Card>
 
           <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-            <SheetContent>
+            <SheetContent className="flex flex-col gap-0 p-0">
               {selectedUser && (
                 <>
-                  <SheetHeader>
-                    <SheetTitle>User Info</SheetTitle>
+                  <SheetHeader className="p-6 border-b border-border/50">
+                    <SheetTitle>User Management</SheetTitle>
                     <SheetDescription>
-                      View and manage user role and status.
+                      Administrative control over platform access and permissions.
                     </SheetDescription>
                   </SheetHeader>
-                  <div className="grid gap-6 px-4 pb-4">
-                    <div className="flex items-center gap-4 py-2 border-b border-border/50">
-                      <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
-                        <AvatarFallback className="rounded-full">{initials(selectedUser.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-base text-foreground">{selectedUser.name}</span>
-                        <span className="text-xs text-muted-foreground">{selectedUser.id}</span>
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="grid gap-6 p-6">
+                      <div className="flex items-center gap-4 py-2">
+                        <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
+                          <AvatarFallback className="rounded-full">{initials(selectedUser.name)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium text-foreground">{selectedUser.name}</span>
+                          <span className="text-xs text-muted-foreground">{selectedUser.email}</span>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-border/50" />
+
+                      <div className="grid gap-6">
+                        <div className="grid gap-2">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
+                          <Select
+                            value={draftRole || ""}
+                            onValueChange={setDraftRole}
+                            disabled={!canManage}
+                          >
+                            <SelectTrigger className="w-full h-11 bg-white/[0.02] border-white/10 rounded-[4px]">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="employee">Employee</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                              <SelectItem value="finance">Finance Team</SelectItem>
+                              <SelectItem value="leadership">Leadership</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Danger Zone</div>
+                          <div className="flex items-center justify-between py-2 px-3 bg-rose-500/[0.02] border border-rose-500/10 rounded-[4px]">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-medium text-foreground">Account Status</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {draftStatus === "active" ? "Access granted to platform" : "Access currently suspended"}
+                              </span>
+                            </div>
+                            <Switch 
+                              checked={draftStatus === "active"}
+                              onCheckedChange={(checked) => setDraftStatus(checked ? "active" : "inactive")}
+                              disabled={!canManage}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="grid gap-4">
-                      <div className="grid gap-1">
-                        <div className="text-xs text-muted-foreground/50">Email Address</div>
-                        <div className="text-sm text-foreground">{selectedUser.email}</div>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <div className="text-xs text-muted-foreground/50">Current Role</div>
-                        <Select
-                          value={draftRole || ""}
-                          onValueChange={handleRoleChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="employee">Employee</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="finance">Finance Team</SelectItem>
-                            <SelectItem value="leadership">Leadership</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <div className="text-xs text-muted-foreground/50">Account Actions</div>
-                        <Button variant="outline" className="w-fit justify-start rounded-[4px]" onClick={handlePromote}>
-                          Promote
-                        </Button>
-                      </div>
+                  </div>
+                  <div className="p-6 border-t border-border/50 bg-white/[0.01]">
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 rounded-[4px] h-10" 
+                        onClick={() => setSelectedUser(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        className="flex-1 rounded-[4px] h-10 bg-slate-50 text-black hover:bg-slate-50/90" 
+                        onClick={handleSaveChanges}
+                        disabled={saving || !canManage}
+                      >
+                        {saving ? "Saving..." : "Save Changes"}
+                      </Button>
                     </div>
                   </div>
                 </>
