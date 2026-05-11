@@ -8,7 +8,6 @@ import { z } from "zod"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  BanknoteIcon,
   CheckIcon,
   PlusIcon,
   SearchIcon,
@@ -294,14 +293,14 @@ export default function CashRequestsPage() {
                                 </Button>
                               </>
                             )}
-                            {canDisburseRequest && req.status === "approved" && (
+                            {canDisburseRequest && (
                               <Button
                                 variant="default"
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                                 onClick={() => handleStatusChange(req.id, "disbursed")}
+                                disabled={req.status !== "approved"}
                               >
-                                <BanknoteIcon className="mr-2 size-4" />
                                 Disburse
                               </Button>
                             )}
