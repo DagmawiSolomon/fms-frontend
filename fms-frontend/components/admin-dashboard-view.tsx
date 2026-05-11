@@ -77,6 +77,12 @@ import { fmsApi, normalizeUsers } from "@/lib/fms"
 export function AdminDashboardView() {
   const [loading, setLoading] = React.useState(true)
   const [users, setUsers] = React.useState<any[]>([])
+  const [microservices, setMicroservices] = React.useState([
+    { name: "Auth", status: "checking" },
+    { name: "Expense", status: "checking" },
+    { name: "Budget", status: "checking" },
+    { name: "Users", status: "checking" },
+  ])
 
   React.useEffect(() => {
     async function fetchData() {
@@ -90,10 +96,34 @@ export function AdminDashboardView() {
         setLoading(false)
       }
     }
+
+    async function checkHealth() {
+      const endpoints = [
+        { name: "Auth", check: () => fmsApi.getMe() },
+        { name: "Expense", check: () => fmsApi.getExpenses() },
+        { name: "Budget", check: () => fmsApi.getBudgets() },
+        { name: "Users", check: () => fmsApi.getUsers() },
+      ]
+
+      const results = await Promise.allSettled(endpoints.map(e => e.check()))
+      
+      const statuses = endpoints.map((e, i) => {
+        const res = results[i]
+        // If it succeeded or returned any status code (even 401/403), the service is up.
+        // If it's a network error (no status), then it's down.
+        const isUp = res.status === "fulfilled" || (res.status === "rejected" && (res.reason as any).status !== undefined)
+        return { name: e.name, status: isUp ? "Healthy" : "Down" }
+      })
+
+      setMicroservices(statuses)
+    }
+
     fetchData()
+    checkHealth()
   }, [])
 
   const totalUsers = users.length
+  const healthScore = Math.round((microservices.filter(m => m.status === "Healthy").length / microservices.length) * 100)
   
   const usersByRole = React.useMemo(() => {
     const roles: Record<string, number> = {
@@ -142,17 +172,20 @@ export function AdminDashboardView() {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
             <CardDescription>System Health</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{stats.systemHealth}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{healthScore}%</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                {stats.trends.health}
+              <span className={cn("text-[10px] flex items-center", healthScore > 90 ? "text-emerald-500" : "text-amber-500")}>
+                {healthScore === 100 ? "Stable" : healthScore > 50 ? "Degraded" : "Critical"}
               </span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-            {stats.microservices.map((m) => (
+            {microservices.map((m) => (
               <div key={m.name} className="flex items-center gap-1.5">
-                <div className={cn("size-1.5 rounded-full", m.status === "Healthy" ? "bg-emerald-500" : "bg-amber-500")} />
+                <div className={cn(
+                  "size-1.5 rounded-full", 
+                  m.status === "Healthy" ? "bg-emerald-500" : m.status === "checking" ? "bg-slate-500 animate-pulse" : "bg-rose-500"
+                )} />
                 <span className="text-muted-foreground">{m.name}</span>
               </div>
             ))}
