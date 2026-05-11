@@ -326,6 +326,11 @@ export const fmsApi = {
       body: payload,
       skipAuth: true,
     }),
+  logoutUser: () =>
+    apiRequest<void>("/auth-bridge/logout", {
+      method: "POST",
+      skipAuth: true,
+    }),
   getBudgetSummary: () => apiRequest<unknown>("/budgets/summary"),
   getReportOverview: () => apiRequest<unknown>("/reports/overview"),
   reportBudgets: () => apiRequest<unknown>("/reports/budgets"),

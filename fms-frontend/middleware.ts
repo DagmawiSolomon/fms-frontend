@@ -47,12 +47,25 @@ export async function middleware(request: NextRequest) {
     if (
       lower === "host" ||
       lower === "origin" ||
-      lower === "referer" ||
-      lower === "cookie"
+      lower === "referer"
     )
       return
     forwardHeaders.set(key, value)
   })
+
+  // Ensure Authorization header is present if we have a token cookie
+  if (!forwardHeaders.has("Authorization")) {
+    const token = request.cookies.get("fms_token")?.value
+    if (token) {
+      console.log(`[fms-proxy] Injected Authorization header from cookie (token starts with: ${token.substring(0, 10)}...) for ${upstreamPath}`)
+      forwardHeaders.set("Authorization", `Bearer ${token}`)
+    } else {
+      console.log(`[fms-proxy] No token cookie found for ${upstreamPath}`)
+    }
+  } else {
+    const existingAuth = forwardHeaders.get("Authorization")
+    console.log(`[fms-proxy] Authorization header already present (starts with: ${existingAuth?.substring(0, 17)}...) for ${upstreamPath}`)
+  }
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD"
   let body: string | undefined

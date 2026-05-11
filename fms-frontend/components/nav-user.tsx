@@ -99,9 +99,16 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
-                clearAuthToken()
-                router.push("/login")
+              onClick={async () => {
+                try {
+                  const { fmsApi } = await import("@/lib/fms")
+                  await fmsApi.logoutUser()
+                } catch (e) {
+                  console.error("Logout failed:", e)
+                } finally {
+                  clearAuthToken()
+                  router.push("/login")
+                }
               }}
             >
               <HugeiconsIcon icon={Logout01Icon} />
