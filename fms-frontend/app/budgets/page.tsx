@@ -9,8 +9,10 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   CheckIcon,
+  PencilIcon,
   PlusIcon,
   SearchIcon,
+  TrashIcon,
   XIcon,
 } from "lucide-react"
 
@@ -81,14 +83,12 @@ export default function BudgetsPage() {
   }, [config, router])
 
   const canCreateBudgets = hasPermission("budgets.create")
-  const canUpdateBudgets = hasPermission("budgets.update")
   const canApproveBudgets = hasPermission("budgets.approve")
   const canRejectBudgets = hasPermission("budgets.reject")
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
-  const [editingBudget, setEditingBudget] = React.useState<FmsBudget | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [deptFilter, setDeptFilter] = React.useState("all")
 
@@ -141,22 +141,6 @@ export default function BudgetsPage() {
     }
   }
 
-  const handleUpdate = async (values: BudgetFormValues) => {
-    if (!editingBudget) return
-    try {
-      await fmsApi.updateBudget(editingBudget.id, {
-        ...values,
-        status: values.status as FmsBudgetStatus
-      })
-      toast.success("Budget updated successfully")
-      setDialogOpen(false)
-      setEditingBudget(null)
-      fetchBudgets()
-    } catch (error) {
-      toast.error("Failed to update budget.")
-    }
-  }
-
   const handleStatusChange = async (id: string | number, status: FmsBudgetStatus) => {
     try {
       await fmsApi.setBudgetStatus(id, status)
@@ -168,16 +152,10 @@ export default function BudgetsPage() {
   }
 
   const openCreateDialog = () => {
-    setEditingBudget(null)
     setDialogOpen(true)
   }
 
-  const openEditDialog = (budget: FmsBudget) => {
-    setEditingBudget(budget)
-    setDialogOpen(true)
-  }
-
-  const showActions = canUpdateBudgets || canApproveBudgets || canRejectBudgets
+  const showActions = true
 
   return (
     <DashboardShell
@@ -241,6 +219,7 @@ export default function BudgetsPage() {
                   <SelectItem value="IT">IT</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
                   <SelectItem value="Operations">Operations</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -278,15 +257,25 @@ export default function BudgetsPage() {
                       {showActions && (
                         <TableCell>
                           <div className="flex justify-end gap-2">
-                            {canUpdateBudgets && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(budget)}
-                              >
-                                Update
-                              </Button>
-                            )}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {}}
+                            >
+                              <PencilIcon className="size-3.5" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 border-rose-500/20"
+                              onClick={() => {}}
+                            >
+                              <TrashIcon className="size-3.5" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
                             {canApproveBudgets && (
                               <Button
                                 variant="outline"
@@ -329,19 +318,11 @@ export default function BudgetsPage() {
 
       <BudgetDialog
         open={dialogOpen}
-        budget={editingBudget}
         onOpenChange={(open) => {
           setDialogOpen(open)
-          if (!open) {
-            setEditingBudget(null)
-          }
         }}
         onSubmit={(values) => {
-          if (editingBudget) {
-            handleUpdate(values)
-          } else {
-            handleCreate(values)
-          }
+          handleCreate(values)
         }}
       />
     </DashboardShell>
@@ -350,12 +331,10 @@ export default function BudgetsPage() {
 
 function BudgetDialog({
   open,
-  budget,
   onOpenChange,
   onSubmit,
 }: {
   open: boolean
-  budget: FmsBudget | null
   onOpenChange: (open: boolean) => void
   onSubmit: (values: BudgetFormValues) => void
 }) {
@@ -391,33 +370,20 @@ function BudgetDialog({
       return
     }
 
-    if (budget) {
-      form.reset({
-        name: budget.name,
-        department: budget.department ?? "",
-        amount: budget.amount,
-        spent: budget.spent,
-        period: budget.period ?? "",
-        year: budget.updatedAt ? new Date(budget.updatedAt).getFullYear() : new Date().getFullYear(),
-        status: budget.status,
-        notes: budget.notes ?? "",
-      })
-    } else {
-      // Auto-calculate current quarter and year for new budget
-      const now = new Date()
-      const q = Math.floor(now.getMonth() / 3) + 1
-      const y = now.getFullYear()
-      const p = `Q${q}-${y}`
-      form.setValue("period", p)
-      form.setValue("year", y)
-    }
-  }, [budget, form, open])
+    // Auto-calculate current quarter and year for new budget
+    const now = new Date()
+    const q = Math.floor(now.getMonth() / 3) + 1
+    const y = now.getFullYear()
+    const p = `Q${q}-${y}`
+    form.setValue("period", p)
+    form.setValue("year", y)
+  }, [form, open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{budget ? "Update budget" : "Create budget"}</DialogTitle>
+          <DialogTitle>Create budget</DialogTitle>
           <DialogDescription>
             Enter funding details and department allocation
           </DialogDescription>
@@ -440,7 +406,24 @@ function BudgetDialog({
             label="Department"
             error={form.formState.errors.department?.message}
             control={
-              <Input placeholder="Finance" {...form.register("department")} />
+              <Select
+                value={form.watch("department")}
+                onValueChange={(value) =>
+                  form.setValue("department", value, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="IT">IT</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="Operations">Operations</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                </SelectContent>
+              </Select>
             }
           />
           <div className="grid gap-4 md:grid-cols-2">
@@ -456,20 +439,6 @@ function BudgetDialog({
                 />
               }
             />
-            {budget && (
-              <Field
-                label="Spent"
-                error={form.formState.errors.spent?.message}
-                control={
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    {...form.register("spent", { valueAsNumber: true })}
-                  />
-                }
-              />
-            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
@@ -509,36 +478,7 @@ function BudgetDialog({
               }
             />
           </div>
-          {budget && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                label="Status"
-                error={form.formState.errors.status?.message}
-                control={
-                  <Select
-                    value={form.watch("status")}
-                    onValueChange={(value) =>
-                      form.setValue(
-                        "status",
-                        value as BudgetFormValues["status"],
-                        { shouldValidate: true }
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                }
-              />
-            </div>
-          )}
+
           <Field
             label="Notes"
             error={form.formState.errors.notes?.message}
@@ -554,7 +494,7 @@ function BudgetDialog({
               Cancel
             </Button>
             <Button type="submit">
-              {budget ? "Update budget" : "Create budget"}
+              Create budget
             </Button>
           </DialogFooter>
         </form>
