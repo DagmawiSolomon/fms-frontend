@@ -239,7 +239,7 @@ function AuthContent() {
                         <option value="Manager">Manager</option>
                         <option value="Finance Team">Finance Team</option>
                         <option value="Leadership">Leadership</option>
-                        <option value="Administrator">Administrator</option>
+                        <option value="admin">Administrator</option>
                       </select>
                     </div>
                     <div className="grid gap-2">

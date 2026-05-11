@@ -101,7 +101,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   employee: {
     name: "General Employee",
     description: "Submit expenses and request cash for operations.",
-    navigation: ["Dashboard", "Cash Requests", "Expenses", "Profile"],
+    navigation: ["Dashboard", "Cash Requests", "Expenses"],
     permissions: [
 
       "cash_requests.create",
@@ -163,10 +163,5 @@ export const ALL_NAV_ITEMS = [
     title: "Users",
     url: "/users",
     icon: UserMultipleIcon,
-  },
-  {
-    title: "Profile",
-    url: "/profile",
-    icon: UserIcon,
   },
 ]

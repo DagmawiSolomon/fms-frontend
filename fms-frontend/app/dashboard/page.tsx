@@ -83,7 +83,9 @@ export default function DashboardPage() {
   return (
     <DashboardShell
       title={`${getGreeting()} ${userName} !`}
-      description={`Viewing performance for ${currentPeriod}.`}
+      description={role === "admin" 
+        ? "Monitor platform infrastructure, service availability, and user account distribution." 
+        : `Viewing performance for ${currentPeriod}.`}
       actions={role !== "admin" ? dashboardActions : undefined}
       hideBreadcrumbs
     >
