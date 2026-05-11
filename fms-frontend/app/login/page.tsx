@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { fmsApi, extractAuthToken, normalizeSessionUser } from "@/lib/fms"
 import { setAuthToken } from "@/lib/auth"
 import { toast } from "sonner"
+import { addPendingApproval, isPendingApproval, isBlockedAccount } from "@/lib/pending-approvals"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -43,6 +44,7 @@ function AuthContent() {
 
   const [mode, setMode] = React.useState<"login" | "register">(initialMode)
   const [showPassword, setShowPassword] = React.useState(false)
+  const [loginError, setLoginError] = React.useState<string | null>(null)
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -58,7 +60,18 @@ function AuthContent() {
 
   const loginMutation = useMutation({
     mutationFn: (values: LoginValues) => fmsApi.loginUser(values),
-    onSuccess: async (payload) => {
+    onSuccess: async (payload, variables) => {
+      setLoginError(null)
+      if (isBlockedAccount(variables.email)) {
+        await fmsApi.logoutUser().catch(() => {})
+        setLoginError("Your account request was declined. Please contact an administrator.")
+        return
+      }
+      if (isPendingApproval(variables.email)) {
+        await fmsApi.logoutUser().catch(() => {})
+        setLoginError("Your account is awaiting admin approval. You will be able to sign in once approved.")
+        return
+      }
       const token = extractAuthToken(payload)
       if (token) {
         setAuthToken(token)
@@ -68,6 +81,7 @@ function AuthContent() {
       router.push("/dashboard")
     },
     onError: () => {
+      setLoginError(null)
       toast.error("Invalid email or password")
     },
   })
@@ -75,7 +89,8 @@ function AuthContent() {
   const registerMutation = useMutation({
     mutationFn: (values: RegisterValues) => fmsApi.registerUser(values),
     onSuccess: (payload, variables) => {
-      toast.success("Account created successfully. Please log in.")
+      addPendingApproval(variables.email, variables.name, variables.role)
+      toast.success("Account request submitted. An admin will review and approve your access.")
       setMode("login")
       loginForm.setValue("email", variables.email)
     },
@@ -177,10 +192,16 @@ function AuthContent() {
                       Keep me logged in
                     </Label>
                   </div>
+                  {loginError && (
+                    <div className="rounded-[4px] border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                      <p className="text-xs text-amber-400 leading-relaxed">{loginError}</p>
+                    </div>
+                  )}
                   <Button
                     type="submit"
                     disabled={isPending}
                     className="h-11 font-heading"
+                    onClick={() => setLoginError(null)}
                   >
                     {isPending ? "Signing in..." : "Continue to Dashboard"}
                   </Button>
