@@ -1,6 +1,6 @@
 "use client"
 
-import { toast } from "sonner"
+
 
 import { getAuthToken } from "@/lib/auth"
 
@@ -109,7 +109,7 @@ export async function apiRequest<T>(
       ? fallbackMessage 
       : extractErrorMessage(payload, fallbackMessage);
       
-    toast.error(message)
+
     throw new ApiError(message, response.status, payload)
   }
 

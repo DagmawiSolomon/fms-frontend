@@ -151,7 +151,7 @@ export default function CashRequestsPage() {
       
       fetchRequests()
     } catch (error) {
-      // Handled in apiRequest
+      toast.error("Failed to submit cash request. Please try again.")
     }
   }
 
@@ -165,7 +165,7 @@ export default function CashRequestsPage() {
       toast.success(`Request marked as ${status}`)
       fetchRequests()
     } catch (error) {
-      // Handled in apiRequest
+      toast.error("Failed to update request status.")
     }
   }
 

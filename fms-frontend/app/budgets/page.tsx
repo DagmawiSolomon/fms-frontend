@@ -137,7 +137,7 @@ export default function BudgetsPage() {
       setDialogOpen(false)
       fetchBudgets()
     } catch (error) {
-      // toast.error is handled in apiRequest
+      toast.error("Failed to create budget. Please check your inputs.")
     }
   }
 
@@ -153,7 +153,7 @@ export default function BudgetsPage() {
       setEditingBudget(null)
       fetchBudgets()
     } catch (error) {
-      // toast.error is handled in apiRequest
+      toast.error("Failed to update budget.")
     }
   }
 
@@ -163,7 +163,7 @@ export default function BudgetsPage() {
       toast.success(`Budget marked as ${status}`)
       fetchBudgets()
     } catch (error) {
-      // toast.error is handled in apiRequest
+      toast.error("Failed to update budget status.")
     }
   }
 
