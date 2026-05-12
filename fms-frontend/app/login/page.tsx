@@ -53,7 +53,7 @@ function AuthContent() {
 
   const registerForm = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", role: "Employee", department: "Finance" },
+    defaultValues: { name: "", email: "", password: "", role: "employee", department: "Finance" },
   })
 
   const queryClient = useQueryClient()
@@ -183,7 +183,7 @@ function AuthContent() {
                       <p className="text-xs text-destructive">{loginForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <Checkbox id="keep-me-logged-in" />
                     <Label
                       htmlFor="keep-me-logged-in"
@@ -248,35 +248,19 @@ function AuthContent() {
                       <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="reg-role" className="text-md text-foreground">Role</Label>
-                      <select
-                        id="reg-role"
-                        className="h-11 bg-background border border-border text-foreground rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/20"
-                        {...registerForm.register("role")}
-                      >
-                        <option value="Employee">Employee</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Finance Team">Finance Team</option>
-                        <option value="Leadership">Leadership</option>
-                        <option value="admin">Administrator</option>
-                      </select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="reg-dept" className="text-md text-foreground">Department</Label>
-                      <select
-                        id="reg-dept"
-                        className="h-11 bg-background border border-border text-foreground rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/20"
-                        {...registerForm.register("department")}
-                      >
-                        <option value="Finance">Finance</option>
-                        <option value="IT">IT</option>
-                        <option value="Sales">Sales</option>
-                        <option value="HR">HR</option>
-                        <option value="Operations">Operations</option>
-                      </select>
-                    </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="reg-dept" className="text-md text-foreground">Department</Label>
+                    <select
+                      id="reg-dept"
+                      className="h-11 bg-background border border-border text-foreground rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/20"
+                      {...registerForm.register("department")}
+                    >
+                      <option value="Finance">Finance</option>
+                      <option value="IT">IT</option>
+                      <option value="Sales">Sales</option>
+                      <option value="HR">HR</option>
+                      <option value="Operations">Operations</option>
+                    </select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="reg-password" className="text-md text-foreground">Password</Label>
