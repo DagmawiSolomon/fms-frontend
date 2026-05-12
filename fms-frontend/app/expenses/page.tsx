@@ -13,6 +13,7 @@ import {
   SearchIcon,
   ShieldCheckIcon,
   XIcon,
+  ArrowUpRight,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -56,6 +57,17 @@ import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment } from 
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { getUserFromCache } from "@/lib/user-cache"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
+import { CalendarIcon, UserIcon, BriefcaseIcon, DollarSignIcon, FileTextIcon, TagIcon } from "lucide-react"
 
 
 const expenseSchema = z.object({
@@ -91,6 +103,7 @@ export default function ExpensesPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState("all")
+  const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   const canViewAll = hasPermission("expenses.view_all")
 
@@ -269,8 +282,9 @@ export default function ExpensesPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Category</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
+                  <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -287,7 +301,9 @@ export default function ExpensesPage() {
                   ))
                 ) : filteredExpenses.length ? (
                   filteredExpenses.map((expense) => (
-                    <TableRow key={expense.id}>
+                    <TableRow 
+                      key={expense.id}
+                    >
                       <TableCell className="">
                         {expense.description}
                         {expense.receiptUrl && (
@@ -300,45 +316,51 @@ export default function ExpensesPage() {
                         {formatMoney(expense.amount)}
                       </TableCell>
                       <TableCell>
+                        <button
+                          onClick={() => setSelectedUserProfile(getUserFromCache(expense.submitter))}
+                          className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                        >
+                          {getUserFromCache(expense.submitter)?.name || "Unknown"}
+                        </button>
+                      </TableCell>
+                      <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
-                      {showActions && (
-                        <TableCell>
-                          <div className="flex justify-end gap-2">
-                            {canApproveExpense && expense.status === "pending" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleStatusChange(expense.id, "approved")}
-                                >
-                                  <CheckIcon className="size-4" />
-                                  <span className="sr-only">Approve</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleStatusChange(expense.id, "rejected")}
-                                >
-                                  <XIcon className="size-4" />
-                                  <span className="sr-only">Reject</span>
-                                </Button>
-                              </>
-                            )}
-                            {canVerifyExpense && expense.status === "approved" && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-2">
+                          {canApproveExpense && expense.status === "pending" && (
+                            <>
                               <Button
-                                variant="default"
+                                variant="outline"
                                 size="sm"
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => handleStatusChange(expense.id, "verified")}
+                                onClick={() => handleStatusChange(expense.id, "approved")}
                               >
-                                <ShieldCheckIcon className="mr-2 size-4" />
-                                Verify
+                                <CheckIcon className="size-4" />
+                                <span className="sr-only">Approve</span>
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(expense.id, "rejected")}
+                              >
+                                <XIcon className="size-4" />
+                                <span className="sr-only">Reject</span>
+                              </Button>
+                            </>
+                          )}
+                          {canVerifyExpense && expense.status === "approved" && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => handleStatusChange(expense.id, "verified")}
+                            >
+                              <ShieldCheckIcon className="mr-2 size-4" />
+                              Verify
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -361,6 +383,75 @@ export default function ExpensesPage() {
         budgets={budgets}
         budgetsLoading={budgetsLoading}
       />
+
+      <Sheet open={!!selectedUserProfile} onOpenChange={(open) => !open && setSelectedUserProfile(null)}>
+        <SheetContent className="flex flex-col gap-0 p-0">
+          {selectedUserProfile && (
+            <>
+              <SheetHeader className="p-6 border-b border-border/50">
+                <SheetTitle>User Profile</SheetTitle>
+                <SheetDescription>
+                  Detailed information about the submitter and their organizational role.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid gap-6 p-6">
+                  {/* Cloned User Profile UI from users/page.tsx */}
+                  <div className="flex items-center gap-4 py-2">
+                    <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
+                      <AvatarFallback className="rounded-full">
+                        {selectedUserProfile.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-base font-medium text-foreground">{selectedUserProfile.name}</span>
+                      <span className="text-xs text-muted-foreground">{selectedUserProfile.email}</span>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  <div className="grid gap-6">
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
+                      <div className="text-sm font-medium capitalize text-foreground">
+                        {selectedUserProfile.role}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Department</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {selectedUserProfile.department || "General"}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Status</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium capitalize text-foreground">{selectedUserProfile.status || "active"}</span>
+                        <div className={cn(
+                          "size-1.5 rounded-full",
+                          (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
+                        )} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-border/50 bg-white/[0.01]">
+                <Button 
+                  variant="outline"
+                  className="w-full rounded-[4px] h-10" 
+                  onClick={() => setSelectedUserProfile(null)}
+                >
+                  Close Profile
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </DashboardShell>
   )
 }

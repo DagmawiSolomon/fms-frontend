@@ -14,8 +14,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { fmsApi, extractAuthToken, normalizeSessionUser } from "@/lib/fms"
+import { fmsApi, extractAuthToken, normalizeSessionUser, normalizeUsers } from "@/lib/fms"
 import { setAuthToken } from "@/lib/auth"
+import { saveUsersToCache, addUserToCache } from "@/lib/user-cache"
 import { toast } from "sonner"
 import { addPendingApproval, isPendingApproval, isBlockedAccount } from "@/lib/pending-approvals"
 import Link from "next/link"
@@ -76,6 +77,19 @@ function AuthContent() {
       if (token) {
         setAuthToken(token)
       }
+
+      // If admin, pre-fetch and cache all users for name lookups
+      const user = normalizeSessionUser(payload)
+      if (user && user.role === "admin") {
+        try {
+          const usersData = await fmsApi.getUsers()
+          const normalizedUsers = normalizeUsers(usersData)
+          saveUsersToCache(normalizedUsers)
+        } catch (err) {
+          console.error("Failed to pre-cache users:", err)
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["session"] })
       toast.success("Signed in successfully")
       router.push("/dashboard")
@@ -90,6 +104,13 @@ function AuthContent() {
     mutationFn: (values: RegisterValues) => fmsApi.registerUser(values),
     onSuccess: (payload, variables) => {
       addPendingApproval(variables.email, variables.name, variables.role)
+      
+      // Attempt to normalize and cache the new user if returned
+      const newUser = normalizeSessionUser(payload)
+      if (newUser) {
+        addUserToCache(newUser)
+      }
+
       toast.success("Account request submitted. An admin will review and approve your access.")
       setMode("login")
       loginForm.setValue("email", variables.email)

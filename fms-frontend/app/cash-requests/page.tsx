@@ -12,6 +12,7 @@ import {
   PlusIcon,
   SearchIcon,
   XIcon,
+  ArrowUpRight,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -55,6 +56,17 @@ import { fmsApi, normalizeCashRequests, filterByDepartment } from "@/lib/fms"
 import type { FmsCashRequest } from "@/lib/fms"
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getUserFromCache } from "@/lib/user-cache"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
+import { CalendarIcon, UserIcon, BriefcaseIcon, DollarSignIcon, FileTextIcon } from "lucide-react"
 
 
 const requestSchema = z.object({
@@ -85,6 +97,7 @@ export default function CashRequestsPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
+  const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   const canViewSelf = hasPermission("cash_requests.view_self")
   const canViewAll = hasPermission("cash_requests.view_all")
@@ -239,8 +252,9 @@ export default function CashRequestsPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Request</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Purpose</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Requester</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
+                  <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,54 +270,62 @@ export default function CashRequestsPage() {
                   ))
                 ) : filteredRequests.length ? (
                   filteredRequests.map((req) => (
-                    <TableRow key={req.id}>
+                    <TableRow 
+                      key={req.id}
+                    >
                       <TableCell className="text-sm font-normal text-foreground">{req.title}</TableCell>
-                      <TableCell className="max-w-[250px] truncate text-muted-foreground">
+                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
                         {req.purpose || "No details"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(req.amount)}
                       </TableCell>
                       <TableCell>
+                        <button
+                          onClick={() => setSelectedUserProfile(getUserFromCache(req.requestedBy))}
+                          className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                        >
+                          {getUserFromCache(req.requestedBy)?.name || "Unknown"}
+                        </button>
+                      </TableCell>
+                      <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
-                      {showActions && (
-                        <TableCell>
-                          <div className="flex justify-end gap-2">
-                            {canApproveRequest && req.status === "pending" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleStatusChange(req.id, "approved")}
-                                >
-                                  <CheckIcon className="size-4" />
-                                  <span className="sr-only">Approve</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleStatusChange(req.id, "rejected")}
-                                >
-                                  <XIcon className="size-4" />
-                                  <span className="sr-only">Reject</span>
-                                </Button>
-                              </>
-                            )}
-                            {canDisburseRequest && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-2">
+                          {canApproveRequest && req.status === "pending" && (
+                            <>
                               <Button
-                                variant="default"
+                                variant="outline"
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                onClick={() => handleStatusChange(req.id, "disbursed")}
-                                disabled={req.status !== "approved"}
+                                onClick={() => handleStatusChange(req.id, "approved")}
                               >
-                                Disburse
+                                <CheckIcon className="size-4" />
+                                <span className="sr-only">Approve</span>
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(req.id, "rejected")}
+                              >
+                                <XIcon className="size-4" />
+                                <span className="sr-only">Reject</span>
+                              </Button>
+                            </>
+                          )}
+                          {canDisburseRequest && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              onClick={() => handleStatusChange(req.id, "disbursed")}
+                              disabled={req.status !== "approved"}
+                            >
+                              Disburse
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -324,6 +346,75 @@ export default function CashRequestsPage() {
         onOpenChange={setDialogOpen}
         onSubmit={handleCreate}
       />
+
+      <Sheet open={!!selectedUserProfile} onOpenChange={(open) => !open && setSelectedUserProfile(null)}>
+        <SheetContent className="flex flex-col gap-0 p-0">
+          {selectedUserProfile && (
+            <>
+              <SheetHeader className="p-6 border-b border-border/50">
+                <SheetTitle>User Profile</SheetTitle>
+                <SheetDescription>
+                  Detailed information about the requester and their organizational role.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid gap-6 p-6">
+                  {/* Cloned User Profile UI from users/page.tsx */}
+                  <div className="flex items-center gap-4 py-2">
+                    <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
+                      <AvatarFallback className="rounded-full">
+                        {selectedUserProfile.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-base font-medium text-foreground">{selectedUserProfile.name}</span>
+                      <span className="text-xs text-muted-foreground">{selectedUserProfile.email}</span>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  <div className="grid gap-6">
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
+                      <div className="text-sm font-medium capitalize text-foreground">
+                        {selectedUserProfile.role}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Department</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {selectedUserProfile.department || "General"}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Status</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium capitalize text-foreground">{selectedUserProfile.status || "active"}</span>
+                        <div className={cn(
+                          "size-1.5 rounded-full",
+                          (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
+                        )} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-border/50 bg-white/[0.01]">
+                <Button 
+                  variant="outline"
+                  className="w-full rounded-[4px] h-10" 
+                  onClick={() => setSelectedUserProfile(null)}
+                >
+                  Close Profile
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </DashboardShell>
   )
 }

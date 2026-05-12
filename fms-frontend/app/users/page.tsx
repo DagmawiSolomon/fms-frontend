@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils"
 import { fmsApi, normalizeUsers, type FmsSessionUser } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { saveUsersToCache } from "@/lib/user-cache"
 
 const ROLE_RANKS: Record<string, number> = {
   admin: 0,
@@ -83,7 +84,9 @@ export default function UsersPage() {
       setLoading(true)
       setError(null)
       const data = await fmsApi.getUsers()
-      setUsers(normalizeUsers(data))
+      const normalized = normalizeUsers(data)
+      setUsers(normalized)
+      saveUsersToCache(normalized)
     } catch (err: any) {
       console.error("Failed to fetch users:", err)
       setError(err.message || "Failed to connect to the server. Please check your connection.")
