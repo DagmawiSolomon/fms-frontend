@@ -56,6 +56,7 @@ export type FmsCashRequest = {
   purpose?: string | null
   requestedBy?: string | null
   budgetId?: string | number | null
+  department?: string | null
 }
 
 export type FmsExpense = {
@@ -69,6 +70,7 @@ export type FmsExpense = {
   requestId?: string | number | null
   date?: string | null
   submitter?: string | null
+  department?: string | null
 }
 
 export type FmsAuthResponse = {
@@ -266,6 +268,7 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
         null
       ) as string | null,
       budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
+      department: (request.department ?? request.departmentName ?? null) as string | null,
     }
   })
 }
@@ -289,6 +292,7 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
         expense.submitter ?? expense.user_name ?? expense.created_by ?? expense.submitted_by ?? null,
         null
       ) as string | null,
+      department: (expense.department ?? expense.departmentName ?? null) as string | null,
     }
   })
 }
@@ -583,4 +587,42 @@ export function filterByPeriod<T extends { date?: string | null }>(items: T[], p
   }
 
   return items
+}
+
+/**
+ * Filter data by department based on user role and permissions.
+ * Admins/Leadership see everything.
+ * Finance/Managers/Employees see only their department's data.
+ */
+export function filterByDepartment<T extends { department?: string | null; requestedBy?: string | null; submitter?: string | null }>(
+  items: T[],
+  user: FmsSessionUser | null,
+  role: string
+): T[] {
+  if (!items || !user) return items
+
+  // Admins and Leadership have global oversight
+  if (role === "admin" || role === "leadership") {
+    return items
+  }
+
+  const userDept = user.department?.toLowerCase().trim()
+  const userId = String(user.id).toLowerCase()
+
+  return items.filter((item) => {
+    // 1. Check department match first
+    const itemDept = (item.department ?? "").toLowerCase().trim()
+    if (itemDept && userDept && itemDept === userDept) {
+      return true
+    }
+
+    // 2. Fallback to personal ownership (crucial for Employees)
+    const ownerId = String(item.requestedBy ?? item.submitter ?? "").toLowerCase()
+    if (ownerId && ownerId === userId) {
+      return true
+    }
+
+    // 3. If no department info and not the owner, hide it for non-admins
+    return false
+  })
 }
