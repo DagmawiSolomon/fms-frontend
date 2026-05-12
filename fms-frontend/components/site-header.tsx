@@ -84,12 +84,9 @@ export function SiteHeader({
           </span>
         </div>
 
-        <div className="ml-auto flex min-w-0 items-center gap-2 text-xs text-sidebar-foreground/75">
-          <HugeiconsIcon icon={Calendar04Icon} className="size-4 shrink-0 text-sidebar-foreground/55" />
-          <span className="truncate">{dateLabel}</span>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {actions}
         </div>
-
-        <div>{actions}</div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

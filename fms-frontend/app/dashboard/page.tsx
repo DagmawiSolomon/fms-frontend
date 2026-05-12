@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Sun, Cloud, CloudRain, CloudLightning } from "lucide-react"
 import { format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
@@ -27,6 +27,29 @@ function getGreeting() {
   if (hour < 12) return "Good morning,"
   if (hour < 18) return "Good afternoon,"
   return "Good evening,"
+}
+
+const WEATHER_DATA = [
+  { icon: Sun, temp: "28°C", label: "Sunny", color: "text-amber-500" },
+  { icon: Cloud, temp: "22°C", label: "Partly Cloudy", color: "text-slate-400" },
+  { icon: CloudRain, temp: "18°C", label: "Showers", color: "text-blue-400" },
+  { icon: CloudLightning, temp: "20°C", label: "Stormy", color: "text-indigo-400" },
+]
+
+function WeatherDisplay() {
+  const day = new Date().getDate()
+  const weather = WEATHER_DATA[day % WEATHER_DATA.length]
+  const Icon = weather.icon
+  
+  return (
+    <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-1">
+      <span className="font-heading text-lg text-slate-50">{format(new Date(), "EEEE, MMMM do")}</span>
+      <div className="flex items-center gap-1.5 opacity-60">
+        <Icon className="size-4" />
+        <span className="font-medium text-foreground">{weather.temp}</span>
+      </div>
+    </div>
+  )
 }
 
 export default function DashboardPage() {
@@ -85,7 +108,7 @@ export default function DashboardPage() {
       title={`${getGreeting()} ${userName} !`}
       description={role === "admin"
         ? "Monitor platform infrastructure, service availability, and user account distribution."
-        : `Viewing performance for ${currentPeriod}.`}
+        : <WeatherDisplay />}
       actions={role !== "admin" ? dashboardActions : undefined}
       hideBreadcrumbs
     >
