@@ -535,6 +535,8 @@ function normalizeExpenseStatus(value: unknown) {
   return "pending"
 }
 
+function normalizeIdentifier(value: unknown, fallback: string | number): string | number
+function normalizeIdentifier(value: unknown, fallback: null): string | number | null
 function normalizeIdentifier(
   value: unknown,
   fallback: string | number | null
