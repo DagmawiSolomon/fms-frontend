@@ -48,6 +48,14 @@ import { fmsApi, normalizeUsers, type FmsSessionUser } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 
+const ROLE_RANKS: Record<string, number> = {
+  admin: 0,
+  leadership: 1,
+  finance: 2,
+  manager: 2,
+  employee: 3,
+}
+
 export default function UsersPage() {
   const router = useRouter()
   const { role: currentUserRole, config, hasPermission } = useRole()
@@ -90,6 +98,15 @@ export default function UsersPage() {
   }, [])
 
   const filteredUsers = users.filter(user => {
+    // Role hierarchy check: Admins see all, others only see their rank and below
+    if (currentUserRole !== "admin") {
+      const currentRank = ROLE_RANKS[currentUserRole] ?? 99
+      const userRank = ROLE_RANKS[user.role] ?? 99
+      
+      // If the target user has a higher rank (lower number), hide them
+      if (userRank < currentRank) return false
+    }
+
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRole = roleFilter === "all" || user.role === roleFilter
@@ -117,9 +134,12 @@ export default function UsersPage() {
       }
 
       const updates: Promise<any>[] = [
-        fmsApi.changeUserRole(selectedUser.id, backendRole),
-        fmsApi.updateUserStatus(selectedUser.id, draftStatus)
+        fmsApi.changeUserRole(selectedUser.id, backendRole)
       ]
+
+      if (currentUserRole === "admin") {
+        updates.push(fmsApi.updateUserStatus(selectedUser.id, draftStatus))
+      }
 
       if (newEmail !== selectedUser.email) {
         updates.push(fmsApi.updateUser(selectedUser.id, { email: newEmail }))
@@ -192,11 +212,14 @@ export default function UsersPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="finance">Finance Team</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="leadership">Leadership</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
+                      {Object.keys(ROLE_RANKS)
+                        .filter(r => currentUserRole === "admin" || ROLE_RANKS[r] >= (ROLE_RANKS[currentUserRole] ?? 99))
+                        .map(r => (
+                          <SelectItem key={r} value={r} className="capitalize">
+                            {r === "finance" ? "Finance Team" : r}
+                          </SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>
@@ -313,11 +336,14 @@ export default function UsersPage() {
                               <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="employee">Employee</SelectItem>
-                              <SelectItem value="manager">Manager</SelectItem>
-                              <SelectItem value="finance">Finance Team</SelectItem>
-                              <SelectItem value="leadership">Leadership</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
+                              {Object.keys(ROLE_RANKS)
+                                .filter(r => currentUserRole === "admin" || ROLE_RANKS[r] >= (ROLE_RANKS[currentUserRole] ?? 99))
+                                .map(r => (
+                                  <SelectItem key={r} value={r} className="capitalize">
+                                    {r === "finance" ? "Finance Team" : r}
+                                  </SelectItem>
+                                ))
+                              }
                             </SelectContent>
                           </Select>
                           {draftRole === "manager" && (
@@ -331,22 +357,24 @@ export default function UsersPage() {
                           )}
                         </div>
 
-                        <div className="grid gap-2">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Danger Zone</div>
-                          <div className="flex items-center justify-between py-2 px-3 bg-rose-500/[0.02] border border-rose-500/10 rounded-[4px]">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-xs font-medium text-foreground">Account Status</span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {draftStatus === "active" ? "Access granted to platform" : "Access currently suspended"}
-                              </span>
+                        {currentUserRole === "admin" && (
+                          <div className="grid gap-2">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Danger Zone</div>
+                            <div className="flex items-center justify-between py-2 px-3 bg-rose-500/[0.02] border border-rose-500/10 rounded-[4px]">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-medium text-foreground">Account Status</span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {draftStatus === "active" ? "Access granted to platform" : "Access currently suspended"}
+                                </span>
+                              </div>
+                              <Switch 
+                                checked={draftStatus === "active"}
+                                onCheckedChange={(checked) => setDraftStatus(checked ? "active" : "inactive")}
+                                disabled={!canManage}
+                              />
                             </div>
-                            <Switch 
-                              checked={draftStatus === "active"}
-                              onCheckedChange={(checked) => setDraftStatus(checked ? "active" : "inactive")}
-                              disabled={!canManage}
-                            />
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
