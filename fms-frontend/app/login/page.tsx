@@ -223,30 +223,32 @@ function AuthContent() {
                     registerMutation.mutate(values)
                   })}
                 >
-                  <div className="grid gap-2">
-                    <Label htmlFor="reg-name" className="text-md text-foreground">Full Name</Label>
-                    <Input
-                      id="reg-name"
-                      placeholder="John Doe"
-                      className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
-                      {...registerForm.register("name")}
-                    />
-                    {registerForm.formState.errors.name && (
-                      <p className="text-xs text-destructive">{registerForm.formState.errors.name.message}</p>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="reg-email" className="text-md text-foreground">Email address</Label>
-                    <Input
-                      id="reg-email"
-                      placeholder="name@example.com"
-                      type="email"
-                      className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
-                      {...registerForm.register("email")}
-                    />
-                    {registerForm.formState.errors.email && (
-                      <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
-                    )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="reg-name" className="text-md text-foreground">Full Name</Label>
+                      <Input
+                        id="reg-name"
+                        placeholder="John Doe"
+                        className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
+                        {...registerForm.register("name")}
+                      />
+                      {registerForm.formState.errors.name && (
+                        <p className="text-xs text-destructive">{registerForm.formState.errors.name.message}</p>
+                      )}
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="reg-email" className="text-md text-foreground">Email address</Label>
+                      <Input
+                        id="reg-email"
+                        placeholder="name@example.com"
+                        type="email"
+                        className="h-11 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-white/20"
+                        {...registerForm.register("email")}
+                      />
+                      {registerForm.formState.errors.email && (
+                        <p className="text-xs text-destructive">{registerForm.formState.errors.email.message}</p>
+                      )}
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="reg-dept" className="text-md text-foreground">Department</Label>
