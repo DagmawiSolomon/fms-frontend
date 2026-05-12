@@ -153,7 +153,7 @@ export function normalizeSessionUser(payload: unknown): FmsSessionUser | null {
     | undefined
   const email = (source.email ?? source.email_address ?? source.emailAddress ?? "user@example.com") as string | undefined
   const avatar = (source.avatar ?? source.image ?? null) as string | null
-  const role = normalizeRole(source.role as string | null | undefined)
+  const role = normalizeRole(source.role as string | null | undefined, email)
 
   return {
     id,
@@ -296,12 +296,13 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
 export function normalizeUsers(payload: unknown): FmsSessionUser[] {
   return unwrapList<FmsSessionUser>(payload).map((item, index) => {
     const user = item as Record<string, unknown>
+    const email = (user.email ?? user.email_address ?? user.emailAddress ?? "user@example.com") as string
     return {
       id: normalizeIdentifier(user.id ?? user._id ?? user.userId ?? user.user_id, index),
       name: (user.name ?? user.fullName ?? user.full_name ?? user.username ?? "User") as string,
-      email: (user.email ?? user.email_address ?? user.emailAddress ?? "user@example.com") as string,
+      email,
       avatar: (user.avatar ?? user.image ?? null) as string | null,
-      role: normalizeRole(user.role as string | null | undefined),
+      role: normalizeRole(user.role as string | null | undefined, email),
       department: (user.department ?? "General") as string,
       status: (user.status ?? user.isActive ?? true) ? "active" : "inactive",
     }
@@ -394,6 +395,11 @@ export const fmsApi = {
     apiRequest<unknown>(`/users/${id}/role`, {
       method: "PATCH",
       body: { Role: role },
+    }),
+  updateUser: (id: string | number, data: Record<string, any>) =>
+    apiRequest<unknown>(`/users/${id}`, {
+      method: "PATCH",
+      body: data
     }),
   updateUserStatus: (id: string | number, status: "active" | "inactive") =>
     apiRequest<unknown>(`/users/${id}`, {

@@ -102,11 +102,30 @@ export default function UsersPage() {
 
     try {
       setSaving(true)
-      await Promise.all([
-        fmsApi.changeUserRole(selectedUser.id, draftRole),
+      
+      const backendRole = draftRole === "manager" ? "finance" : draftRole
+      let newEmail = selectedUser.email
+
+      // Handle Manager Email Flagging
+      if (draftRole === "manager" && !newEmail.includes("+manager@")) {
+        const [local, domain] = newEmail.split("@")
+        newEmail = `${local}+manager@${domain}`
+      } else if (draftRole !== "manager" && newEmail.includes("+manager@")) {
+        newEmail = newEmail.replace("+manager", "")
+      }
+
+      const updates: Promise<any>[] = [
+        fmsApi.changeUserRole(selectedUser.id, backendRole),
         fmsApi.updateUserStatus(selectedUser.id, draftStatus)
-      ])
-      toast.success("User updated successfully")
+      ]
+
+      if (newEmail !== selectedUser.email) {
+        updates.push(fmsApi.updateUser(selectedUser.id, { email: newEmail }))
+      }
+
+      await Promise.all(updates)
+      
+      toast.success(draftRole === "manager" ? "User promoted to Manager (Finance role + Email flag)" : "User updated successfully")
       fetchUsers()
       setSelectedUser(null)
     } catch (error) {
@@ -298,6 +317,15 @@ export default function UsersPage() {
                               <SelectItem value="admin">Admin</SelectItem>
                             </SelectContent>
                           </Select>
+                          {draftRole === "manager" && (
+                            <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-[4px]">
+                              <p className="text-[10px] text-amber-500 leading-tight">
+                                <span className="font-bold uppercase tracking-wider block mb-1">Manager Note:</span>
+                                This user will be assigned the <strong>Finance Team</strong> role on the backend, 
+                                with an email flag <strong>(+manager)</strong> to enable the Manager UI.
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <div className="grid gap-2">
