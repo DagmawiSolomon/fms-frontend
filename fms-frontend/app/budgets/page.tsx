@@ -183,6 +183,7 @@ export default function BudgetsPage() {
           isFirst
           trend={{ value: "+2.5%", isUp: true }}
           trendLabel="from last month"
+          loading={loading}
         />
         <SummaryCard
           label="Spent total"
@@ -190,6 +191,7 @@ export default function BudgetsPage() {
           description="Total actual spending recorded to date"
           trend={{ value: "+12.1%", isUp: true }}
           trendLabel="vs previous"
+          loading={loading}
         />
         <SummaryCard
           label="Remaining total"
@@ -197,6 +199,7 @@ export default function BudgetsPage() {
           description="Total unspent funds across all budget lines"
           trend={{ value: "-4.3%", isUp: false }}
           trendLabel="from last month"
+          loading={loading}
         />
       </div>
 
@@ -542,6 +545,7 @@ function SummaryCard({
   value,
   description,
   isFirst,
+  loading,
   trend,
   trendLabel,
 }: {
@@ -549,12 +553,31 @@ function SummaryCard({
   value: number
   description: string
   isFirst?: boolean
+  loading?: boolean
   trend?: {
     value: string
     isUp: boolean
   }
   trendLabel?: string
 }) {
+  if (loading) {
+    return (
+      <Card className={cn(
+        "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+        !isFirst && "border-l"
+      )}>
+        <CardHeader className="pb-2 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-3 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className={cn(
       "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",

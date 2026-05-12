@@ -45,6 +45,8 @@ import { useRole } from "@/components/role-provider"
 import { cn } from "@/lib/utils"
 
 import { fmsApi, normalizeUsers, type FmsSessionUser } from "@/lib/fms"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function UsersPage() {
   const router = useRouter()
@@ -213,14 +215,15 @@ export default function UsersPage() {
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                            Loading users...
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                        </TableRow>
+                      ))
                     ) : error ? (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center text-rose-500">

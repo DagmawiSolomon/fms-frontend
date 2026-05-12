@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRole } from "@/components/role-provider"
 import { useSession } from "@/hooks/use-session"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ProfilePage() {
   const { data: session, isLoading } = useSession()
@@ -19,19 +20,19 @@ export default function ProfilePage() {
       <Card className="rounded-none border shadow-none">
         <CardContent className="p-8 space-y-8">
           {isLoading ? (
-            <div className="space-y-8 animate-pulse">
+            <div className="space-y-8">
               <div className="flex items-center gap-6">
-                <div className="h-20 w-20 rounded-full bg-muted" />
+                <Skeleton className="h-20 w-20 rounded-full" />
                 <div className="space-y-2">
-                  <div className="h-6 w-40 rounded bg-muted" />
-                  <div className="h-4 w-56 rounded bg-muted" />
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-56" />
                 </div>
               </div>
               <div className="grid gap-x-12 gap-y-6 sm:grid-cols-2 max-w-2xl">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="space-y-1.5">
-                    <div className="h-3 w-16 rounded bg-muted" />
-                    <div className="h-4 w-32 rounded bg-muted" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-32" />
                   </div>
                 ))}
               </div>

@@ -206,24 +206,27 @@ export default function ExpensesPage() {
         <SummaryCard
           label="Total expenses"
           value={totals.total}
-          description="Sum of all submitted expenditures"
+          description="Total actual spending in the current period"
           isFirst
-          trend={{ value: "+8.2%", isUp: true }}
+          trend={{ value: "+4.2%", isUp: true }}
           trendLabel="from last month"
+          loading={loading}
         />
         <SummaryCard
-          label="Pending review"
+          label="Pending verification"
           value={totals.pending}
-          description="Awaiting verification by finance"
-          trend={{ value: "+2", isUp: true }}
-          trendLabel="new this week"
+          description="Expenses currently awaiting financial audit"
+          trend={{ value: "+12.1%", isUp: true }}
+          trendLabel="vs previous"
+          loading={loading}
         />
         <SummaryCard
-          label="Verified"
+          label="Approved spending"
           value={totals.approved}
-          description="Sum of all approved expenses"
-          trend={{ value: "+5.2%", isUp: true }}
+          description="Total funds successfully verified and cleared"
+          trend={{ value: "-2.3%", isUp: false }}
           trendLabel="from last month"
+          loading={loading}
         />
       </div>
 
@@ -567,6 +570,7 @@ function SummaryCard({
   value,
   description,
   isFirst,
+  loading,
   trend,
   trendLabel,
 }: {
@@ -574,12 +578,31 @@ function SummaryCard({
   value: number
   description: string
   isFirst?: boolean
+  loading?: boolean
   trend?: {
     value: string
     isUp: boolean
   }
   trendLabel?: string
 }) {
+  if (loading) {
+    return (
+      <Card className={cn(
+        "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+        !isFirst && "border-l"
+      )}>
+        <CardHeader className="pb-2 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-3 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className={cn(
       "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",

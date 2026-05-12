@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { fmsApi, normalizeBudgets, normalizeExpenses, normalizeSummary, filterByPeriod } from "@/lib/fms"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Placeholder for data not yet in API ---
 const mockRevenue = 2450000
@@ -109,10 +110,23 @@ export function LeadershipDashboardView({ period }: { period: string }) {
 
   if (loading) {
     return (
-      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden animate-pulse">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
-        ))}
+      <div className="flex flex-col gap-0">
+        <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
+              <CardHeader className="pb-2 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-0 lg:grid-cols-1 border rounded-b-[4px] overflow-hidden">
+          <Card className="rounded-none border-0 shadow-none p-6">
+            <Skeleton className="h-[350px] w-full" />
+          </Card>
+        </div>
       </div>
     )
   }

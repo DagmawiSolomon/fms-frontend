@@ -175,26 +175,29 @@ export default function CashRequestsPage() {
     >
       <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
         <SummaryCard
-          label="Total Requested"
+          label="Total requests"
           value={totals.total}
-          description="Cumulative value of all cash requests"
+          description="Total funds requested in the current period"
           isFirst
-          trend={{ value: "+5.4%", isUp: true }}
+          trend={{ value: "+8.2%", isUp: true }}
           trendLabel="from last month"
+          loading={loading}
         />
         <SummaryCard
-          label="Pending Amount"
+          label="Pending approval"
           value={totals.pending}
-          description="Funds currently awaiting approval"
-          trend={{ value: "+3", isUp: true }}
-          trendLabel="requests today"
+          description="Funds currently awaiting administrative review"
+          trend={{ value: "-2.1%", isUp: false }}
+          trendLabel="vs previous"
+          loading={loading}
         />
         <SummaryCard
-          label="Disbursed"
+          label="Disbursed total"
           value={totals.approved}
-          description="Total cash released this period"
-          trend={{ value: "+18.2%", isUp: true }}
-          trendLabel="vs last month"
+          description="Total funds successfully processed and paid"
+          trend={{ value: "+15.4%", isUp: true }}
+          trendLabel="from last month"
+          loading={loading}
         />
       </div>
 
@@ -449,6 +452,7 @@ function SummaryCard({
   value,
   description,
   isFirst,
+  loading,
   trend,
   trendLabel,
 }: {
@@ -456,12 +460,31 @@ function SummaryCard({
   value: number
   description: string
   isFirst?: boolean
+  loading?: boolean
   trend?: {
     value: string
     isUp: boolean
   }
   trendLabel?: string
 }) {
+  if (loading) {
+    return (
+      <Card className={cn(
+        "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
+        !isFirst && "border-l"
+      )}>
+        <CardHeader className="pb-2 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-3 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className={cn(
       "rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-border/50",
