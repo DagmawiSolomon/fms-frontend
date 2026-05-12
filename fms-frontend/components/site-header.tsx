@@ -17,8 +17,6 @@ import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Agreement01Icon,
-  Calendar04Icon,
   ArrowDown01Icon,
   UserCircleIcon,
   LogoutSquare01Icon
@@ -27,16 +25,17 @@ import { clearAuthToken } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { useRole } from "@/components/role-provider"
-import { Role } from "@/lib/roles"
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
 
 function formatHeaderDate(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date)
+  return DATE_FORMATTER.format(date)
 }
 
 export function SiteHeader({
@@ -45,7 +44,7 @@ export function SiteHeader({
   actions,
 }: {
   title: string
-  description?: string
+  description?: ReactNode
   actions?: ReactNode
 }) {
   const session = useSession()
@@ -56,18 +55,7 @@ export function SiteHeader({
     avatar: null,
   }
 
-  const [dateLabel, setDateLabel] = React.useState(() =>
-    formatHeaderDate(new Date())
-  )
   const { role } = useRole()
-
-  React.useEffect(() => {
-    const update = () => setDateLabel(formatHeaderDate(new Date()))
-    update()
-    const timer = window.setInterval(update, 60_000)
-
-    return () => window.clearInterval(timer)
-  }, [])
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border/70 bg-sidebar text-sidebar-foreground transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -80,7 +68,7 @@ export function SiteHeader({
           </span>
           <span className="sr-only">
             {title}
-            {description ? ` ${description}` : ""}
+            {description}
           </span>
         </div>
 
@@ -116,7 +104,7 @@ export function SiteHeader({
             sideOffset={8}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-2 py-2">
+              <div className="flex items-center gap-2 p-2">
                 <Avatar className="size-8 rounded-full grayscale">
                   <AvatarFallback className="rounded-full">
                     {user.name
