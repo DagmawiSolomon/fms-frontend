@@ -108,9 +108,12 @@ const renderDistributionLabel = (props: any) => {
   )
 }
 
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { useRole } from "@/components/role-provider"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function FinanceDashboardView({ period }: { period: string }) {
+  const { user, role } = useRole()
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
@@ -128,10 +131,19 @@ export function FinanceDashboardView({ period }: { period: string }) {
           fmsApi.getExpenses()
         ])
         
+        let normalizedBudgets = normalizeBudgets(budgetsRes)
+        let normalizedRequests = normalizeCashRequests(requestsRes)
+        let normalizedExpenses = normalizeExpenses(expensesRes)
+
+        // Enforce department isolation
+        normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
+        normalizedRequests = filterByDepartment(normalizedRequests, user, role)
+        normalizedExpenses = filterByDepartment(normalizedExpenses, user, role)
+
         setData({
-          budgets: normalizeBudgets(budgetsRes),
-          cashRequests: normalizeCashRequests(requestsRes),
-          expenses: normalizeExpenses(expensesRes)
+          budgets: normalizedBudgets,
+          cashRequests: normalizedRequests,
+          expenses: normalizedExpenses
         })
       } catch (error) {
         console.error("Dashboard fetch error:", error)
@@ -140,7 +152,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
       }
     }
     fetchData()
-  }, [])
+  }, [user, role])
 
   // Filter by selected period
   const filteredBudgets = React.useMemo(() => {
@@ -193,10 +205,26 @@ export function FinanceDashboardView({ period }: { period: string }) {
 
   if (loading) {
     return (
-      <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden animate-pulse">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
-        ))}
+      <div className="flex flex-col gap-0">
+        <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
+              <CardHeader className="pb-2 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
+          <Card className="rounded-none border-0 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+          <Card className="rounded-none border-l border-border/50 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+        </div>
       </div>
     )
   }

@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary, filterByPeriod } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { useRole } from "@/components/role-provider"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Placeholder Trends ---
 const trends = {
@@ -36,6 +38,7 @@ function formatMoney(value: number) {
 }
 
 export function ManagerDashboardView({ period }: { period: string }) {
+  const { user, role } = useRole()
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
@@ -54,11 +57,18 @@ export function ManagerDashboardView({ period }: { period: string }) {
           fmsApi.getReportOverview()
         ])
         
+        let normalizedBudgets = normalizeBudgets(budgetsRes)
+        let normalizedRequests = normalizeCashRequests(requestsRes)
+
+        // Enforce department isolation
+        normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
+        normalizedRequests = filterByDepartment(normalizedRequests, user, role)
+
         setData({
-          budgets: normalizeBudgets(budgetsRes),
-          cashRequests: normalizeCashRequests(requestsRes),
+          budgets: normalizedBudgets,
+          cashRequests: normalizedRequests,
           summary: normalizeSummary(reportRes),
-          reportPoints: [] // We'll calculate or use if reportRes has them
+          reportPoints: []
         })
       } catch (error) {
         console.error("Manager dashboard fetch error:", error)
@@ -67,7 +77,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
       }
     }
     fetchData()
-  }, [])
+  }, [user, role])
 
   // Filter by selected period
   const filteredBudgets = React.useMemo(() => {
@@ -113,10 +123,26 @@ export function ManagerDashboardView({ period }: { period: string }) {
 
   if (loading) {
     return (
-      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden animate-pulse">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
-        ))}
+      <div className="flex flex-col gap-0">
+        <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
+              <CardHeader className="pb-2 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
+          <Card className="rounded-none border-0 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+          <Card className="rounded-none border-l border-border/50 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+        </div>
       </div>
     )
   }

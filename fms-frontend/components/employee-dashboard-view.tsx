@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod, filterByDepartment } from "@/lib/fms"
 import { format } from "date-fns"
 import { useRole } from "@/components/role-provider"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Mock Data Trends (Placeholder) ---
 const trends = {
@@ -37,7 +38,7 @@ function formatMoney(value: number) {
 }
 
 export function EmployeeDashboardView({ period }: { period: string }) {
-  const { user } = useRole()
+  const { user, role } = useRole()
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     expenses: any[]
@@ -52,27 +53,17 @@ export function EmployeeDashboardView({ period }: { period: string }) {
           fmsApi.getExpenses(),
           fmsApi.getBudgets()
         ])
-        // Filter by current user
-        const myId = user?.id ? String(user.id).toLowerCase() : null
-        let filteredExpenses = normalizeExpenses(expensesRes)
         
-        if (myId) {
-          filteredExpenses = filteredExpenses.filter(
-            (e) => e.submitter != null && String(e.submitter).toLowerCase() === myId
-          )
-        }
+        let normalizedExpenses = normalizeExpenses(expensesRes)
+        let normalizedBudgets = normalizeBudgets(budgetsRes)
 
-        let filteredBudgets = normalizeBudgets(budgetsRes)
-        if (user?.department) {
-          const dept = user.department.toLowerCase()
-          filteredBudgets = filteredBudgets.filter(
-            (b) => b.department?.toLowerCase() === dept
-          )
-        }
+        // Enforce department isolation and ownership
+        normalizedExpenses = filterByDepartment(normalizedExpenses, user, role)
+        normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
 
         setData({
-          expenses: filteredExpenses,
-          budgets: filteredBudgets
+          expenses: normalizedExpenses,
+          budgets: normalizedBudgets
         })
       } catch (error) {
         console.error("Employee dashboard fetch error:", error)
@@ -81,7 +72,7 @@ export function EmployeeDashboardView({ period }: { period: string }) {
       }
     }
     fetchData()
-  }, [user?.id])
+  }, [user, role])
 
   // Filter budgets by selected period
   const filteredBudgets = React.useMemo(() => {
@@ -130,10 +121,26 @@ export function EmployeeDashboardView({ period }: { period: string }) {
 
   if (loading) {
     return (
-      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden animate-pulse">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-32 bg-white/5 border-l border-border/50 first:border-0" />
-        ))}
+      <div className="flex flex-col gap-0">
+        <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
+              <CardHeader className="pb-2 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
+          <Card className="rounded-none border-0 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+          <Card className="rounded-none border-l border-border/50 shadow-none p-6">
+            <Skeleton className="h-[300px] w-full" />
+          </Card>
+        </div>
       </div>
     )
   }

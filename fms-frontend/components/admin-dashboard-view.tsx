@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { fmsApi, normalizeUsers } from "@/lib/fms"
 import { getPendingApprovals, approveUser, rejectUser } from "@/lib/pending-approvals"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Constants ---
 const usersChartConfig = {
@@ -148,10 +149,14 @@ export function AdminDashboardView() {
 
   if (loading) {
     return (
-      <div className="grid gap-0 md:grid-cols-3 border rounded-[4px] overflow-hidden animate-pulse">
-        <div className="h-32 bg-white/5" />
-        <div className="h-32 bg-white/5 border-l border-border/50" />
-        <div className="h-32 bg-white/5 border-l border-border/50" />
+      <div className="grid gap-0 md:grid-cols-3 border rounded-[4px] overflow-hidden">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="rounded-none border-0 shadow-none @container/card border-l first:border-0 border-border/50 p-6 space-y-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-10 w-full" />
+          </Card>
+        ))}
       </div>
     )
   }

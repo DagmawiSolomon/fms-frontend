@@ -53,8 +53,10 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeBudgets } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, filterByDepartment } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 
 
 const budgetSchema = z.object({
@@ -97,13 +99,16 @@ export default function BudgetsPage() {
       setLoading(true)
       const budgetsData = await fmsApi.getBudgets()
       const normalizedBudgets = normalizeBudgets(budgetsData)
-      setBudgets(normalizedBudgets)
+      
+      // Enforce department isolation
+      const visibleBudgets = filterByDepartment(normalizedBudgets, user, role)
+      setBudgets(visibleBudgets)
     } catch (error) {
       console.error("Failed to fetch budgets:", error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user, role])
 
   React.useEffect(() => {
     fetchBudgets()
@@ -238,7 +243,18 @@ export default function BudgetsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBudgets.length ? (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
+                    </TableRow>
+                  ))
+                ) : filteredBudgets.length ? (
                   filteredBudgets.map((budget) => (
                     <TableRow key={budget.id}>
                       <TableCell>

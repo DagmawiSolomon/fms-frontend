@@ -51,8 +51,10 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeCashRequests } from "@/lib/fms"
+import { fmsApi, normalizeCashRequests, filterByDepartment } from "@/lib/fms"
 import type { FmsCashRequest } from "@/lib/fms"
+import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 
 const requestSchema = z.object({
@@ -92,21 +94,9 @@ export default function CashRequestsPage() {
       setLoading(true)
       const data = await fmsApi.getCashRequests()
       let normalized = normalizeCashRequests(data)
-      // Employees only see their own requests
-      // Compare against user.id (a MongoDB ObjectId) because the API stores
-      // the user's ID in `requested_by`, not their display name.
-      if (canViewSelf && !canViewAll && user?.id) {
-        const myId = String(user.id).toLowerCase()
-        normalized = normalized.filter(
-          (req) => req.requestedBy != null && String(req.requestedBy).toLowerCase() === myId
-        )
-      }
-      // Debug: help track why data might disappear
-      if (normalized.length > 0 && canViewSelf && !canViewAll) {
-        console.log(`[CashRequests] Filtering for user ID: ${user?.id}. Total before filter: ${normalized.length}`);
-        const sampleReq = normalized[0];
-        console.log(`[CashRequests] Sample request ID: ${sampleReq.id}, requestedBy: ${sampleReq.requestedBy}`);
-      }
+      
+      // Enforce department isolation and ownership
+      normalized = filterByDepartment(normalized, user, role)
 
       setRequests(normalized)
     } catch (error) {
@@ -114,7 +104,7 @@ export default function CashRequestsPage() {
     } finally {
       setLoading(false)
     }
-  }, [canViewAll, canViewSelf, user?.id])
+  }, [user, role])
 
   React.useEffect(() => {
     fetchRequests()
@@ -249,14 +239,15 @@ export default function CashRequestsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
-                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                        <div className="size-4 border-2 border-primary border-t-transparent animate-spin rounded-full" />
-                        <span>Loading requests...</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
+                    </TableRow>
+                  ))
                 ) : filteredRequests.length ? (
                   filteredRequests.map((req) => (
                     <TableRow key={req.id}>
