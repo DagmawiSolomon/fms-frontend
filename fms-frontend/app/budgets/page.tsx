@@ -181,24 +181,30 @@ export default function BudgetsPage() {
           value={totals.amount}
           description="Total funds allocated across all departments"
           isFirst
-          trend={{ value: "+2.5%", isUp: true }}
-          trendLabel="from last month"
+          trend={{ value: `${filteredBudgets.length}`, isUp: true }}
+          trendLabel="active budgets"
           loading={loading}
         />
         <SummaryCard
           label="Spent total"
           value={totals.spent}
           description="Total actual spending recorded to date"
-          trend={{ value: "+12.1%", isUp: true }}
-          trendLabel="vs previous"
+          trend={{ 
+            value: `${((totals.spent / (totals.amount || 1)) * 100).toFixed(1)}%`, 
+            isUp: totals.spent < totals.amount * 0.8 
+          }}
+          trendLabel="of total budget"
           loading={loading}
         />
         <SummaryCard
           label="Remaining total"
           value={totals.remaining}
           description="Total unspent funds across all budget lines"
-          trend={{ value: "-4.3%", isUp: false }}
-          trendLabel="from last month"
+          trend={{ 
+            value: `${((totals.remaining / (totals.amount || 1)) * 100).toFixed(1)}%`, 
+            isUp: true 
+          }}
+          trendLabel="liquidity ratio"
           loading={loading}
         />
       </div>

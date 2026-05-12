@@ -41,6 +41,14 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
+function getPreviousPeriod(period: string) {
+  const [qStr, yearStr] = period.split("-")
+  const q = parseInt(qStr.substring(1))
+  const year = parseInt(yearStr)
+  if (q === 1) return `Q4-${year - 1}`
+  return `Q${q - 1}-${year}`
+}
+
 export function LeadershipDashboardView({ period }: { period: string }) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
@@ -108,6 +116,26 @@ export function LeadershipDashboardView({ period }: { period: string }) {
     return Object.entries(categories).map(([category, vals]) => ({ category, ...vals }))
   }, [filteredBudgets])
 
+  // Dynamic Trend Calculations
+  const prevPeriod = getPreviousPeriod(period)
+  const prevBudgets = data.budgets.filter(b => b.period === prevPeriod)
+  const prevExpenses = filterByPeriod(data.expenses, prevPeriod)
+
+  const prevTotalBudget = prevBudgets.reduce((sum, b) => sum + b.amount, 0)
+  const prevTotalSpent = prevExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+  const budgetTrendVal = prevTotalBudget > 0 ? ((totalBudget - prevTotalBudget) / prevTotalBudget * 100) : 0
+  const spentTrendVal = prevTotalSpent > 0 ? ((totalSpent - prevTotalSpent) / prevTotalSpent * 100) : 0
+  
+  const budgetTrend = {
+    value: `${budgetTrendVal >= 0 ? "+" : ""}${budgetTrendVal.toFixed(1)}%`,
+    isUp: budgetTrendVal >= 0
+  }
+  const spentTrend = {
+    value: `${spentTrendVal >= 0 ? "+" : ""}${spentTrendVal.toFixed(1)}%`,
+    isUp: spentTrendVal >= 0
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-0">
@@ -139,10 +167,13 @@ export function LeadershipDashboardView({ period }: { period: string }) {
             <CardDescription>Total Budget Allocated</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {mockTrends.revenue}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                budgetTrend.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={budgetTrend.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {budgetTrend.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">across all departments</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Aggregate funding for the current fiscal period</CardContent>
@@ -155,12 +186,12 @@ export function LeadershipDashboardView({ period }: { period: string }) {
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(
                 "text-[10px] flex items-center",
-                totalSpent > totalBudget * 0.8 ? "text-rose-500" : "text-emerald-500"
+                spentTrend.isUp ? "text-rose-500" : "text-emerald-500"
               )}>
-                <HugeiconsIcon icon={totalSpent > totalBudget * 0.8 ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> 
-                {((totalSpent / (totalBudget || 1)) * 100).toFixed(1)}%
+                <HugeiconsIcon icon={spentTrend.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> 
+                {spentTrend.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">of total budget</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Consolidated overhead and operational liquidity</CardContent>

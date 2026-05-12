@@ -208,24 +208,24 @@ export default function ExpensesPage() {
           value={totals.total}
           description="Total actual spending in the current period"
           isFirst
-          trend={{ value: "+4.2%", isUp: true }}
-          trendLabel="from last month"
+          trend={{ value: `${filteredExpenses.length}`, isUp: true }}
+          trendLabel="total items"
           loading={loading}
         />
         <SummaryCard
-          label="Pending verification"
+          label="Pending review"
           value={totals.pending}
           description="Expenses currently awaiting financial audit"
-          trend={{ value: "+12.1%", isUp: true }}
-          trendLabel="vs previous"
+          trend={{ value: `${filteredExpenses.filter(e => e.status === "pending").length}`, isUp: false }}
+          trendLabel="items pending"
           loading={loading}
         />
         <SummaryCard
-          label="Approved spending"
-          value={totals.approved}
-          description="Total funds successfully verified and cleared"
-          trend={{ value: "-2.3%", isUp: false }}
-          trendLabel="from last month"
+          label="Avg. expense"
+          value={filteredExpenses.length > 0 ? totals.total / filteredExpenses.length : 0}
+          description="Average value of submitted expenses"
+          trend={{ value: "LIVE", isUp: true }}
+          trendLabel="calculation"
           loading={loading}
         />
       </div>

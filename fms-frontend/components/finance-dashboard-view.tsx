@@ -77,6 +77,14 @@ function formatMoney(value: number) {
   }).format(value)
 }
 
+function getPreviousPeriod(period: string) {
+  const [qStr, yearStr] = period.split("-")
+  const q = parseInt(qStr.substring(1))
+  const year = parseInt(yearStr)
+  if (q === 1) return `Q4-${year - 1}`
+  return `Q${q - 1}-${year}`
+}
+
 const renderDistributionLabel = (props: any) => {
   const { x, y, width, height, value, dataKey } = props
   if (width < 45) return null
@@ -111,6 +119,7 @@ const renderDistributionLabel = (props: any) => {
 import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod, filterByDepartment } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 export function FinanceDashboardView({ period }: { period: string }) {
   const { user, role } = useRole()
@@ -199,6 +208,31 @@ export function FinanceDashboardView({ period }: { period: string }) {
     return cats
   }, [filteredExpenses])
 
+  // Dynamic Trend Calculations
+  const prevPeriod = getPreviousPeriod(period)
+  const prevBudgets = data.budgets.filter(b => b.period === prevPeriod)
+  const prevExpenses = filterByPeriod(data.expenses, prevPeriod)
+  const prevRequests = filterByPeriod(data.cashRequests, prevPeriod)
+
+  const prevTotalBudget = prevBudgets.reduce((sum, b) => sum + b.amount, 0)
+  const prevTotalUsed = prevBudgets.reduce((sum, b) => sum + b.spent, 0)
+  const prevTotalRequests = prevRequests.reduce((sum, r) => sum + r.amount, 0)
+
+  const calcTrend = (curr: number, prev: number) => {
+    if (prev === 0) return { value: "0.0%", isUp: true }
+    const val = ((curr - prev) / prev) * 100
+    return {
+      value: `${val >= 0 ? "+" : ""}${val.toFixed(1)}%`,
+      isUp: val >= 0
+    }
+  }
+
+  const trends = {
+    allocated: calcTrend(totalBudgetAllocated, prevTotalBudget),
+    used: calcTrend(totalBudgetUsed, prevTotalUsed),
+    requests: calcTrend(pendingCashRequestsAmount, prevTotalRequests)
+  }
+
   const expenseDistribution = [
     { name: "Expenses", ...categories }
   ]
@@ -237,10 +271,13 @@ export function FinanceDashboardView({ period }: { period: string }) {
             <CardDescription>Allocated Budget</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetAllocated)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.allocated}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.allocated.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.allocated.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.allocated.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+              <span className="text-[10px] text-muted-foreground uppercase">from last period</span>
             </div>
           </CardHeader>
         </Card>
@@ -249,8 +286,11 @@ export function FinanceDashboardView({ period }: { period: string }) {
             <CardDescription>Budget Used</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetUsed)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.used}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.used.isUp ? "text-rose-500" : "text-emerald-500"
+              )}>
+                <HugeiconsIcon icon={trends.used.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.used.value}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase">vs previous</span>
             </div>
@@ -261,10 +301,10 @@ export function FinanceDashboardView({ period }: { period: string }) {
             <CardDescription>Remaining</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingBudget)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.remaining}
+              <span className="text-[10px] text-emerald-500 flex items-center font-medium">
+                {((remainingBudget / (totalBudgetAllocated || 1)) * 100).toFixed(1)}%
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">liquidity remaining</span>
             </div>
           </CardHeader>
         </Card>
@@ -275,22 +315,25 @@ export function FinanceDashboardView({ period }: { period: string }) {
               {pendingCashRequestsCount} <span className="text-sm font-normal text-muted-foreground">({formatMoney(pendingCashRequestsAmount)})</span>
             </CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {stats.trends.requests}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.requests.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.requests.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.requests.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">new requests</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Pending Verifications</CardDescription>
+            <CardDescription>Pending Review</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingVerifications}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {stats.trends.verifications}
+              <span className="text-[10px] text-amber-500 flex items-center font-medium">
+                ACTION REQUIRED
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">on {pendingVerifications} items</span>
             </div>
           </CardHeader>
         </Card>

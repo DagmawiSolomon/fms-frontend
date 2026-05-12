@@ -9,14 +9,7 @@ import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary, filterByPeriod, filterByDepartment } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
-
-// --- Placeholder Trends ---
-const trends = {
-  budgets: "+1",
-  requests: "+4",
-  amount: "+$8,500",
-  remaining: "-$2,100"
-}
+import { cn } from "@/lib/utils"
 
 const approvalChartConfig = {
   approved: { label: "Approved", color: "var(--chart-2)" },
@@ -35,6 +28,14 @@ function formatMoney(value: number) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function getPreviousPeriod(period: string) {
+  const [qStr, yearStr] = period.split("-")
+  const q = parseInt(qStr.substring(1))
+  const year = parseInt(yearStr)
+  if (q === 1) return `Q4-${year - 1}`
+  return `Q${q - 1}-${year}`
 }
 
 export function ManagerDashboardView({ period }: { period: string }) {
@@ -121,6 +122,30 @@ export function ManagerDashboardView({ period }: { period: string }) {
     { type: "Remaining", amount: remainingBudget, fill: "var(--chart-2)" },
   ]
 
+  // Dynamic Trend Calculations
+  const prevPeriod = getPreviousPeriod(period)
+  const prevBudgets = data.budgets.filter(b => b.period === prevPeriod)
+  const prevRequests = filterByPeriod(data.cashRequests, prevPeriod)
+
+  const prevPendingBudgets = prevBudgets.filter(b => b.status === "pending").length
+  const prevPendingRequests = prevRequests.filter(r => r.status === "pending").length
+  const prevTotalAllocated = prevBudgets.reduce((sum, b) => sum + b.amount, 0)
+
+  const calcTrend = (curr: number, prev: number) => {
+    if (prev === 0) return { value: "0.0%", isUp: true }
+    const val = ((curr - prev) / prev) * 100
+    return {
+      value: `${val >= 0 ? "+" : ""}${val.toFixed(1)}%`,
+      isUp: val >= 0
+    }
+  }
+
+  const trends = {
+    budgets: calcTrend(pendingBudgetApprovals, prevPendingBudgets),
+    requests: calcTrend(pendingCashRequestsCount, prevPendingRequests),
+    allocated: calcTrend(totalAllocated, prevTotalAllocated)
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-0">
@@ -155,10 +180,13 @@ export function ManagerDashboardView({ period }: { period: string }) {
             <CardDescription>Pending Budgets</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingBudgetApprovals || 0}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.budgets}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.budgets.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.budgets.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.budgets.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">since yesterday</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Awaiting your approval</CardContent>
@@ -168,10 +196,13 @@ export function ManagerDashboardView({ period }: { period: string }) {
             <CardDescription>Pending Requests</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingCashRequestsCount || 0}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.requests}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.requests.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.requests.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.requests.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">new today</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Cash requests awaiting review</CardContent>
@@ -181,26 +212,29 @@ export function ManagerDashboardView({ period }: { period: string }) {
             <CardDescription>Total Pending Amount</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalPendingAmount)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.amount}
+              <span className="text-[10px] text-emerald-500 flex items-center font-medium">
+                {((totalPendingAmount / (totalAllocated || 1)) * 100).toFixed(1)}%
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">total volume</span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">of total budget</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of pending items</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Remaining Budget</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingBudget)}</CardTitle>
+            <CardDescription>Allocated Budget</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalAllocated)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {trends.remaining}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.allocated.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.allocated.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.allocated.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">vs last month</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Across your departments</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Total department funding</CardContent>
         </Card>
       </div>
 

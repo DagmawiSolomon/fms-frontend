@@ -179,24 +179,27 @@ export default function CashRequestsPage() {
           value={totals.total}
           description="Total funds requested in the current period"
           isFirst
-          trend={{ value: "+8.2%", isUp: true }}
-          trendLabel="from last month"
+          trend={{ value: `${filteredRequests.length}`, isUp: true }}
+          trendLabel="total items"
           loading={loading}
         />
         <SummaryCard
-          label="Pending approval"
+          label="Pending review"
           value={totals.pending}
           description="Funds currently awaiting administrative review"
-          trend={{ value: "-2.1%", isUp: false }}
-          trendLabel="vs previous"
+          trend={{ value: `${filteredRequests.filter(r => r.status === "pending").length}`, isUp: false }}
+          trendLabel="items pending"
           loading={loading}
         />
         <SummaryCard
-          label="Disbursed total"
+          label="Disbursed ratio"
           value={totals.approved}
-          description="Total funds successfully processed and paid"
-          trend={{ value: "+15.4%", isUp: true }}
-          trendLabel="from last month"
+          description="Percentage of requested funds successfully paid"
+          trend={{ 
+            value: `${((totals.approved / (totals.total || 1)) * 100).toFixed(1)}%`, 
+            isUp: true 
+          }}
+          trendLabel="of total volume"
           loading={loading}
         />
       </div>

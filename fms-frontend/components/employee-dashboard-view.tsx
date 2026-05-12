@@ -10,13 +10,7 @@ import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod, filterByDe
 import { format } from "date-fns"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
-
-// --- Mock Data Trends (Placeholder) ---
-const trends = {
-  expenses: "+3",
-  spent: "+12%",
-  remaining: "-8%"
-}
+import { cn } from "@/lib/utils"
 
 const spendingChartConfig = {
   amount: { label: "Amount Spent", color: "var(--chart-1)" },
@@ -35,6 +29,14 @@ function formatMoney(value: number) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function getPreviousPeriod(period: string) {
+  const [qStr, yearStr] = period.split("-")
+  const q = parseInt(qStr.substring(1))
+  const year = parseInt(yearStr)
+  if (q === 1) return `Q4-${year - 1}`
+  return `Q${q - 1}-${year}`
 }
 
 export function EmployeeDashboardView({ period }: { period: string }) {
@@ -84,7 +86,7 @@ export function EmployeeDashboardView({ period }: { period: string }) {
     return filterByPeriod(data.expenses, period)
   }, [data.expenses, period]);
 
-  const totalExpenses = dateFilteredExpenses.length
+  const totalExpensesCount = dateFilteredExpenses.length
   const totalSpent = dateFilteredExpenses
     .filter(e => e.status === "approved" || e.status === "verified")
     .reduce((sum, e) => sum + e.amount, 0)
@@ -119,6 +121,30 @@ export function EmployeeDashboardView({ period }: { period: string }) {
     }))
   }, [dateFilteredExpenses])
 
+  // Dynamic Trend Calculations
+  const prevPeriod = getPreviousPeriod(period)
+  const prevBudgets = data.budgets.filter(b => b.period === prevPeriod)
+  const prevExpenses = filterByPeriod(data.expenses, prevPeriod)
+
+  const prevTotalSpent = prevExpenses
+    .filter(e => e.status === "approved" || e.status === "verified")
+    .reduce((sum, e) => sum + e.amount, 0)
+  const prevExpensesCount = prevExpenses.length
+
+  const calcTrend = (curr: number, prev: number) => {
+    if (prev === 0) return { value: "0.0%", isUp: true }
+    const val = ((curr - prev) / prev) * 100
+    return {
+      value: `${val >= 0 ? "+" : ""}${val.toFixed(1)}%`,
+      isUp: val >= 0
+    }
+  }
+
+  const trends = {
+    expenses: calcTrend(totalExpensesCount, prevExpensesCount),
+    spent: calcTrend(totalSpent, prevTotalSpent)
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-0">
@@ -151,12 +177,15 @@ export function EmployeeDashboardView({ period }: { period: string }) {
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Expenses</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{totalExpenses}</CardTitle>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{totalExpensesCount}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.expenses}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.expenses.isUp ? "text-emerald-500" : "text-rose-500"
+              )}>
+                <HugeiconsIcon icon={trends.expenses.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.expenses.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">since last week</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Expenses submitted to date</CardContent>
@@ -166,10 +195,13 @@ export function EmployeeDashboardView({ period }: { period: string }) {
             <CardDescription>Total Spent</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalSpent)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-rose-500 flex items-center">
-                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" /> {trends.spent}
+              <span className={cn(
+                "text-[10px] flex items-center",
+                trends.spent.isUp ? "text-rose-500" : "text-emerald-500"
+              )}>
+                <HugeiconsIcon icon={trends.spent.isUp ? ArrowUp01Icon : ArrowDown01Icon} className="size-3" /> {trends.spent.value}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+              <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Sum of all approved expenses</CardContent>
@@ -179,10 +211,10 @@ export function EmployeeDashboardView({ period }: { period: string }) {
             <CardDescription>Remaining Funds</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingFunds)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-[10px] text-emerald-500 flex items-center">
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" /> {trends.remaining}
+              <span className="text-[10px] text-emerald-500 flex items-center font-medium">
+                {((remainingFunds / (totalAllocated || 1)) * 100).toFixed(1)}%
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">from last month</span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">of budget remains</span>
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Available balance this period</CardContent>
