@@ -21,6 +21,8 @@ const geistMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+import { MobileBlocker } from "@/components/mobile-blocker"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,6 +36,7 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
+          <MobileBlocker />
           <AppProviders>{children}</AppProviders>
         </ThemeProvider>
       </body>
