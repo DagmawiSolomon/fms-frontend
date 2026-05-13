@@ -211,33 +211,35 @@ export default function BudgetsPage() {
 
       <Card className="rounded-b-[4px] overflow-hidden border shadow-none">
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Search budgets..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search budgets..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              {(role === "admin" || role === "leadership") && (
+                <div className="flex gap-2">
+                  <Select value={deptFilter} onValueChange={setDeptFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="IT">IT</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-            <div className="flex gap-2">
-              <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="IT">IT</SelectItem>
-                  <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
           <div className="overflow-hidden rounded-none">
             <Table>
@@ -349,6 +351,8 @@ export default function BudgetsPage() {
         onSubmit={(values) => {
           handleCreate(values)
         }}
+        userDept={user?.department}
+        isGlobalAdmin={role === "admin" || role === "leadership"}
       />
     </DashboardShell>
   )
@@ -358,10 +362,14 @@ function BudgetDialog({
   open,
   onOpenChange,
   onSubmit,
+  userDept,
+  isGlobalAdmin,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: BudgetFormValues) => void
+  userDept?: string | null
+  isGlobalAdmin: boolean
 }) {
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetSchema) as Resolver<BudgetFormValues>,
@@ -383,7 +391,7 @@ function BudgetDialog({
     if (!open) {
       form.reset({
         name: "",
-        department: "",
+        department: isGlobalAdmin ? "" : (userDept || ""),
         amount: 0,
         spent: 0,
         period: "",
@@ -393,6 +401,10 @@ function BudgetDialog({
       })
       setIsEditingPeriod(false)
       return
+    }
+
+    if (!isGlobalAdmin && userDept && !form.getValues("department")) {
+      form.setValue("department", userDept)
     }
 
     // Auto-calculate current quarter and year for new budget
@@ -436,17 +448,24 @@ function BudgetDialog({
                 onValueChange={(value) =>
                   form.setValue("department", value, { shouldValidate: true })
                 }
+                disabled={!isGlobalAdmin}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="IT">IT</SelectItem>
-                  <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
+                  {isGlobalAdmin ? (
+                    <>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="IT">IT</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                    </>
+                  ) : (
+                    <SelectItem value={userDept || "General"}>{userDept || "General"}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             }
