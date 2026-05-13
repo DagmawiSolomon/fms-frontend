@@ -55,6 +55,7 @@ import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment, filter
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserFromCache } from "@/lib/user-cache"
+import { isFinanceLeadershipEmail } from "@/lib/auth"
 import {
   Sheet,
   SheetContent,
@@ -99,6 +100,8 @@ export default function ExpensesPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState("all")
+  const [statusFilter, setStatusFilter] = React.useState("all")
+  const [departmentFilter, setDepartmentFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   // Preload budgets independently so they're ready before the dialog opens
@@ -150,7 +153,9 @@ export default function ExpensesPage() {
     const matchesSearch = (expense.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       String(expense.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
-    return matchesSearch && matchesCategory
+    const matchesStatus = statusFilter === "all" || expense.status === statusFilter
+    const matchesDept = departmentFilter === "all" || expense.department === departmentFilter
+    return matchesSearch && matchesCategory && matchesStatus && matchesDept
   })
 
 
@@ -221,8 +226,10 @@ export default function ExpensesPage() {
     }
   }
 
+  const isLeadership = isFinanceLeadershipEmail(user?.email)
+  const canVerifyExpense = hasPermission("expenses.verify") && !isLeadership
   const showOwnershipColumns = role !== "employee"
-  const showActionColumn = role === "finance"
+  const showActionColumn = role === "finance" && !isLeadership
 
   return (
     <DashboardShell
@@ -278,6 +285,32 @@ export default function ExpensesPage() {
               />
             </div>
             <div className="flex gap-2">
+              {(role === "admin" || role === "finance" || isLeadership) && (
+                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="All Departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="All Categories" />
@@ -356,7 +389,7 @@ export default function ExpensesPage() {
                       {showActionColumn && (
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-2">
-                          {canApproveExpense && (
+                           {canVerifyExpense && (
                           <Button
                             variant="outline"
                             size="sm"
