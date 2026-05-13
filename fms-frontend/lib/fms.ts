@@ -1,5 +1,5 @@
 import { apiRequest, unwrapList } from "@/lib/api"
-import { normalizeRole, type UserRole } from "@/lib/auth"
+import { isFinanceLeadershipEmail, normalizeRole, type UserRole } from "@/lib/auth"
 
 export type FmsBudgetStatus = "pending" | "approved" | "rejected" | "draft"
 
@@ -57,6 +57,7 @@ export type FmsCashRequest = {
   requestedBy?: string | null
   budgetId?: string | number | null
   department?: string | null
+  date?: string | null
 }
 
 export type FmsExpense = {
@@ -285,6 +286,7 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
       requestedBy,
       budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
       department,
+      date: (request.date ?? request.created_at ?? request.createdAt ?? request.submitted_at ?? null) as string | null,
     }
   })
 }
@@ -636,8 +638,8 @@ export function filterByDepartment<T extends { department?: string | null; reque
 ): T[] {
   if (!items || !user) return items
 
-  // Admins and Finance have global oversight
-  if (role === "admin" || role === "finance") {
+  // Admins and finance leadership have global oversight
+  if (role === "admin" || isFinanceLeadershipEmail(user.email)) {
     return items
   }
 

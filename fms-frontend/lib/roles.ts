@@ -53,7 +53,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   finance: {
     name: "Finance Team",
-    description: "Financial oversight, budget proposal review, and disbursement.",
+    description: "Financial oversight, budget approval, and disbursement.",
     navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
@@ -86,8 +86,6 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "budgets.view_specific",
       "budgets.create",
       "budgets.update",
-      "budgets.approve",
-      "budgets.reject",
       "budgets.summary",
       "cash_requests.view_all",
       "cash_requests.view_specific",
