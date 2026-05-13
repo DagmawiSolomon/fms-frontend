@@ -153,14 +153,7 @@ export default function ExpensesPage() {
     return matchesSearch && matchesCategory
   })
 
-  const getBudgetSubmitter = React.useCallback((budgetId?: string | number | null) => {
-    if (!budgetId) return null
-    const budget = budgets.find((item) => String(item.id).toLowerCase().trim() === String(budgetId).toLowerCase().trim())
-    if (!budget) return null
 
-    const cachedUser = getUserFromCache(budget.owner ?? null)
-    return cachedUser ?? (budget.owner ? { id: budget.owner, name: "Unknown user", email: "", role: "employee" } : null)
-  }, [budgets])
 
   const handleCreate = async (values: ExpenseFormValues) => {
     try {
@@ -312,7 +305,6 @@ export default function ExpensesPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   {showOwnershipColumns && <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>}
-                  {showOwnershipColumns && <TableHead className="text-xs text-muted-foreground/50">Budget submitter</TableHead>}
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   {showActionColumn && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
@@ -326,7 +318,6 @@ export default function ExpensesPage() {
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                       {showOwnershipColumns && <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>}
-                      {showOwnershipColumns && <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>}
                       <TableCell><Skeleton className="h-4 w-[90px]" /></TableCell>
                       {showActionColumn && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                     </TableRow>
@@ -358,23 +349,7 @@ export default function ExpensesPage() {
                           </button>
                         </TableCell>
                       )}
-                      {showOwnershipColumns && (
-                        <TableCell>
-                          {(() => {
-                            const budgetSubmitter = getBudgetSubmitter(expense.budgetId)
-                            if (!budgetSubmitter) return <span className="text-sm text-muted-foreground">Unknown</span>
-                            return (
-                              <button
-                                onClick={() => setSelectedUserProfile(budgetSubmitter)}
-                                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
-                              >
-                                {budgetSubmitter.name}
-                                <ArrowUpRight className="size-3" />
-                              </button>
-                            )
-                          })()}
-                        </TableCell>
-                      )}
+
                       <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
@@ -400,7 +375,7 @@ export default function ExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                      <TableCell colSpan={showActionColumn ? (showOwnershipColumns ? 8 : 6) : (showOwnershipColumns ? 7 : 5)} className="h-24 text-center">
+                      <TableCell colSpan={showActionColumn ? (showOwnershipColumns ? 7 : 6) : (showOwnershipColumns ? 6 : 5)} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
