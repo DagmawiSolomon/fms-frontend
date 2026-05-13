@@ -55,6 +55,7 @@ import { fmsApi, normalizeCashRequests, filterByDepartment, filterByOwnership } 
 import type { FmsCashRequest } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserFromCache } from "@/lib/user-cache"
+import { isFinanceLeadershipEmail } from "@/lib/auth"
 import {
   Sheet,
   SheetContent,
@@ -88,13 +89,13 @@ export default function CashRequestsPage() {
   
   const canCreateRequest = hasPermission("cash_requests.create")
   const canApproveRequest = hasPermission("cash_requests.approve")
-  const canDisburseRequest = hasPermission("cash_requests.disburse")
 
   const [requests, setRequests] = React.useState<FmsCashRequest[]>([])
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
+  const [departmentFilter, setDepartmentFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   const fetchRequests = React.useCallback(async () => {
@@ -132,7 +133,8 @@ export default function CashRequestsPage() {
     const matchesSearch = (req.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
                          String(req.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || req.status === statusFilter
-    return matchesSearch && matchesStatus
+    const matchesDept = departmentFilter === "all" || req.department === departmentFilter
+    return matchesSearch && matchesStatus && matchesDept
   })
 
   const handleCreate = async (values: RequestFormValues) => {
@@ -171,6 +173,8 @@ export default function CashRequestsPage() {
     }
   }
 
+  const isLeadership = isFinanceLeadershipEmail(user?.email)
+  const canDisburseRequest = hasPermission("cash_requests.disburse") && !isLeadership
   const showActions = canApproveRequest || canDisburseRequest
   const showRequesterColumn = role !== "employee"
 
@@ -231,6 +235,22 @@ export default function CashRequestsPage() {
               />
             </div>
             <div className="flex gap-2">
+              {(role === "admin" || role === "finance" || isLeadership) && (
+                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="All Departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="All Status" />
