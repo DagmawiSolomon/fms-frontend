@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment, filterByOwnership } from "@/lib/fms"
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserFromCache } from "@/lib/user-cache"
@@ -123,7 +123,9 @@ export default function ExpensesPage() {
       let normalized = normalizeExpenses(data)
       
       // Enforce department isolation and ownership
-      normalized = filterByDepartment(normalized, user, role)
+      normalized = role === "employee"
+        ? filterByOwnership(normalized, user)
+        : filterByDepartment(normalized, user, role)
 
       setExpenses(normalized)
     } catch (error) {

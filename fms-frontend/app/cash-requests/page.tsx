@@ -11,7 +11,6 @@ import {
   CheckIcon,
   PlusIcon,
   SearchIcon,
-  XIcon,
   ArrowUpRight,
 } from "lucide-react"
 
@@ -52,9 +51,8 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeCashRequests, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeCashRequests, filterByDepartment, filterByOwnership } from "@/lib/fms"
 import type { FmsCashRequest } from "@/lib/fms"
-import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserFromCache } from "@/lib/user-cache"
 import {
@@ -99,9 +97,6 @@ export default function CashRequestsPage() {
   const [statusFilter, setStatusFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
-  const canViewSelf = hasPermission("cash_requests.view_self")
-  const canViewAll = hasPermission("cash_requests.view_all")
-
   const fetchRequests = React.useCallback(async () => {
     try {
       setLoading(true)
@@ -109,7 +104,9 @@ export default function CashRequestsPage() {
       let normalized = normalizeCashRequests(data)
       
       // Enforce department isolation and ownership
-      normalized = filterByDepartment(normalized, user, role)
+      normalized = role === "employee"
+        ? filterByOwnership(normalized, user)
+        : filterByDepartment(normalized, user, role)
 
       setRequests(normalized)
     } catch (error) {
@@ -308,14 +305,6 @@ export default function CashRequestsPage() {
                               >
                                 <CheckIcon className="size-4" />
                                 <span className="sr-only">Approve</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStatusChange(req.id, "rejected")}
-                              >
-                                <XIcon className="size-4" />
-                                <span className="sr-only">Reject</span>
                               </Button>
                             </>
                           )}
