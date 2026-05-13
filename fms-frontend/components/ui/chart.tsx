@@ -39,7 +39,7 @@ function useChart() {
   return context
 }
 
-function ChartContainer({
+export function ChartContainer({
   id,
   className,
   children,
@@ -81,7 +81,7 @@ function ChartContainer({
   )
 }
 
-const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+export const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([, config]) => config.theme ?? config.color
   )
@@ -114,9 +114,9 @@ ${colorConfig
   )
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip
+export const ChartTooltip = RechartsPrimitive.Tooltip
 
-function ChartTooltipContent({
+export function ChartTooltipContent({
   active,
   payload,
   className,
@@ -270,17 +270,19 @@ function ChartTooltipContent({
   )
 }
 
-const ChartLegend = RechartsPrimitive.Legend
+export const ChartLegend = RechartsPrimitive.Legend
 
-function ChartLegendContent({
+export function ChartLegendContent({
   className,
   hideIcon = false,
   payload,
   verticalAlign = "bottom",
   nameKey,
+  hideLabel = false,
 }: React.ComponentProps<"div"> & {
   hideIcon?: boolean
   nameKey?: string
+  hideLabel?: boolean
 } & RechartsPrimitive.DefaultLegendContentProps) {
   const { config } = useChart()
 
@@ -319,7 +321,7 @@ function ChartLegendContent({
                   }}
                 />
               )}
-              {itemConfig?.label}
+              {!hideLabel && itemConfig?.label}
             </div>
           )
         })}
@@ -363,11 +365,4 @@ function getPayloadConfigFromPayload(
   return configLabelKey in config ? config[configLabelKey] : config[key]
 }
 
-export {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  ChartStyle,
-}
+
