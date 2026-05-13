@@ -111,7 +111,7 @@ function AuthContent() {
         addUserToCache(newUser)
       }
 
-      toast.success("Account request submitted. An admin will review and approve your access.")
+      toast.success("Account request submitted. An admin will approve your access.")
       setMode("login")
       loginForm.setValue("email", variables.email)
     },

@@ -116,7 +116,7 @@ const renderDistributionLabel = (props: any) => {
   )
 }
 
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod, filterByDepartment, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -143,6 +143,8 @@ export function FinanceDashboardView({ period }: { period: string }) {
         let normalizedBudgets = normalizeBudgets(budgetsRes)
         let normalizedRequests = normalizeCashRequests(requestsRes)
         let normalizedExpenses = normalizeExpenses(expensesRes)
+
+        normalizedExpenses = enrichExpensesWithBudgetDepartments(normalizedExpenses, normalizedBudgets)
 
         // Enforce department isolation
         normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
@@ -186,6 +188,9 @@ export function FinanceDashboardView({ period }: { period: string }) {
   const pendingCashRequestsAmount = pendingCashRequests.reduce((sum, r) => sum + r.amount, 0)
 
   const pendingVerifications = filteredExpenses.filter(e => e.status === "pending").length
+  const approvedBudgets = filteredBudgets.filter(b => b.status === "approved").length
+  const disbursedCashRequests = filteredRequests.filter(r => r.status === "disbursed").length
+  const verifiedExpenses = filteredExpenses.filter(e => e.status === "verified").length
 
   // Charts
   const budgetByDept = React.useMemo(() => {
@@ -268,8 +273,8 @@ export function FinanceDashboardView({ period }: { period: string }) {
       <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
-            <CardDescription>Allocated Budget</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetAllocated)}</CardTitle>
+            <CardDescription>Approved Budgets</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{approvedBudgets}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(
                 "text-[10px] flex items-center",
@@ -280,11 +285,12 @@ export function FinanceDashboardView({ period }: { period: string }) {
               <span className="text-[10px] text-muted-foreground uppercase">from last period</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Budget proposals approved for release</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Budget Used</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalBudgetUsed)}</CardTitle>
+            <CardDescription>Disbursed Cash Requests</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{disbursedCashRequests}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(
                 "text-[10px] flex items-center",
@@ -295,18 +301,20 @@ export function FinanceDashboardView({ period }: { period: string }) {
               <span className="text-[10px] text-muted-foreground uppercase">vs previous</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Cash requests successfully paid out</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Remaining</CardDescription>
-            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(remainingBudget)}</CardTitle>
+            <CardDescription>Verified Expenses</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{verifiedExpenses}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-emerald-500 flex items-center font-medium">
-                {((remainingBudget / (totalBudgetAllocated || 1)) * 100).toFixed(1)}%
+                {((verifiedExpenses / (filteredExpenses.length || 1)) * 100).toFixed(1)}%
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase ml-1">liquidity remaining</span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">verified ratio</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Expenses cleared by finance review</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
@@ -327,7 +335,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Pending Review</CardDescription>
+            <CardDescription>Pending Verifications</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{pendingVerifications}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] text-amber-500 flex items-center font-medium">
@@ -336,14 +344,15 @@ export function FinanceDashboardView({ period }: { period: string }) {
               <span className="text-[10px] text-muted-foreground uppercase ml-1">on {pendingVerifications} items</span>
             </div>
           </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Expense claims awaiting verification</CardContent>
         </Card>
       </div>
 
       <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
-            <CardTitle>Budget Utilization by Department</CardTitle>
-            <CardDescription>Used vs Remaining</CardDescription>
+            <CardTitle>Approved Budgets by Department</CardTitle>
+            <CardDescription>Approved vs remaining budget allocations</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={budgetDeptChartConfig} className="h-[300px] w-full">
@@ -363,7 +372,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50">
           <CardHeader>
             <CardTitle>Cash Flow Over Time</CardTitle>
-            <CardDescription>Requested vs Disbursed amounts</CardDescription>
+            <CardDescription>Requested vs disbursed amounts</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={cashFlowChartConfig} className="h-[300px] w-full">

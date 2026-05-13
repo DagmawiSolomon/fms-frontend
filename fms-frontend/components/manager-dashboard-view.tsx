@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, normalizeSummary, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, normalizeSummary, filterByPeriod, filterByDepartment, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -63,6 +63,8 @@ export function ManagerDashboardView({ period }: { period: string }) {
         let normalizedBudgets = normalizeBudgets(budgetsRes)
         let normalizedRequests = normalizeCashRequests(requestsRes)
         let normalizedExpenses = normalizeExpenses(expensesRes)
+
+        normalizedExpenses = enrichExpensesWithBudgetDepartments(normalizedExpenses, normalizedBudgets)
 
         // Enforce department isolation
         normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
@@ -215,7 +217,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
               <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Cash requests awaiting review</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Cash requests awaiting approval before disbursement</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
@@ -232,7 +234,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">
-            <CardDescription>Allocated Budget</CardDescription>
+            <CardDescription>Approved Budgets</CardDescription>
             <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalAllocated)}</CardTitle>
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(
@@ -264,8 +266,8 @@ export function ManagerDashboardView({ period }: { period: string }) {
       <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
-            <CardTitle>Approval Pipeline</CardTitle>
-            <CardDescription>Request processing status</CardDescription>
+            <CardTitle>Disbursement Pipeline</CardTitle>
+            <CardDescription>Approved requests moving to paid status</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={approvalChartConfig} className="h-[300px] w-full">
@@ -288,7 +290,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50">
           <CardHeader>
             <CardTitle>Budget Utilization</CardTitle>
-            <CardDescription>Used vs Remaining funds</CardDescription>
+            <CardDescription>Approved vs remaining funds</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={utilizationChartConfig} className="h-[300px] w-full">

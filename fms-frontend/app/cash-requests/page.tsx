@@ -123,9 +123,10 @@ export default function CashRequestsPage() {
   const totals = requests.reduce((acc, req) => {
     acc.total += req.amount
     if (req.status === "pending") acc.pending += req.amount
-    if (req.status === "approved" || req.status === "disbursed") acc.approved += req.amount
+    if (req.status === "approved") acc.approved += req.amount
+    if (req.status === "disbursed") acc.disbursed += req.amount
     return acc
-  }, { total: 0, pending: 0, approved: 0 })
+  }, { total: 0, pending: 0, approved: 0, disbursed: 0 })
 
   const filteredRequests = requests.filter(req => {
     const matchesSearch = (req.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
@@ -175,7 +176,7 @@ export default function CashRequestsPage() {
   return (
     <DashboardShell
       title="Cash requests"
-      description="Monitor and approve pending advance funding requests."
+      description="Monitor pending advance funding requests through approval and disbursement."
       actions={
         canCreateRequest ? (
           <Button onClick={() => setDialogOpen(true)}>
@@ -196,20 +197,20 @@ export default function CashRequestsPage() {
           loading={loading}
         />
         <SummaryCard
-          label="Pending review"
-          value={totals.pending}
-          description="Funds currently awaiting administrative review"
-          trend={{ value: `${filteredRequests.filter(r => r.status === "pending").length}`, isUp: false }}
-          trendLabel="items pending"
+          label="Disbursed total"
+          value={totals.disbursed}
+          description="Funds successfully paid out"
+          trend={{ value: `${filteredRequests.filter(r => r.status === "disbursed").length}`, isUp: true }}
+          trendLabel="disbursed requests"
           loading={loading}
         />
         <SummaryCard
-          label="Disbursed ratio"
-          value={totals.approved}
-          description="Percentage of requested funds successfully paid"
+          label="Pending approval"
+          value={totals.pending}
+          description="Funds still awaiting approval"
           trend={{ 
-            value: `${((totals.approved / (totals.total || 1)) * 100).toFixed(1)}%`, 
-            isUp: true 
+            value: `${((totals.pending / (totals.total || 1)) * 100).toFixed(1)}%`, 
+            isUp: false 
           }}
           trendLabel="of total volume"
           loading={loading}

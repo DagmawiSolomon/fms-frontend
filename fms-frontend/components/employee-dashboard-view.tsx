@@ -88,7 +88,7 @@ export function EmployeeDashboardView({ period }: { period: string }) {
 
   const totalExpensesCount = dateFilteredExpenses.length
   const totalSpent = dateFilteredExpenses
-    .filter(e => e.status === "approved" || e.status === "verified")
+    .filter(e => e.status === "verified")
     .reduce((sum, e) => sum + e.amount, 0)
   
   const totalAllocated = filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
@@ -127,7 +127,7 @@ export function EmployeeDashboardView({ period }: { period: string }) {
   const prevExpenses = filterByPeriod(data.expenses, prevPeriod)
 
   const prevTotalSpent = prevExpenses
-    .filter(e => e.status === "approved" || e.status === "verified")
+    .filter(e => e.status === "verified")
     .reduce((sum, e) => sum + e.amount, 0)
   const prevExpensesCount = prevExpenses.length
 
@@ -204,7 +204,7 @@ export function EmployeeDashboardView({ period }: { period: string }) {
               <span className="text-[10px] text-muted-foreground uppercase">vs prev period</span>
             </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Sum of all approved expenses</CardContent>
+          <CardContent className="text-sm text-muted-foreground">Sum of all verified expenses</CardContent>
         </Card>
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
           <CardHeader className="pb-2">

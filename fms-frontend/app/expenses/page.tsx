@@ -11,7 +11,6 @@ import {
   CheckIcon,
   PlusIcon,
   SearchIcon,
-  XIcon,
   ArrowUpRight,
 } from "lucide-react"
 
@@ -52,7 +51,7 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment, filterByOwnership } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment, filterByOwnership, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserFromCache } from "@/lib/user-cache"
@@ -121,6 +120,7 @@ export default function ExpensesPage() {
       setLoading(true)
       const data = await fmsApi.getExpenses()
       let normalized = normalizeExpenses(data)
+      normalized = enrichExpensesWithBudgetDepartments(normalized, budgets)
       
       // Enforce department isolation and ownership
       normalized = role === "employee"
@@ -133,7 +133,7 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false)
     }
-  }, [user, role])
+  }, [budgets, user, role])
 
   React.useEffect(() => {
     fetchExpenses()
@@ -142,9 +142,9 @@ export default function ExpensesPage() {
   const totals = expenses.reduce((acc, exp) => {
     acc.total += exp.amount
     if (exp.status === "pending") acc.pending += exp.amount
-    if (exp.status === "approved" || exp.status === "verified") acc.approved += exp.amount
+    if (exp.status === "verified") acc.verified += exp.amount
     return acc
-  }, { total: 0, pending: 0, approved: 0 })
+  }, { total: 0, pending: 0, verified: 0 })
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = (expense.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
@@ -152,6 +152,15 @@ export default function ExpensesPage() {
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter
     return matchesSearch && matchesCategory
   })
+
+  const getBudgetSubmitter = React.useCallback((budgetId?: string | number | null) => {
+    if (!budgetId) return null
+    const budget = budgets.find((item) => String(item.id).toLowerCase().trim() === String(budgetId).toLowerCase().trim())
+    if (!budget) return null
+
+    const cachedUser = getUserFromCache(budget.owner ?? null)
+    return cachedUser ?? (budget.owner ? { id: budget.owner, name: "Unknown user", email: "", role: "employee" } : null)
+  }, [budgets])
 
   const handleCreate = async (values: ExpenseFormValues) => {
     try {
@@ -175,7 +184,20 @@ export default function ExpensesPage() {
       
       const newExpenses = normalizeExpenses([response])
       if (newExpenses.length > 0) {
-        setExpenses((prev) => [newExpenses[0], ...prev])
+        const budgetDepartment = budgets.find((budget) =>
+          String(budget.id).toLowerCase().trim() === String(newExpenses[0].budgetId ?? "").toLowerCase().trim()
+        )?.department ?? user?.department ?? null
+
+        setExpenses((prev) => [
+          {
+            ...newExpenses[0],
+            status: "pending",
+            approved: null,
+            verified: null,
+            department: newExpenses[0].department ?? budgetDepartment,
+          },
+          ...prev,
+        ])
       }
       
       // Also fetch in the background to ensure consistency
@@ -185,22 +207,22 @@ export default function ExpensesPage() {
     }
   }
 
-  const handleStatusChange = async (id: string | number, approved: boolean) => {
+  const handleStatusChange = async (id: string | number) => {
     try {
-      await fmsApi.verifyExpense(id, approved)
+      await fmsApi.verifyExpense(id, true)
       setExpenses((prev) =>
         prev.map((expense) =>
           String(expense.id) === String(id)
             ? {
                 ...expense,
-                approved,
-                verified: approved,
-                status: approved ? "approved" : "rejected",
+                approved: true,
+                verified: true,
+                status: "verified",
               }
             : expense
         )
       )
-      toast.success(`Expense marked as ${approved ? "approved" : "rejected"}`)
+      toast.success("Expense verified successfully")
     } catch (error) {
       toast.error("Failed to update expense status.")
     }
@@ -211,7 +233,7 @@ export default function ExpensesPage() {
   return (
     <DashboardShell
       title="Expenses"
-      description="Finance reviews and approves itemized expenses submitted by staff."
+      description="Finance verifies itemized expenses submitted by staff."
       actions={
         canCreateExpense ? (
           <Button onClick={() => setDialogOpen(true)}>
@@ -232,19 +254,19 @@ export default function ExpensesPage() {
           loading={loading}
         />
         <SummaryCard
-          label="Pending review"
-          value={totals.pending}
-          description="Expenses currently awaiting financial audit"
-          trend={{ value: `${filteredExpenses.filter(e => e.status === "pending").length}`, isUp: false }}
-          trendLabel="items pending"
+          label="Verified total"
+          value={totals.verified}
+          description="Expenses cleared by finance review"
+          trend={{ value: `${filteredExpenses.filter(e => e.status === "verified").length}`, isUp: true }}
+          trendLabel="verified items"
           loading={loading}
         />
         <SummaryCard
-          label="Avg. expense"
-          value={filteredExpenses.length > 0 ? totals.total / filteredExpenses.length : 0}
-          description="Average value of submitted expenses"
-          trend={{ value: "LIVE", isUp: true }}
-          trendLabel="calculation"
+          label="Pending verification"
+          value={totals.pending}
+          description="Expenses still awaiting verification"
+          trend={{ value: `${filteredExpenses.filter(e => e.status === "pending").length}`, isUp: false }}
+          trendLabel="items pending"
           loading={loading}
         />
       </div>
@@ -289,6 +311,7 @@ export default function ExpensesPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Budget submitter</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
                 </TableRow>
@@ -302,6 +325,8 @@ export default function ExpensesPage() {
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[90px]" /></TableCell>
                       {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                     </TableRow>
                   ))
@@ -331,31 +356,35 @@ export default function ExpensesPage() {
                         </button>
                       </TableCell>
                       <TableCell>
+                        {(() => {
+                          const budgetSubmitter = getBudgetSubmitter(expense.budgetId)
+                          if (!budgetSubmitter) return <span className="text-sm text-muted-foreground">Unknown</span>
+                          return (
+                            <button
+                              onClick={() => setSelectedUserProfile(budgetSubmitter)}
+                              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                            >
+                              {budgetSubmitter.name}
+                              <ArrowUpRight className="size-3" />
+                            </button>
+                          )
+                        })()}
+                      </TableCell>
+                      <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
                           {canApproveExpense && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={expense.status !== "pending"}
-                                onClick={() => handleStatusChange(expense.id, true)}
-                              >
-                                <CheckIcon className="size-4" />
-                                <span className="sr-only">Approve</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={expense.status !== "pending"}
-                                onClick={() => handleStatusChange(expense.id, false)}
-                              >
-                                <XIcon className="size-4" />
-                                <span className="sr-only">Reject</span>
-                              </Button>
-                            </>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={expense.status !== "pending"}
+                              onClick={() => handleStatusChange(expense.id)}
+                            >
+                              <CheckIcon className="size-4" />
+                              <span className="sr-only">Verify</span>
+                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -363,7 +392,7 @@ export default function ExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                      <TableCell colSpan={showActions ? 8 : 7} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
@@ -413,6 +442,15 @@ export default function ExpensesPage() {
                     <Info label="System Role" value={<span className="capitalize">{selectedUserProfile.role}</span>} />
 
                     <Info label="Department" value={selectedUserProfile.department || "General"} />
+
+                    <Info
+                      label="Source"
+                      value={
+                        selectedUserProfile?.email
+                          ? selectedUserProfile.email
+                          : "Local cache record"
+                      }
+                    />
 
                     <Info 
                       label="Status" 
@@ -622,16 +660,15 @@ function Field({
 }
 
 function StatusBadge({ status }: { status: FmsExpense["status"] }) {
+  const displayStatus = status === "approved" ? "verified" : status
   const tone =
-    status === "approved"
+    displayStatus === "verified"
         ? "border-emerald-500/20 text-emerald-500"
-        : status === "rejected"
-          ? "border-rose-500/20 text-rose-500"
-          : "border-amber-500/20 text-amber-500"
+        : "border-amber-500/20 text-amber-500"
 
   return (
     <Badge variant="outline" className={cn(tone, "rounded-[4px] bg-black capitalize font-medium")}>
-      {status}
+      {displayStatus}
     </Badge>
   )
 }
