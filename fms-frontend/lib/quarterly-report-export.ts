@@ -50,102 +50,296 @@ export async function buildQuarterlyReportHtml(period: string, user: FmsSessionU
   <meta charset="utf-8" />
   <title>Quarterly Financial Report ${period}</title>
   <style>
-    @page { size: A4; margin: 18mm; }
-    :root { --ink: #151515; --muted: #5f5a52; --rule: #d7d0c4; --paper: #fbf8f2; --accent: #7a5a2b; }
-    body { margin: 0; background: #eee7db; color: var(--ink); font-family: "Georgia", "Times New Roman", serif; }
-    .page { width: 100%; background: var(--paper); padding: 0; }
-    .header { border-bottom: 1px solid var(--rule); padding-bottom: 14px; margin-bottom: 18px; }
-    h1 { margin: 0; font-size: 30px; letter-spacing: 0.04em; text-transform: uppercase; }
-    .subtitle { margin-top: 6px; color: var(--muted); font-size: 12px; }
-    .meta { display: flex; justify-content: space-between; gap: 16px; margin-top: 10px; font-size: 11px; color: var(--muted); }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
-    .card { border: 1px solid var(--rule); padding: 12px 14px; border-radius: 10px; background: #fffdf9; }
-    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 6px; }
-    .value { font-size: 22px; font-weight: 700; }
-    .small { font-size: 11px; color: var(--muted); margin-top: 3px; }
-    .section { margin-top: 18px; }
-    .section h2 { font-size: 16px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th, td { border-top: 1px solid var(--rule); padding: 8px 6px; text-align: left; vertical-align: top; }
-    th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .note { margin-top: 14px; font-size: 10px; color: var(--muted); }
+    @page { size: A4; margin: 0; }
+    :root { 
+      --ink: #1a1a1a; 
+      --muted: #4b5563; 
+      --rule: #e5e7eb; 
+      --paper: #ffffff; 
+      --accent: #111827; 
+      --header-bg: #f9fafb;
+    }
+    body { 
+      margin: 0; 
+      background: #f3f4f6; 
+      color: var(--ink); 
+      font-family: "Inter", -apple-system, sans-serif; 
+      line-height: 1.5;
+    }
+    .report-container {
+      width: 210mm;
+      margin: 0 auto;
+      background: var(--paper);
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+    .page {
+      width: 210mm;
+      height: 297mm;
+      padding: 25mm 20mm;
+      box-sizing: border-box;
+      position: relative;
+      page-break-after: always;
+    }
+    
+    /* Cover Page */
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: var(--header-bg);
+    }
+    .company-logo {
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin-bottom: 80mm;
+    }
+    .report-title {
+      font-size: 36px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .report-period {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 60mm;
+    }
+    .report-meta {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .report-meta strong {
+      color: var(--ink);
+    }
+
+    /* Standard Page Content */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 4px;
+      margin-bottom: 16px;
+      margin-top: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .summary-stat {
+      padding: 16px;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--ink);
+    }
+    td {
+      font-size: 11px;
+      padding: 10px 4px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .text-right { text-align: right; }
+    .font-bold { font-weight: 700; }
+    
+    .executive-summary {
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 30px;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 20mm;
+      left: 20mm;
+      right: 20mm;
+      border-top: 1px solid var(--rule);
+      padding-top: 8px;
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .approval-section {
+      margin-top: 60px;
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+    }
+    .signature-line {
+      flex: 1;
+      border-top: 1px solid var(--ink);
+      padding-top: 8px;
+      font-size: 11px;
+    }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <h1>Quarterly Financial Report</h1>
-      <div class="subtitle">Prepared in a print-ready report layout for ${period}</div>
-      <div class="meta">
-        <div>Role: ${role}</div>
-        <div>Total approved budget: ${money(totalApprovedBudget)}</div>
-        <div>Generated: ${new Date().toLocaleString()}</div>
+  <div class="report-container" id="report-content">
+    <!-- Page 1: Cover -->
+    <div class="page cover-page">
+      <div class="company-logo">FMS FINANCE SYSTEM</div>
+      <h1 class="report-title">Financial Performance Report</h1>
+      <div class="report-period">Fiscal Period: ${period}</div>
+      <div class="report-meta">
+        <div>Prepared by: <strong>${user?.name || "System Administrator"}</strong></div>
+        <div>Role: <strong>${role.toUpperCase()}</strong></div>
+        <div>Date: <strong>${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</strong></div>
       </div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <div class="label">Approved Budget</div>
-        <div class="value">${money(totalApprovedBudget)}</div>
-        <div class="small">${approvedBudgets.length} approved items</div>
+    <!-- Page 2: Summary -->
+    <div class="page">
+      <div class="section-title">Executive Summary</div>
+      <div class="executive-summary">
+        This report provides a comprehensive overview of the financial activities for the period ${period}. 
+        It consolidates departmental budgets, cash disbursement requests, and verified operational expenses 
+        to provide a high-level view of capital utilization and liquidity.
       </div>
-      <div class="card">
-        <div class="label">Disbursed Cash</div>
-        <div class="value">${money(totalDisbursed)}</div>
-        <div class="small">${disbursedRequests.length} disbursed requests</div>
-      </div>
-      <div class="card">
-        <div class="label">Verified Expenses</div>
-        <div class="value">${money(totalVerifiedExpenses)}</div>
-        <div class="small">${verifiedExpenses.length} verified records</div>
-      </div>
-    </div>
 
-    <div class="split">
-      <div class="card">
-        <div class="label">Pending Budget Requests</div>
-        <div class="value">${money(totalPendingBudget)}</div>
-        <div class="small">${pendingBudgets.length} items awaiting approval</div>
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <div class="stat-label">Total Approved Budget</div>
+          <div class="stat-value">${money(totalApprovedBudget)}</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-label">Actual Operational Spend</div>
+          <div class="stat-value">${money(totalVerifiedExpenses)}</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-label">Total Cash Disbursed</div>
+          <div class="stat-value">${money(totalDisbursed)}</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-label">Liquidity Efficiency</div>
+          <div class="stat-value">${totalApprovedBudget > 0 ? ((totalVerifiedExpenses / totalApprovedBudget) * 100).toFixed(1) : 0}%</div>
+        </div>
       </div>
-      <div class="card">
-        <div class="label">Pending Requests & Expenses</div>
-        <div class="value">${money(totalPendingRequest + totalPendingExpense)}</div>
-        <div class="small">${pendingRequests.length} cash requests and ${pendingExpenses.length} expenses still open</div>
-      </div>
-    </div>
 
-    <div class="section">
-      <h2>Budget Summary</h2>
+      <div class="section-title">Budget Allocation Detail</div>
       <table>
-        <thead><tr><th>Name</th><th>Department</th><th>Status</th><th>Amount</th><th>Spent</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Budget Name</th>
+            <th>Department</th>
+            <th>Allocated</th>
+            <th>Actual Spent</th>
+            <th class="text-right">Utilization</th>
+          </tr>
+        </thead>
         <tbody>
-          ${pBudgets.slice(0, 10).map((b) => `<tr><td>${b.name}</td><td>${b.department ?? "Unassigned"}</td><td>${b.status}</td><td>${money(b.amount)}</td><td>${money(b.spent)}</td></tr>`).join("") || `<tr><td colspan="5">No budget data for ${period}</td></tr>`}
+          ${pBudgets.map((b) => `
+            <tr>
+              <td class="font-bold">${b.name}</td>
+              <td>${b.department || "N/A"}</td>
+              <td>${money(b.amount)}</td>
+              <td>${money(b.spent)}</td>
+              <td class="text-right">${b.amount > 0 ? ((b.spent / b.amount) * 100).toFixed(0) : 0}%</td>
+            </tr>
+          `).join("") || `<tr><td colspan="5">No budget data recorded.</td></tr>`}
         </tbody>
       </table>
+
+      <div class="footer">
+        <div>Confidential - Internal Use Only</div>
+        <div>Page 2 of 3</div>
+      </div>
     </div>
 
-    <div class="section">
-      <h2>Cash Requests</h2>
+    <!-- Page 3: Transaction Detail -->
+    <div class="page">
+      <div class="section-title">Cash Disbursement Log</div>
       <table>
-        <thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Amount</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Purpose</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
         <tbody>
-          ${pRequests.slice(0, 10).map((r) => `<tr><td>${r.title}</td><td>${r.department ?? "Unassigned"}</td><td>${r.status}</td><td>${money(r.amount)}</td></tr>`).join("") || `<tr><td colspan="4">No cash request data for ${period}</td></tr>`}
+          ${pRequests.slice(0, 15).map((r) => `
+            <tr>
+              <td>${r.title}</td>
+              <td>${r.department || "N/A"}</td>
+              <td>${r.status.toUpperCase()}</td>
+              <td class="text-right font-bold">${money(r.amount)}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="4">No requests recorded.</td></tr>`}
         </tbody>
       </table>
-    </div>
 
-    <div class="section">
-      <h2>Expenses</h2>
+      <div class="section-title">Expense Verification Log</div>
       <table>
-        <thead><tr><th>Description</th><th>Department</th><th>Status</th><th>Amount</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
         <tbody>
-          ${pExpenses.slice(0, 10).map((e) => `<tr><td>${e.description}</td><td>${e.department ?? "Unassigned"}</td><td>${e.status}</td><td>${money(e.amount)}</td></tr>`).join("") || `<tr><td colspan="4">No expense data for ${period}</td></tr>`}
+          ${pExpenses.slice(0, 15).map((e) => `
+            <tr>
+              <td>${e.description}</td>
+              <td>${e.department || "N/A"}</td>
+              <td>${e.status.toUpperCase()}</td>
+              <td class="text-right font-bold">${money(e.amount)}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="4">No expenses recorded.</td></tr>`}
         </tbody>
       </table>
-    </div>
 
-    <div class="note">This report uses a LaTeX-inspired print layout for clean PDF export via the browser print dialog.</div>
+      <div class="approval-section">
+        <div class="signature-line">
+          <strong>Finance Reviewer</strong><br/>
+          Name & Date
+        </div>
+        <div class="signature-line">
+          <strong>Approving Authority</strong><br/>
+          Name & Date
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>Confidential - Internal Use Only</div>
+        <div>Page 3 of 3</div>
+      </div>
+    </div>
   </div>
 </body>
 </html>`
