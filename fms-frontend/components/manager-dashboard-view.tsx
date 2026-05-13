@@ -3,7 +3,8 @@
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, normalizeSummary, filterByPeriod, filterByDepartment, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
@@ -12,8 +13,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 const approvalChartConfig = {
-  approved: { label: "Approved", color: "var(--chart-2)" },
   pending: { label: "Pending", color: "var(--chart-3)" },
+  approved: { label: "Approved", color: "var(--chart-2)" },
+  disbursed: { label: "Disbursed", color: "var(--chart-1)" },
   rejected: { label: "Rejected", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
@@ -116,22 +118,23 @@ export function ManagerDashboardView({ period }: { period: string }) {
 
   // Charts
   const approvalPipelineData = React.useMemo(() => {
-    const counts = { Approved: 0, Pending: 0, Rejected: 0 }
+    const counts = { pending: 0, approved: 0, disbursed: 0, rejected: 0 }
     filteredRequests.forEach(r => {
-      if (r.status === "approved" || r.status === "disbursed") counts.Approved++
-      else if (r.status === "pending") counts.Pending++
-      else if (r.status === "rejected") counts.Rejected++
+      if (r.status === "disbursed") counts.disbursed++
+      else if (r.status === "approved") counts.approved++
+      else if (r.status === "pending") counts.pending++
+      else if (r.status === "rejected") counts.rejected++
     })
     return [
-      { status: "Approved", count: counts.Approved, fill: "var(--chart-2)" },
-      { status: "Pending", count: counts.Pending, fill: "var(--chart-3)" },
-      { status: "Rejected", count: counts.Rejected, fill: "var(--chart-4)" },
+      { status: "pending", count: counts.pending, fill: "var(--chart-3)" },
+      { status: "approved", count: counts.approved, fill: "var(--chart-2)" },
+      { status: "disbursed", count: counts.disbursed, fill: "var(--chart-1)" },
     ]
   }, [filteredRequests])
 
   const budgetUtilizationData = [
-    { type: "Used", amount: totalSpent, fill: "var(--chart-1)" },
-    { type: "Remaining", amount: remainingBudget, fill: "var(--chart-2)" },
+    { type: "used", amount: totalSpent, fill: "var(--chart-1)" },
+    { type: "remaining", amount: remainingBudget, fill: "var(--chart-2)" },
   ]
 
   // Dynamic Trend Calculations
@@ -266,17 +269,28 @@ export function ManagerDashboardView({ period }: { period: string }) {
       <div className="grid gap-0 lg:grid-cols-2 border rounded-b-[4px] overflow-hidden">
         <Card className="rounded-none border-0 shadow-none">
           <CardHeader>
-            <CardTitle>Disbursement Pipeline</CardTitle>
-            <CardDescription>Approved requests moving to paid status</CardDescription>
+            <CardTitle>Cash Request Lifecycle</CardTitle>
+            <CardDescription>Volume of requests from submission to payout</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={approvalChartConfig} className="h-[300px] w-full">
               <BarChart data={approvalPipelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="status" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                <XAxis 
+                  dataKey="status" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8} 
+                  fontSize={12} 
+                  tickFormatter={(val) => approvalChartConfig[val as keyof typeof approvalChartConfig]?.label ?? val}
+                />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Legend verticalAlign="bottom" height={36} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="status" />} />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  content={(props) => <ChartLegendContent {...props} nameKey="status" />}
+                />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
                   {approvalPipelineData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -296,7 +310,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
             <ChartContainer config={utilizationChartConfig} className="h-[300px] w-full">
               <PieChart>
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Legend verticalAlign="top" height={36} />
+
                 <Pie data={budgetUtilizationData} dataKey="amount" nameKey="type" cx="50%" cy="45%" innerRadius={60} outerRadius={80} paddingAngle={2}>
                   {budgetUtilizationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
