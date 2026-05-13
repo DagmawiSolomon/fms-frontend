@@ -318,9 +318,10 @@ export default function ExpensesPage() {
                       <TableCell>
                         <button
                           onClick={() => setSelectedUserProfile(getUserFromCache(expense.submitter))}
-                          className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
                         >
                           {getUserFromCache(expense.submitter)?.name || "Unknown"}
+                          <ArrowUpRight className="size-3" />
                         </button>
                       </TableCell>
                       <TableCell>
@@ -412,30 +413,22 @@ export default function ExpensesPage() {
                   <Separator className="bg-border/50" />
 
                   <div className="grid gap-6">
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
-                      <div className="text-sm font-medium capitalize text-foreground">
-                        {selectedUserProfile.role}
-                      </div>
-                    </div>
+                    <Info label="System Role" value={<span className="capitalize">{selectedUserProfile.role}</span>} />
 
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Department</div>
-                      <div className="text-sm font-medium text-foreground">
-                        {selectedUserProfile.department || "General"}
-                      </div>
-                    </div>
+                    <Info label="Department" value={selectedUserProfile.department || "General"} />
 
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Status</div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium capitalize text-foreground">{selectedUserProfile.status || "active"}</span>
-                        <div className={cn(
-                          "size-1.5 rounded-full",
-                          (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
-                        )} />
-                      </div>
-                    </div>
+                    <Info 
+                      label="Status" 
+                      value={
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{selectedUserProfile.status || "active"}</span>
+                          <div className={cn(
+                            "size-1.5 rounded-full",
+                            (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
+                          )} />
+                        </div>
+                      }
+                    />
                   </div>
                 </div>
               </div>
@@ -725,5 +718,14 @@ function SummaryCard({
         {description}
       </CardContent>
     </Card>
+  )
+}
+
+function Info({ label, value, labelClassName }: { label: string; value: React.ReactNode; labelClassName?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={cn("text-xs font-heading text-muted-foreground/50", labelClassName)}>{label}</div>
+      <div className="text-sm text-foreground">{value}</div>
+    </div>
   )
 }

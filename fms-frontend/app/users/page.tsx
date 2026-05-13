@@ -105,7 +105,7 @@ export default function UsersPage() {
     if (currentUserRole !== "admin") {
       const currentRank = ROLE_RANKS[currentUserRole] ?? 99
       const userRank = ROLE_RANKS[user.role] ?? 99
-      
+
       // If the target user has a higher rank (lower number), hide them
       if (userRank < currentRank) return false
     }
@@ -124,7 +124,7 @@ export default function UsersPage() {
 
     try {
       setSaving(true)
-      
+
       const backendRole = draftRole === "manager" ? "finance" : draftRole
       let newEmail = selectedUser.email
 
@@ -149,7 +149,7 @@ export default function UsersPage() {
       }
 
       await Promise.all(updates)
-      
+
       toast.success(draftRole === "manager" ? "User promoted to Manager (Finance role + Email flag)" : "User updated successfully")
       fetchUsers()
       setSelectedUser(null)
@@ -328,70 +328,81 @@ export default function UsersPage() {
                       <Separator className="bg-border/50" />
 
                       <div className="grid gap-6">
-                        <div className="grid gap-2">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
-                          <Select
-                            value={draftRole || ""}
-                            onValueChange={setDraftRole}
-                            disabled={!canManage}
-                          >
-                            <SelectTrigger className="w-full h-11 bg-white/[0.02] border-white/10 rounded-[4px]">
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(ROLE_RANKS)
-                                .filter(r => currentUserRole === "admin" || ROLE_RANKS[r] >= (ROLE_RANKS[currentUserRole] ?? 99))
-                                .map(r => (
-                                  <SelectItem key={r} value={r} className="capitalize">
-                                    {r === "finance" ? "Finance Team" : r}
-                                  </SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                          {draftRole === "manager" && (
-                            <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-[4px]">
-                              <p className="text-[10px] text-amber-500 leading-tight">
-                                <span className="font-bold uppercase tracking-wider block mb-1">Manager Note:</span>
-                                This user will be assigned the <strong>Finance Team</strong> role on the backend, 
-                                with an email flag <strong>(+manager)</strong> to enable the Manager UI.
-                              </p>
+                        <Info 
+                          label="Department"
+                          value={selectedUser.department || "General"}
+                        />
+                        <Info
+                          label="System Role"
+                          value={
+                            <div className="grid gap-2">
+                              <Select
+                                value={draftRole || ""}
+                                onValueChange={setDraftRole}
+                                disabled={!canManage}
+                              >
+                                <SelectTrigger className="w-full h-11 bg-white/[0.02] border-white/10 rounded-[4px]">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.keys(ROLE_RANKS)
+                                    .filter(r => currentUserRole === "admin" || ROLE_RANKS[r] >= (ROLE_RANKS[currentUserRole] ?? 99))
+                                    .map(r => (
+                                      <SelectItem key={r} value={r} className="capitalize">
+                                        {r === "finance" ? "Finance Team" : r}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                              {draftRole === "manager" && (
+                                <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-[4px]">
+                                  <p className="text-[10px] text-amber-500 leading-tight">
+                                    <span className="font-bold font-heading capitalize tracking-wider block mb-1">Manager Note:</span>
+                                    This user will be assigned the <strong>Finance Team</strong> role on the backend,
+                                    with an email flag <strong>(+manager)</strong> to enable the Manager UI.
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          }
+                        />
 
                         {currentUserRole === "admin" && (
-                          <div className="grid gap-2">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Danger Zone</div>
-                            <div className="flex items-center justify-between py-2 px-3 bg-rose-500/[0.02] border border-rose-500/10 rounded-[4px]">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-medium text-foreground">Account Status</span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  {draftStatus === "active" ? "Access granted to platform" : "Access currently suspended"}
-                                </span>
+                          <Info
+                            label="Danger Zone"
+                            labelClassName="text-rose-500"
+                            value={
+                              <div className="flex items-center justify-between py-2 px-3 bg-rose-500/[0.02] border border-rose-500/10 rounded-[4px]">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-xs font-medium text-foreground">Account Status</span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {draftStatus === "active" ? "Access granted to platform" : "Access currently suspended"}
+                                  </span>
+                                </div>
+                                <Switch
+                                  checked={draftStatus === "active"}
+                                  onCheckedChange={(checked) => setDraftStatus(checked ? "active" : "inactive")}
+                                  disabled={!canManage}
+                                />
                               </div>
-                              <Switch 
-                                checked={draftStatus === "active"}
-                                onCheckedChange={(checked) => setDraftStatus(checked ? "active" : "inactive")}
-                                disabled={!canManage}
-                              />
-                            </div>
-                          </div>
+                            }
+                          />
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="p-6 border-t border-border/50 bg-white/[0.01]">
                     <div className="flex gap-3">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1 rounded-[4px] h-10" 
+                      <Button
+                        variant="outline"
+                        className="flex-1 rounded-[4px] h-10"
                         onClick={() => setSelectedUser(null)}
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        className="flex-1 rounded-[4px] h-10 bg-slate-50 text-black hover:bg-slate-50/90" 
+                      <Button
+                        className="flex-1 rounded-[4px] h-10 bg-slate-50 text-black hover:bg-slate-50/90"
                         onClick={handleSaveChanges}
                         disabled={saving || !canManage}
                       >
@@ -416,4 +427,13 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("")
+}
+
+function Info({ label, value, labelClassName }: { label: string; value: React.ReactNode; labelClassName?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={cn("text-xs text-muted-foreground/50", labelClassName)}>{label}</div>
+      <div className="text-sm text-foreground">{value}</div>
+    </div>
+  )
 }

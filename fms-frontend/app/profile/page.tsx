@@ -84,10 +84,10 @@ export default function ProfilePage() {
   )
 }
 
-function Info({ label, value }: { label: string; value: ReactNode }) {
+function Info({ label, value, labelClassName }: { label: string; value: ReactNode; labelClassName?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="text-xs text-muted-foreground/50">{label}</div>
+      <div className={`text-xs font-heading text-muted-foreground/50 ${labelClassName || ""}`}>{label}</div>
       <div className="text-sm text-foreground">{value}</div>
     </div>
   )
