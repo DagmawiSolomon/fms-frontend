@@ -172,6 +172,7 @@ export default function CashRequestsPage() {
   }
 
   const showActions = canApproveRequest || canDisburseRequest
+  const showRequesterColumn = role !== "employee"
 
   return (
     <DashboardShell
@@ -252,9 +253,9 @@ export default function CashRequestsPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Request</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Purpose</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
-                  {role !== "employee" && <TableHead className="text-xs text-muted-foreground/50">Requester</TableHead>}
+                  {showRequesterColumn && <TableHead className="text-xs text-muted-foreground/50">Requester</TableHead>}
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
+                  {showActions && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -264,7 +265,7 @@ export default function CashRequestsPage() {
                       <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-                      {role !== "employee" && <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>}
+                      {showRequesterColumn && <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>}
                       <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                       {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                     </TableRow>
@@ -281,7 +282,7 @@ export default function CashRequestsPage() {
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(req.amount)}
                       </TableCell>
-                      {role !== "employee" && (
+                      {showRequesterColumn && (
                         <TableCell>
                           <button
                             onClick={() => setSelectedUserProfile(getUserFromCache(req.requestedBy))}
@@ -295,38 +296,40 @@ export default function CashRequestsPage() {
                       <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-end gap-2">
-                          {canApproveRequest && req.status === "pending" && (
-                            <>
+                      {showActions && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
+                            {canApproveRequest && (
                               <Button
                                 variant="outline"
                                 size="sm"
+                                className="disabled:cursor-not-allowed"
                                 onClick={() => handleStatusChange(req.id, "approved")}
+                                disabled={req.status !== "pending"}
                               >
                                 <CheckIcon className="size-4" />
                                 <span className="sr-only">Approve</span>
                               </Button>
-                            </>
-                          )}
-                          {canDisburseRequest && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleStatusChange(req.id, "disbursed")}
-                              disabled={req.status !== "approved"}
-                            >
-                              Disburse
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                            )}
+                            {canDisburseRequest && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white disabled:cursor-not-allowed"
+                                onClick={() => handleStatusChange(req.id, "disbursed")}
+                                disabled={req.status !== "approved"}
+                              >
+                                Disburse
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? (showRequesterColumn ? 5 : 4) : (showRequesterColumn ? 4 : 3)} className="h-24 text-center">
                       No cash requests found.
                     </TableCell>
                   </TableRow>

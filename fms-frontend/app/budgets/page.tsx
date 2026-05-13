@@ -9,6 +9,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   CheckIcon,
+  ArrowUpRightIcon,
   PencilIcon,
   PlusIcon,
   SearchIcon,
@@ -59,6 +60,7 @@ import { fmsApi, normalizeBudgets, filterByDepartment } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { isFinanceLeadershipEmail } from "@/lib/auth"
 import { getUserFromCache } from "@/lib/user-cache"
 import {
   Sheet,
@@ -96,8 +98,8 @@ export default function BudgetsPage() {
 
   const canCreateBudgets = hasPermission("budgets.create")
   const canEditBudgets = hasPermission("budgets.update")
-  const canApproveBudgets = hasPermission("budgets.approve")
-  const canRejectBudgets = hasPermission("budgets.reject")
+  const canApproveBudgets = role === "finance" || isFinanceLeadershipEmail(user?.email)
+  const canRejectBudgets = canApproveBudgets
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -157,8 +159,10 @@ export default function BudgetsPage() {
 
   const handleCreate = async (values: BudgetFormValues) => {
     try {
+      const generatedName = `${values.department} ${values.period} Budget`
       await fmsApi.createBudget({
         ...values,
+        name: generatedName,
         status: values.status as FmsBudgetStatus,
         userId: user?.id as string | undefined
       })
@@ -202,7 +206,7 @@ export default function BudgetsPage() {
     setDialogOpen(true)
   }
 
-  const showActions = true
+  const showActions = canEditBudgets || canApproveBudgets || canRejectBudgets
 
   return (
     <DashboardShell
@@ -316,6 +320,7 @@ export default function BudgetsPage() {
                               className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
                             >
                               {submitter.name}
+                              <ArrowUpRightIcon className="size-3" />
                             </button>
                           )
                         })()}
@@ -337,7 +342,7 @@ export default function BudgetsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 disabled:cursor-not-allowed"
                                 disabled={budget.status !== "pending" && budget.status !== "draft"}
                                 onClick={() => {}}
                               >
@@ -349,6 +354,7 @@ export default function BudgetsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                className="disabled:cursor-not-allowed"
                                 disabled={budget.status !== "pending"}
                                 onClick={() => handleStatusChange(budget.id, "approved")}
                               >
@@ -360,6 +366,7 @@ export default function BudgetsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                className="disabled:cursor-not-allowed"
                                 disabled={budget.status !== "pending"}
                                 onClick={() => openRejectDialog(budget.id)}
                               >
@@ -558,8 +565,12 @@ function BudgetDialog({
     const q = Math.floor(now.getMonth() / 3) + 1
     const y = now.getFullYear()
     const p = `Q${q}-${y}`
-    form.setValue("period", p)
-    form.setValue("year", y)
+      form.setValue("period", p)
+      form.setValue("year", y)
+      if (!form.getValues("name")) {
+        const dept = form.getValues("department") || userDept || "Department"
+        form.setValue("name", `${dept} ${p} Budget`)
+      }
   }, [form, open])
 
   return (
@@ -578,13 +589,6 @@ function BudgetDialog({
             onSubmit(values as BudgetFormValues)
           )}
         >
-          <Field
-            label="Budget name"
-            error={form.formState.errors.name?.message}
-            control={
-              <Input placeholder="Operations Q3" {...form.register("name")} />
-            }
-          />
           <Field
             label="Department"
             error={form.formState.errors.department?.message}

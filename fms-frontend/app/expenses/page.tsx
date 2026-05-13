@@ -228,7 +228,8 @@ export default function ExpensesPage() {
     }
   }
 
-  const showActions = canApproveExpense
+  const showOwnershipColumns = role !== "employee"
+  const showActionColumn = role === "finance"
 
   return (
     <DashboardShell
@@ -310,10 +311,10 @@ export default function ExpensesPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Category</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Date</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Budget submitter</TableHead>
+                  {showOwnershipColumns && <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>}
+                  {showOwnershipColumns && <TableHead className="text-xs text-muted-foreground/50">Budget submitter</TableHead>}
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
-                  <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
+                  {showActionColumn && <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -324,10 +325,10 @@ export default function ExpensesPage() {
                       <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                      {showOwnershipColumns && <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>}
+                      {showOwnershipColumns && <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>}
                       <TableCell><Skeleton className="h-4 w-[90px]" /></TableCell>
-                      {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
+                      {showActionColumn && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                     </TableRow>
                   ))
                 ) : filteredExpenses.length ? (
@@ -346,53 +347,60 @@ export default function ExpensesPage() {
                       <TableCell className="text-right">
                         {formatMoney(expense.amount)}
                       </TableCell>
-                      <TableCell>
-                        <button
-                          onClick={() => setSelectedUserProfile(getUserFromCache(expense.submitter))}
-                          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
-                        >
-                          {getUserFromCache(expense.submitter)?.name || "Unknown"}
-                          <ArrowUpRight className="size-3" />
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const budgetSubmitter = getBudgetSubmitter(expense.budgetId)
-                          if (!budgetSubmitter) return <span className="text-sm text-muted-foreground">Unknown</span>
-                          return (
-                            <button
-                              onClick={() => setSelectedUserProfile(budgetSubmitter)}
-                              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
-                            >
-                              {budgetSubmitter.name}
-                              <ArrowUpRight className="size-3" />
-                            </button>
-                          )
-                        })()}
-                      </TableCell>
+                      {showOwnershipColumns && (
+                        <TableCell>
+                          <button
+                            onClick={() => setSelectedUserProfile(getUserFromCache(expense.submitter))}
+                            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                          >
+                            {getUserFromCache(expense.submitter)?.name || "Unknown"}
+                            <ArrowUpRight className="size-3" />
+                          </button>
+                        </TableCell>
+                      )}
+                      {showOwnershipColumns && (
+                        <TableCell>
+                          {(() => {
+                            const budgetSubmitter = getBudgetSubmitter(expense.budgetId)
+                            if (!budgetSubmitter) return <span className="text-sm text-muted-foreground">Unknown</span>
+                            return (
+                              <button
+                                onClick={() => setSelectedUserProfile(budgetSubmitter)}
+                                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                              >
+                                {budgetSubmitter.name}
+                                <ArrowUpRight className="size-3" />
+                              </button>
+                            )
+                          })()}
+                        </TableCell>
+                      )}
                       <TableCell>
                         <StatusBadge status={expense.status} />
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-end gap-2">
+                      {showActionColumn && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
                           {canApproveExpense && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={expense.status !== "pending"}
-                              onClick={() => handleStatusChange(expense.id)}
-                            >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="disabled:cursor-not-allowed"
+                            disabled={expense.status !== "pending"}
+                            onClick={() => handleStatusChange(expense.id)}
+                          >
                               <CheckIcon className="size-4" />
                               <span className="sr-only">Verify</span>
                             </Button>
                           )}
-                        </div>
-                      </TableCell>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                      <TableCell colSpan={showActions ? 8 : 7} className="h-24 text-center">
+                      <TableCell colSpan={showActionColumn ? (showOwnershipColumns ? 8 : 6) : (showOwnershipColumns ? 7 : 5)} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
