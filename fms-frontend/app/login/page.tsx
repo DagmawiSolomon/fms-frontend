@@ -64,12 +64,12 @@ function AuthContent() {
     onSuccess: async (payload, variables) => {
       setLoginError(null)
       if (isBlockedAccount(variables.email)) {
-        await fmsApi.logoutUser().catch(() => {})
+        await fmsApi.logoutUser().catch(() => { })
         setLoginError("Your account request was declined. Please contact an administrator.")
         return
       }
       if (isPendingApproval(variables.email)) {
-        await fmsApi.logoutUser().catch(() => {})
+        await fmsApi.logoutUser().catch(() => { })
         setLoginError("Your account is awaiting admin approval. You will be able to sign in once approved.")
         return
       }
@@ -104,7 +104,7 @@ function AuthContent() {
     mutationFn: (values: RegisterValues) => fmsApi.registerUser(values),
     onSuccess: (payload, variables) => {
       addPendingApproval(variables.email, variables.name, variables.role)
-      
+
       // Attempt to normalize and cache the new user if returned
       const newUser = normalizeSessionUser(payload)
       if (newUser) {
@@ -142,9 +142,20 @@ function AuthContent() {
       {/* Right side - Form */}
       <div className="flex w-full flex-col items-center justify-center lg:w-[35%] bg-sidebar text-sidebar-foreground p-6 sm:p-8">
         <div className="w-full max-w-sm flex flex-col gap-4">
-          <div className="flex flex-col gap-0 text-center lg:text-left transition-all duration-300">
-            <h1 className="text-3xl tracking-tight text-foreground font-heading">
-              {mode === "login" ? "Welcome to FMS" : "Create an account"}
+          <div className="flex flex-col items-center gap-3 text-center transition-all duration-300">
+            <Image
+              src="/fms-login.png"
+              alt="FinFlow mark"
+              width={22}
+              height={22}
+              className="size-[22px] object-contain opacity-70"
+              priority
+            />
+            <h1 className="text-[2.35rem] leading-none tracking-[0.16em] text-foreground font-heading uppercase">
+              FinFlow
+            </h1>
+            <h1 className="text-2xl tracking-tight text-muted-foreground font-heading">
+              {mode === "login" ? "Welcome back!" : "Create an account"}
             </h1>
           </div>
 
