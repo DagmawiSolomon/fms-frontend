@@ -294,21 +294,17 @@ export function normalizeExpenses(payload: unknown): FmsExpense[] {
     const expense = item as Record<string, unknown>
     const verified = typeof expense.verified === "boolean"
       ? expense.verified
-      : null
-    const approved = typeof expense.approved === "boolean"
-      ? expense.approved
-      : typeof expense.isApproved === "boolean"
-        ? expense.isApproved
-        : verified
-
-    const status =
-      expense.rejected === true || String(expense.status ?? "").toLowerCase().includes("reject")
+      : typeof expense.approved === "boolean"
+        ? expense.approved
+        : typeof expense.isApproved === "boolean"
+          ? expense.isApproved
+          : null
+    const approved = verified
+    const status = verified === true
+      ? "approved"
+      : verified === false
         ? "rejected"
-        : verified === true
-          ? "approved"
-          : verified === false
-            ? "rejected"
-            : normalizeExpenseStatus(expense.status ?? "pending")
+        : "pending"
 
     return {
       id: normalizeIdentifier(expense.id ?? expense._id ?? expense.expense_id, index),
@@ -556,20 +552,6 @@ function normalizeCashStatus(value: unknown) {
   return "pending"
 }
 
-function normalizeExpenseStatus(value: unknown) {
-  const status = String(value ?? "pending").toLowerCase()
-
-  if (status.includes("verify")) {
-    return "verified"
-  }
-
-  if (status.includes("reject")) {
-    return "rejected"
-  }
-
-  return "pending"
-}
-
 function normalizeIdentifier(value: unknown, fallback: string | number): string | number
 function normalizeIdentifier(value: unknown, fallback: null): string | number | null
 function normalizeIdentifier(
@@ -668,5 +650,23 @@ export function filterByDepartment<T extends { department?: string | null; reque
 
     // 3. If no department info and not the owner, hide it
     return false
+  })
+}
+
+/**
+ * Restrict items to the authenticated user's own submissions.
+ * Used for employee-facing lists that should not expose co-worker records.
+ */
+export function filterByOwnership<T extends { owner?: string | null; requestedBy?: string | null; submitter?: string | null }>(
+  items: T[],
+  user: FmsSessionUser | null
+): T[] {
+  if (!items || !user) return items
+
+  const userId = String(user.id).toLowerCase().trim()
+
+  return items.filter((item) => {
+    const ownerId = String(item.owner ?? item.requestedBy ?? item.submitter ?? "").toLowerCase().trim()
+    return ownerId === userId
   })
 }

@@ -70,7 +70,6 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "expenses.view_all",
       "expenses.view_specific",
       "expenses.approve",
-      "expenses.verify",
       "expenses.read_receipt",
 
     ],
@@ -78,20 +77,18 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   manager: {
     name: "Department Manager",
-    description: "Budget submission, approval, and cash request verification.",
+    description: "Department budget approval and cash request review.",
     navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
       "budgets.view_all",
       "budgets.view_specific",
-      "budgets.create",
       "budgets.approve",
       "budgets.reject",
       "budgets.summary",
       "cash_requests.view_all",
       "cash_requests.view_specific",
-      "cash_requests.create",
       "cash_requests.approve",
       "expenses.view_all",
       "expenses.read_receipt",
@@ -118,18 +115,15 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   leadership: {
     name: "Leadership (CEO/COO)",
-    description: "Executive oversight and high-value approvals.",
+    description: "Executive read-only oversight across the organization.",
     navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
       "budgets.view_all",
-      "budgets.approve",
-      "budgets.reject",
       "budgets.summary",
 
       "cash_requests.view_all",
-      "cash_requests.approve",
       "expenses.view_all",
       "expenses.view_all"
     ],
