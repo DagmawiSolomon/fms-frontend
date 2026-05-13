@@ -36,6 +36,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 import {
   Select,
   SelectContent,
@@ -57,6 +59,14 @@ import { fmsApi, normalizeBudgets, filterByDepartment } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { getUserFromCache } from "@/lib/user-cache"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 
 const budgetSchema = z.object({
@@ -92,8 +102,12 @@ export default function BudgetsPage() {
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
   const [loading, setLoading] = React.useState(true)
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false)
+  const [pendingRejectBudgetId, setPendingRejectBudgetId] = React.useState<string | number | null>(null)
+  const [rejectReason, setRejectReason] = React.useState("")
   const [searchQuery, setSearchQuery] = React.useState("")
   const [deptFilter, setDeptFilter] = React.useState("all")
+  const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   const fetchBudgets = React.useCallback(async () => {
     try {
@@ -122,14 +136,23 @@ export default function BudgetsPage() {
     return matchesSearch && matchesDept
   })
 
+  const getBudgetSubmitter = React.useCallback((budget: FmsBudget) => {
+    const submitterId = budget.owner ?? null
+    if (!submitterId) return null
+
+    const cachedUser = getUserFromCache(submitterId)
+    return cachedUser ?? { id: submitterId, name: "Unknown user", email: "", role: "employee" }
+  }, [])
+
   const totals = budgets.reduce(
     (acc, budget) => {
-      acc.amount += budget.amount
+      if (budget.status === "approved") acc.amount += budget.amount
       acc.spent += budget.spent
       acc.remaining += Math.max(budget.amount - budget.spent, 0)
+      if (budget.status === "pending" || budget.status === "draft") acc.pending += budget.amount
       return acc
     },
-    { amount: 0, spent: 0, remaining: 0 }
+    { amount: 0, spent: 0, remaining: 0, pending: 0 }
   )
 
   const handleCreate = async (values: BudgetFormValues) => {
@@ -147,14 +170,32 @@ export default function BudgetsPage() {
     }
   }
 
-  const handleStatusChange = async (id: string | number, status: FmsBudgetStatus) => {
+  const handleStatusChange = async (id: string | number, status: FmsBudgetStatus, reason?: string) => {
     try {
-      await fmsApi.setBudgetStatus(id, status)
+      await fmsApi.setBudgetStatus(id, status, reason)
       toast.success(`Budget marked as ${status}`)
       fetchBudgets()
     } catch (error) {
       toast.error("Failed to update budget status.")
     }
+  }
+
+  const openRejectDialog = (id: string | number) => {
+    setPendingRejectBudgetId(id)
+    setRejectReason("")
+    setRejectDialogOpen(true)
+  }
+
+  const confirmReject = async () => {
+    if (!pendingRejectBudgetId || !rejectReason.trim()) {
+      toast.error("Please provide a rejection reason.")
+      return
+    }
+
+    await handleStatusChange(pendingRejectBudgetId, "rejected", rejectReason.trim())
+    setRejectDialogOpen(false)
+    setPendingRejectBudgetId(null)
+    setRejectReason("")
   }
 
   const openCreateDialog = () => {
@@ -166,7 +207,7 @@ export default function BudgetsPage() {
   return (
     <DashboardShell
       title="Budgets"
-      description="Manage departmental funding and monitor expenditure."
+      description="Submit department budget proposals and track approvals or rejections."
       actions={
         canCreateBudgets ? (
           <Button onClick={openCreateDialog}>
@@ -176,36 +217,25 @@ export default function BudgetsPage() {
         ) : null
       }
     >
-      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+      <div className="grid gap-0 md:grid-cols-2 border border-b-0 rounded-none overflow-hidden">
         <SummaryCard
           label="Budget total"
           value={totals.amount}
-          description="Total funds allocated across all departments"
+          description="Total approved budget value across all departments"
           isFirst
           trend={{ value: `${filteredBudgets.length}`, isUp: true }}
           trendLabel="active budgets"
           loading={loading}
         />
         <SummaryCard
-          label="Spent total"
-          value={totals.spent}
-          description="Total actual spending recorded to date"
+          label="Pending total"
+          value={totals.pending}
+          description="Budget value still awaiting approval"
           trend={{ 
-            value: `${((totals.spent / (totals.amount || 1)) * 100).toFixed(1)}%`, 
-            isUp: totals.spent < totals.amount * 0.8 
+            value: `${((totals.pending / (totals.amount || 1)) * 100).toFixed(1)}%`, 
+            isUp: false 
           }}
           trendLabel="of total budget"
-          loading={loading}
-        />
-        <SummaryCard
-          label="Remaining total"
-          value={totals.remaining}
-          description="Total unspent funds across all budget lines"
-          trend={{ 
-            value: `${((totals.remaining / (totals.amount || 1)) * 100).toFixed(1)}%`, 
-            isUp: true 
-          }}
-          trendLabel="liquidity ratio"
           loading={loading}
         />
       </div>
@@ -222,7 +252,7 @@ export default function BudgetsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              {(role === "admin" || role === "leadership") && (
+              {(role === "admin" || role === "finance") && (
                 <div className="flex gap-2">
                   <Select value={deptFilter} onValueChange={setDeptFilter}>
                     <SelectTrigger className="w-[180px]">
@@ -248,6 +278,7 @@ export default function BudgetsPage() {
                 <TableRow>
                   <TableHead className="text-xs text-muted-foreground/50">Budget</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Department</TableHead>
+                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Spent</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
@@ -259,6 +290,7 @@ export default function BudgetsPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
@@ -273,6 +305,21 @@ export default function BudgetsPage() {
                         <div className="text-sm font-normal text-foreground">{budget.name}</div>
                       </TableCell>
                       <TableCell>{budget.department || "Unassigned"}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const submitter = getBudgetSubmitter(budget)
+                          if (!submitter) return <span className="text-sm text-muted-foreground">Unknown</span>
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedUserProfile(submitter)}
+                              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                            >
+                              {submitter.name}
+                            </button>
+                          )
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(budget.amount)}
                       </TableCell>
@@ -314,7 +361,7 @@ export default function BudgetsPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={budget.status !== "pending"}
-                                onClick={() => handleStatusChange(budget.id, "rejected")}
+                                onClick={() => openRejectDialog(budget.id)}
                               >
                                 <XIcon className="size-4" />
                                 <span className="sr-only">Reject</span>
@@ -347,8 +394,112 @@ export default function BudgetsPage() {
           handleCreate(values)
         }}
         userDept={user?.department}
-        isGlobalAdmin={role === "admin" || role === "leadership"}
+        isGlobalAdmin={role === "admin" || role === "finance"}
       />
+
+      <Sheet open={!!selectedUserProfile} onOpenChange={(open) => !open && setSelectedUserProfile(null)}>
+        <SheetContent className="flex flex-col gap-0 p-0">
+          {selectedUserProfile && (
+            <>
+              <SheetHeader className="p-6 border-b border-border/50">
+                <SheetTitle>Submitter Profile</SheetTitle>
+                <SheetDescription>
+                  Cached local user information for the budget proposal submitter.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid gap-6 p-6">
+                  <div className="flex items-center gap-4 py-2">
+                    <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
+                      <AvatarFallback className="rounded-full">{initials(selectedUserProfile.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-base font-medium text-foreground">{selectedUserProfile.name}</span>
+                      <span className="text-xs text-muted-foreground">{selectedUserProfile.email}</span>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  <div className="grid gap-6">
+                    <Info label="System Role" value={<span className="capitalize">{selectedUserProfile.role}</span>} />
+                    <Info label="Department" value={selectedUserProfile.department || "General"} />
+                    <Info
+                      label="Source"
+                      value={selectedUserProfile?.email ? selectedUserProfile.email : "Local cache record"}
+                    />
+                    <Info
+                      label="Status"
+                      value={
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{selectedUserProfile.status || "active"}</span>
+                          <div
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              (selectedUserProfile.status || "active") === "active"
+                                ? "bg-emerald-500"
+                                : "bg-slate-500"
+                            )}
+                          />
+                        </div>
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-border/50 bg-white/[0.01]">
+                <Button
+                  variant="outline"
+                  className="w-full rounded-[4px] h-10"
+                  onClick={() => setSelectedUserProfile(null)}
+                >
+                  Close Profile
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject budget proposal</DialogTitle>
+            <DialogDescription>
+              Add a reason so the submitter understands what needs to change.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2">
+            <label className="text-xs text-muted-foreground/60" htmlFor="reject-reason">
+              Rejection reason
+            </label>
+            <Input
+              id="reject-reason"
+              placeholder="Explain why this proposal was rejected"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRejectDialogOpen(false)
+                setPendingRejectBudgetId(null)
+                setRejectReason("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={confirmReject}>
+              Reject proposal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   )
 }
@@ -415,9 +566,9 @@ function BudgetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create budget</DialogTitle>
+          <DialogTitle>Create budget proposal</DialogTitle>
           <DialogDescription>
-            Enter funding details and department allocation
+            Enter the department request, then finance can approve or reject it.
           </DialogDescription>
         </DialogHeader>
 
@@ -533,7 +684,7 @@ function BudgetDialog({
               Cancel
             </Button>
             <Button type="submit">
-              Create budget
+              Submit proposal
             </Button>
           </DialogFooter>
         </form>
@@ -655,4 +806,22 @@ function formatMoney(value: number) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
+function Info({ label, value, labelClassName }: { label: string; value: React.ReactNode; labelClassName?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={cn("text-xs font-heading text-muted-foreground/50", labelClassName)}>{label}</div>
+      <div className="text-sm text-foreground">{value}</div>
+    </div>
+  )
 }
