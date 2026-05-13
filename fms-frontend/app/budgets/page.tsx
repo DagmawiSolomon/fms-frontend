@@ -96,9 +96,10 @@ export default function BudgetsPage() {
     }
   }, [config, router])
 
+  const isLeadership = isFinanceLeadershipEmail(user?.email)
   const canCreateBudgets = hasPermission("budgets.create")
   const canEditBudgets = hasPermission("budgets.update")
-  const canApproveBudgets = role === "finance" || isFinanceLeadershipEmail(user?.email)
+  const canApproveBudgets = (role === "finance" || isLeadership) && !isLeadership
   const canRejectBudgets = canApproveBudgets
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
@@ -109,6 +110,7 @@ export default function BudgetsPage() {
   const [rejectReason, setRejectReason] = React.useState("")
   const [searchQuery, setSearchQuery] = React.useState("")
   const [deptFilter, setDeptFilter] = React.useState("all")
+  const [statusFilter, setStatusFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
 
   const fetchBudgets = React.useCallback(async () => {
@@ -135,7 +137,8 @@ export default function BudgetsPage() {
     const matchesSearch = (budget.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       String(budget.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = deptFilter === "all" || budget.department === deptFilter
-    return matchesSearch && matchesDept
+    const matchesStatus = statusFilter === "all" || budget.status === statusFilter
+    return matchesSearch && matchesDept && matchesStatus
   })
 
   const getBudgetSubmitter = React.useCallback((budget: FmsBudget) => {
@@ -270,6 +273,18 @@ export default function BudgetsPage() {
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Operations">Operations</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
