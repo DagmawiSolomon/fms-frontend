@@ -11,7 +11,6 @@ import {
   CheckIcon,
   PlusIcon,
   SearchIcon,
-  ShieldCheckIcon,
   XIcon,
   ArrowUpRight,
 } from "lucide-react"
@@ -56,7 +55,6 @@ import { toast } from "sonner"
 import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment } from "@/lib/fms"
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Spinner } from "@/components/ui/spinner"
 import { getUserFromCache } from "@/lib/user-cache"
 import {
   Sheet,
@@ -94,7 +92,6 @@ export default function ExpensesPage() {
 
   const canCreateExpense = hasPermission("expenses.create")
   const canApproveExpense = hasPermission("expenses.approve")
-  const canVerifyExpense = hasPermission("expenses.verify")
 
   const [expenses, setExpenses] = React.useState<FmsExpense[]>([])
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
@@ -104,8 +101,6 @@ export default function ExpensesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
-
-  const canViewAll = hasPermission("expenses.view_all")
 
   // Preload budgets independently so they're ready before the dialog opens
   React.useEffect(() => {
@@ -188,24 +183,33 @@ export default function ExpensesPage() {
     }
   }
 
-  const handleStatusChange = async (id: string | number, status: FmsExpense["status"]) => {
+  const handleStatusChange = async (id: string | number, approved: boolean) => {
     try {
-      if (status === "verified") {
-        await fmsApi.verifyExpense(id)
-      }
-      toast.success(`Expense marked as ${status}`)
-      fetchExpenses()
+      await fmsApi.verifyExpense(id, approved)
+      setExpenses((prev) =>
+        prev.map((expense) =>
+          String(expense.id) === String(id)
+            ? {
+                ...expense,
+                approved,
+                verified: approved,
+                status: approved ? "approved" : "rejected",
+              }
+            : expense
+        )
+      )
+      toast.success(`Expense marked as ${approved ? "approved" : "rejected"}`)
     } catch (error) {
       toast.error("Failed to update expense status.")
     }
   }
 
-  const showActions = canApproveExpense || canVerifyExpense
+  const showActions = canApproveExpense
 
   return (
     <DashboardShell
       title="Expenses"
-      description="Review and verify itemized expenses submitted by staff."
+      description="Finance reviews and approves itemized expenses submitted by staff."
       actions={
         canCreateExpense ? (
           <Button onClick={() => setDialogOpen(true)}>
@@ -329,12 +333,13 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
-                          {canApproveExpense && expense.status === "pending" && (
+                          {canApproveExpense && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleStatusChange(expense.id, "approved")}
+                                disabled={expense.status !== "pending"}
+                                onClick={() => handleStatusChange(expense.id, true)}
                               >
                                 <CheckIcon className="size-4" />
                                 <span className="sr-only">Approve</span>
@@ -342,23 +347,13 @@ export default function ExpensesPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleStatusChange(expense.id, "rejected")}
+                                disabled={expense.status !== "pending"}
+                                onClick={() => handleStatusChange(expense.id, false)}
                               >
                                 <XIcon className="size-4" />
                                 <span className="sr-only">Reject</span>
                               </Button>
                             </>
-                          )}
-                          {canVerifyExpense && expense.status === "approved" && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                              onClick={() => handleStatusChange(expense.id, "verified")}
-                            >
-                              <ShieldCheckIcon className="mr-2 size-4" />
-                              Verify
-                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -626,9 +621,7 @@ function Field({
 
 function StatusBadge({ status }: { status: FmsExpense["status"] }) {
   const tone =
-    status === "verified"
-      ? "border-blue-500/20 text-blue-400"
-      : status === "approved"
+    status === "approved"
         ? "border-emerald-500/20 text-emerald-500"
         : status === "rejected"
           ? "border-rose-500/20 text-rose-500"

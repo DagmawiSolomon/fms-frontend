@@ -64,6 +64,8 @@ export type FmsExpense = {
   description: string
   amount: number
   status: "pending" | "approved" | "verified" | "rejected"
+  approved?: boolean | null
+  verified?: boolean | null
   category?: string | null
   receiptUrl?: string | null
   budgetId?: string | number | null
@@ -290,11 +292,31 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
 export function normalizeExpenses(payload: unknown): FmsExpense[] {
   return unwrapList<FmsExpense>(payload).map((item, index) => {
     const expense = item as Record<string, unknown>
+    const verified = typeof expense.verified === "boolean"
+      ? expense.verified
+      : null
+    const approved = typeof expense.approved === "boolean"
+      ? expense.approved
+      : typeof expense.isApproved === "boolean"
+        ? expense.isApproved
+        : verified
+
+    const status =
+      expense.rejected === true || String(expense.status ?? "").toLowerCase().includes("reject")
+        ? "rejected"
+        : verified === true
+          ? "approved"
+          : verified === false
+            ? "rejected"
+            : normalizeExpenseStatus(expense.status ?? "pending")
+
     return {
       id: normalizeIdentifier(expense.id ?? expense._id ?? expense.expense_id, index),
       description: (expense.description ?? expense.title ?? expense.merchant ?? expense.name ?? "Expense") as string,
       amount: numberValue(expense.amount ?? expense.total ?? 0),
-      status: normalizeExpenseStatus(expense.status ?? (expense.verified === true ? "verified" : "pending")),
+      status,
+      approved,
+      verified,
       category: (expense.category ?? expense.type ?? null) as string | null,
       receiptUrl: (expense.receiptUrl ?? expense.receipt ?? (expense.receipt_attached ? "attached" : null)) as
         | string
@@ -486,10 +508,10 @@ export const fmsApi = {
       body: formData,
     })
   },
-  verifyExpense: (id: string | number) =>
+  verifyExpense: (id: string | number, approved: boolean = true) =>
     apiRequest<unknown>(`/expenses/${id}/verify`, {
       method: "PATCH",
-      body: { verified: true },
+      body: { verified: approved },
     }),
 }
 

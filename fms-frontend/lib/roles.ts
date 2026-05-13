@@ -69,6 +69,7 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
       "cash_requests.disburse",
       "expenses.view_all",
       "expenses.view_specific",
+      "expenses.approve",
       "expenses.verify",
       "expenses.read_receipt",
 
