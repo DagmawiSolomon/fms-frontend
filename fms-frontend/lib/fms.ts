@@ -292,19 +292,21 @@ export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
 export function normalizeExpenses(payload: unknown): FmsExpense[] {
   return unwrapList<FmsExpense>(payload).map((item, index) => {
     const expense = item as Record<string, unknown>
-    const verified = typeof expense.verified === "boolean"
+    const rawVerified = typeof expense.verified === "boolean"
       ? expense.verified
       : typeof expense.approved === "boolean"
         ? expense.approved
         : typeof expense.isApproved === "boolean"
           ? expense.isApproved
           : null
-    const approved = verified
-    const status = verified === true
-      ? "approved"
-      : verified === false
-        ? "rejected"
+    const normalizedStatus = normalizeExpenseStatus(expense.status)
+    const status = normalizedStatus ?? (
+      rawVerified === true
+        ? "verified"
         : "pending"
+    )
+    const verified = status === "verified" ? true : rawVerified === false ? false : null
+    const approved = status === "verified" ? true : null
 
     return {
       id: normalizeIdentifier(expense.id ?? expense._id ?? expense.expense_id, index),
@@ -552,6 +554,20 @@ function normalizeCashStatus(value: unknown) {
   return "pending"
 }
 
+function normalizeExpenseStatus(value: unknown) {
+  const status = String(value ?? "").toLowerCase()
+
+  if (status.includes("approve") || status.includes("verif")) {
+    return "verified" as const
+  }
+
+  if (status.includes("pend")) {
+    return "pending" as const
+  }
+
+  return null
+}
+
 function normalizeIdentifier(value: unknown, fallback: string | number): string | number
 function normalizeIdentifier(value: unknown, fallback: null): string | number | null
 function normalizeIdentifier(
@@ -620,8 +636,8 @@ export function filterByDepartment<T extends { department?: string | null; reque
 ): T[] {
   if (!items || !user) return items
 
-  // Admins and Leadership have global oversight
-  if (role === "admin" || role === "leadership") {
+  // Admins and Finance have global oversight
+  if (role === "admin" || role === "finance") {
     return items
   }
 
@@ -668,5 +684,42 @@ export function filterByOwnership<T extends { owner?: string | null; requestedBy
   return items.filter((item) => {
     const ownerId = String(item.owner ?? item.requestedBy ?? item.submitter ?? "").toLowerCase().trim()
     return ownerId === userId
+  })
+}
+
+/**
+ * Fill in missing expense departments from the linked budget when the backend
+ * omits department data on expense rows.
+ */
+export function enrichExpensesWithBudgetDepartments<
+  T extends { budgetId?: string | number | null; department?: string | null }
+>(
+  expenses: T[],
+  budgets: Array<{ id?: string | number | null; department?: string | null }>
+): T[] {
+  if (!expenses?.length || !budgets?.length) return expenses
+
+  const budgetDepartments = new Map<string, string>()
+  budgets.forEach((budget) => {
+    const budgetId = normalizeIdentifier(budget.id ?? null, null)
+    const department = budget.department?.trim()
+    if (budgetId && department) {
+      budgetDepartments.set(String(budgetId).toLowerCase().trim(), department)
+    }
+  })
+
+  return expenses.map((expense) => {
+    if (expense.department) return expense
+
+    const budgetId = normalizeIdentifier(expense.budgetId ?? null, null)
+    if (!budgetId) return expense
+
+    const department = budgetDepartments.get(String(budgetId).toLowerCase().trim())
+    if (!department) return expense
+
+    return {
+      ...expense,
+      department,
+    }
   })
 }

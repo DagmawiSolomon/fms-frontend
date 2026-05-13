@@ -6,13 +6,11 @@ import { EmployeeDashboardView } from "@/components/employee-dashboard-view"
 import { ManagerDashboardView } from "@/components/manager-dashboard-view"
 import { FinanceDashboardView } from "@/components/finance-dashboard-view"
 import { AdminDashboardView } from "@/components/admin-dashboard-view"
-import { LeadershipDashboardView } from "@/components/leadership-dashboard-view"
 import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Sun, Cloud, CloudRain, CloudLightning } from "lucide-react"
@@ -21,6 +19,8 @@ import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { GoogleDocIcon } from "@hugeicons/core-free-icons"
+import { isFinanceLeadershipEmail } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -55,6 +55,8 @@ function WeatherDisplay() {
 export default function DashboardPage() {
   const session = useSession()
   const { role } = useRole()
+  const router = useRouter()
+  const isFinanceLeader = isFinanceLeadershipEmail(session.data?.email)
   const [periodType, setPeriodType] = React.useState("yearly")
   const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth())
   const [selectedQuarter, setSelectedQuarter] = React.useState(Math.floor(new Date().getMonth() / 3) + 1)
@@ -65,6 +67,10 @@ export default function DashboardPage() {
   }, [selectedQuarter, selectedYear])
 
   const userName = session.data?.name ?? "John"
+
+  const exportQuarterlyReport = React.useCallback(() => {
+    router.push(`/reports/quarterly?period=${encodeURIComponent(currentPeriod)}`)
+  }, [currentPeriod, router])
 
   const dashboardActions = (
     <div className="flex items-center gap-2">
@@ -91,13 +97,13 @@ export default function DashboardPage() {
         </SelectContent>
       </Select>
 
-      {role === "leadership" && (
+      {(role === "finance" || isFinanceLeader) && (
         <Button
           className="h-9 rounded-[4px] bg-slate-50 hover:bg-slate-50/90 text-black font-medium px-4 flex items-center gap-2"
-          onClick={() => toast.info("Audit log exported to email")}
+          onClick={exportQuarterlyReport}
         >
           <HugeiconsIcon icon={GoogleDocIcon} className="size-4" />
-          Export
+          Export PDF
         </Button>
       )}
     </div>
@@ -116,7 +122,6 @@ export default function DashboardPage() {
       {role === "manager" && <ManagerDashboardView period={currentPeriod} />}
       {role === "finance" && <FinanceDashboardView period={currentPeriod} />}
       {role === "admin" && <AdminDashboardView />}
-      {role === "leadership" && <LeadershipDashboardView period={currentPeriod} />}
     </DashboardShell>
   )
 }

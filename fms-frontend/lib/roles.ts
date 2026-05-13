@@ -8,7 +8,7 @@ import {
   UserIcon
 } from "@hugeicons/core-free-icons"
 
-export type Role = "employee" | "manager" | "finance" | "admin" | "leadership"
+export type Role = "employee" | "manager" | "finance" | "admin"
 
 export interface NavItem {
   title: string
@@ -53,15 +53,15 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   finance: {
     name: "Finance Team",
-    description: "Financial oversight, budget creation, and disbursement.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses", "Users"],
+    description: "Financial oversight, budget proposal review, and disbursement.",
+    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
       "budgets.view_all",
       "budgets.view_specific",
-      "budgets.create",
-      "budgets.update",
+      "budgets.approve",
+      "budgets.reject",
       "budgets.summary",
 
       "cash_requests.view_all",
@@ -77,13 +77,15 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
   manager: {
     name: "Department Manager",
-    description: "Department budget approval and cash request review.",
+    description: "Department budget proposal creation and review.",
     navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
     permissions: [
       "users.view_all",
       "users.view_profile",
       "budgets.view_all",
       "budgets.view_specific",
+      "budgets.create",
+      "budgets.update",
       "budgets.approve",
       "budgets.reject",
       "budgets.summary",
@@ -113,22 +115,6 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
     ],
     color: "blue"
   },
-  leadership: {
-    name: "Leadership (CEO/COO)",
-    description: "Executive read-only oversight across the organization.",
-    navigation: ["Dashboard", "Budgets", "Cash Requests", "Expenses"],
-    permissions: [
-      "users.view_all",
-      "users.view_profile",
-      "budgets.view_all",
-      "budgets.summary",
-
-      "cash_requests.view_all",
-      "expenses.view_all",
-      "expenses.view_all"
-    ],
-    color: "indigo"
-  }
 }
 
 export const ALL_NAV_ITEMS = [

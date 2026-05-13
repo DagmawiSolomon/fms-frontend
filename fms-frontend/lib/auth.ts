@@ -45,9 +45,26 @@ import type { Role } from "./roles"
 
 export type UserRole = Role
 
+export function isManagerEmail(email?: string | null) {
+  const emailValue = (email ?? "").toLowerCase().trim()
+  return (
+    emailValue.includes("manager") ||
+    emailValue.endsWith("@manager.fms.local") ||
+    emailValue.includes("+manager@")
+  )
+}
+
+export function isFinanceLeadershipEmail(email?: string | null) {
+  const emailValue = (email ?? "").toLowerCase().trim()
+  return (
+    emailValue.includes("leadership") ||
+    emailValue.includes("+leadership@") ||
+    emailValue.endsWith("@leadership.fms.local")
+  )
+}
+
 export function normalizeRole(role?: string | null, email?: string | null): UserRole {
   const value = (role ?? "").toLowerCase().trim()
-  const emailValue = (email ?? "").toLowerCase().trim()
 
   // Priority 1: Explicit "manager" in role string (if backend ever supports it)
   if (value.includes("manager")) {
@@ -61,21 +78,15 @@ export function normalizeRole(role?: string | null, email?: string | null): User
 
   // Priority 3: Finance Team role (Backend reuse)
   if (value.includes("finance")) {
-    // Distinguish Manager from Finance via email flag
-    // Patterns: email contains "manager" or domain is "manager.fms.local"
-    if (
-      emailValue.includes("manager") || 
-      emailValue.endsWith("@manager.fms.local") ||
-      emailValue.includes("+manager@")
-    ) {
+    // Distinguish Manager and finance leadership via email flags.
+    if (isManagerEmail(email)) {
       return "manager"
     }
     return "finance"
   }
 
-  // Priority 4: Leadership
   if (value.includes("leadership") || value.includes("ceo") || value.includes("coo")) {
-    return "leadership"
+    return "finance"
   }
 
   // Default: Employee

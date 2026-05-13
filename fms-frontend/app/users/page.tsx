@@ -51,8 +51,7 @@ import { saveUsersToCache } from "@/lib/user-cache"
 
 const ROLE_RANKS: Record<string, number> = {
   admin: 0,
-  leadership: 1,
-  finance: 2,
+  finance: 1,
   manager: 2,
   employee: 3,
 }
