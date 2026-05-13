@@ -37,14 +37,6 @@ const budgetDeptChartConfig = {
   remaining: { label: "Remaining", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
-const cashFlowData = [
-  { month: "Jan", requested: 45000, disbursed: 40000 },
-  { month: "Feb", requested: 52000, disbursed: 50000 },
-  { month: "Mar", requested: 38000, disbursed: 38000 },
-  { month: "Apr", requested: 65000, disbursed: 60000 },
-  { month: "May", requested: 85000, disbursed: 75000 },
-]
-
 const cashFlowChartConfig = {
   requested: { label: "Requested", color: "var(--chart-3)" },
   disbursed: { label: "Disbursed", color: "var(--chart-1)" },
@@ -60,14 +52,6 @@ const expenseDistributionData = [
     Events: 65000,
   },
 ]
-
-const expenseChartConfig = {
-  Travel: { label: "Travel", color: "var(--chart-1)" },
-  Software: { label: "Software", color: "var(--chart-2)" },
-  Hardware: { label: "Hardware", color: "var(--chart-3)" },
-  Office: { label: "Office", color: "var(--chart-4)" },
-  Events: { label: "Events", color: "var(--chart-5)" },
-} satisfies ChartConfig
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -115,6 +99,15 @@ const renderDistributionLabel = (props: any) => {
     </g>
   )
 }
+
+const CATEGORY_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+]
 
 import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, filterByPeriod, filterByDepartment, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
@@ -206,12 +199,43 @@ export function FinanceDashboardView({ period }: { period: string }) {
 
   const categories = React.useMemo(() => {
     const cats: Record<string, number> = {}
-    filteredExpenses.forEach(e => {
+    data.expenses.forEach(e => {
       const cat = e.category || "Other"
       cats[cat] = (cats[cat] || 0) + e.amount
     })
     return cats
-  }, [filteredExpenses])
+  }, [data.expenses])
+
+  const expenseChartConfig = React.useMemo(() => {
+    return Object.entries(categories).reduce((acc, [category, _value], index) => {
+      acc[category] = {
+        label: category,
+        color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+      }
+      return acc
+    }, {} as ChartConfig)
+  }, [categories])
+
+  const cashFlowData = React.useMemo(() => {
+    const byMonth: Record<string, { requested: number; disbursed: number }> = {}
+
+    data.cashRequests.forEach((request) => {
+      const monthKey = request.date ? new Date(request.date).toLocaleString("en-US", { month: "short" }) : "Unknown"
+      if (!byMonth[monthKey]) {
+        byMonth[monthKey] = { requested: 0, disbursed: 0 }
+      }
+
+      byMonth[monthKey].requested += request.amount
+      if (request.status === "disbursed") {
+        byMonth[monthKey].disbursed += request.amount
+      }
+    })
+
+    return Object.entries(byMonth).map(([month, values]) => ({
+      month,
+      ...values,
+    }))
+  }, [data.cashRequests])
 
   // Dynamic Trend Calculations
   const prevPeriod = getPreviousPeriod(period)
@@ -238,9 +262,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
     requests: calcTrend(pendingCashRequestsAmount, prevTotalRequests)
   }
 
-  const expenseDistribution = [
-    { name: "Expenses", ...categories }
-  ]
+  const expenseDistribution = [{ name: "Expenses", ...categories }]
 
   if (loading) {
     return (
@@ -372,7 +394,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
         <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none border-l border-border/50">
           <CardHeader>
             <CardTitle>Cash Flow Over Time</CardTitle>
-            <CardDescription>Requested vs disbursed amounts</CardDescription>
+            <CardDescription>Requested vs disbursed amounts from API data</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={cashFlowChartConfig} className="h-[300px] w-full">
@@ -392,7 +414,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
         <Card className="lg:col-span-2 rounded-none border-b-0 border-r-0 border-l-0 shadow-none border-t border-border/50">
           <CardHeader>
             <CardTitle>Expense Categories</CardTitle>
-            <CardDescription>Global breakdown (Distribution view)</CardDescription>
+            <CardDescription>Global breakdown across all departments</CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-2">
             <div className="flex flex-wrap items-center justify-end gap-4 mb-6">
