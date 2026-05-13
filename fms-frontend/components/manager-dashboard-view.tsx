@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeSummary, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, normalizeSummary, filterByPeriod, filterByDepartment } from "@/lib/fms"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -44,30 +44,35 @@ export function ManagerDashboardView({ period }: { period: string }) {
   const [data, setData] = React.useState<{
     budgets: any[]
     cashRequests: any[]
+    expenses: any[]
     summary: any
     reportPoints: any[]
-  }>({ budgets: [], cashRequests: [], summary: null, reportPoints: [] })
+  }>({ budgets: [], cashRequests: [], expenses: [], summary: null, reportPoints: [] })
 
   React.useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true)
-        const [budgetsRes, requestsRes, reportRes] = await Promise.all([
+        const [budgetsRes, requestsRes, expensesRes, reportRes] = await Promise.all([
           fmsApi.getBudgets(),
           fmsApi.getCashRequests(),
+          fmsApi.getExpenses(),
           fmsApi.getReportOverview()
         ])
         
         let normalizedBudgets = normalizeBudgets(budgetsRes)
         let normalizedRequests = normalizeCashRequests(requestsRes)
+        let normalizedExpenses = normalizeExpenses(expensesRes)
 
         // Enforce department isolation
         normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
         normalizedRequests = filterByDepartment(normalizedRequests, user, role)
+        normalizedExpenses = filterByDepartment(normalizedExpenses, user, role)
 
         setData({
           budgets: normalizedBudgets,
           cashRequests: normalizedRequests,
+          expenses: normalizedExpenses,
           summary: normalizeSummary(reportRes),
           reportPoints: []
         })
@@ -90,6 +95,10 @@ export function ManagerDashboardView({ period }: { period: string }) {
     return filterByPeriod(data.cashRequests, period)
   }, [data.cashRequests, period])
 
+  const filteredExpenses = React.useMemo(() => {
+    return filterByPeriod(data.expenses, period)
+  }, [data.expenses, period])
+
   // Calculations
   const pendingBudgets = filteredBudgets.filter(b => b.status === "pending")
   const pendingBudgetApprovals = pendingBudgets.length
@@ -100,6 +109,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
   
   const totalAllocated = filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
   const totalSpent = filteredBudgets.reduce((sum, b) => sum + b.spent, 0)
+  const totalDepartmentExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
   const remainingBudget = Math.max(totalAllocated - totalSpent, 0)
 
   // Charts
@@ -149,8 +159,8 @@ export function ManagerDashboardView({ period }: { period: string }) {
   if (loading) {
     return (
       <div className="flex flex-col gap-0">
-        <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(5)].map((_, i) => (
             <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
               <CardHeader className="pb-2 space-y-2">
                 <Skeleton className="h-4 w-24" />
@@ -174,7 +184,7 @@ export function ManagerDashboardView({ period }: { period: string }) {
 
   return (
     <div className="flex flex-col gap-0">
-      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-5 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Pending Budgets</CardDescription>
@@ -235,6 +245,19 @@ export function ManagerDashboardView({ period }: { period: string }) {
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Total department funding</CardContent>
+        </Card>
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Department Expenses</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{formatMoney(totalDepartmentExpenses)}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center font-medium">
+                {filteredExpenses.length}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">expense records</span>
+            </div>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Expenses submitted within this department</CardContent>
         </Card>
       </div>
 

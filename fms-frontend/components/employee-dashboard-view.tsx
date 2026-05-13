@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeExpenses, normalizeBudgets, filterByPeriod, filterByDepartment, filterByOwnership } from "@/lib/fms"
 import { format } from "date-fns"
 import { useRole } from "@/components/role-provider"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -59,8 +59,8 @@ export function EmployeeDashboardView({ period }: { period: string }) {
         let normalizedExpenses = normalizeExpenses(expensesRes)
         let normalizedBudgets = normalizeBudgets(budgetsRes)
 
-        // Enforce department isolation and ownership
-        normalizedExpenses = filterByDepartment(normalizedExpenses, user, role)
+        // Employees should only see their own expenses; budget data stays department-scoped.
+        normalizedExpenses = filterByOwnership(normalizedExpenses, user)
         normalizedBudgets = filterByDepartment(normalizedBudgets, user, role)
 
         setData({

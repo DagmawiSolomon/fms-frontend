@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { fmsApi, normalizeBudgets, normalizeExpenses, normalizeSummary, filterByPeriod } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, normalizeCashRequests, normalizeExpenses, normalizeSummary, filterByPeriod } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Placeholder for data not yet in API ---
@@ -53,9 +53,10 @@ export function LeadershipDashboardView({ period }: { period: string }) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
     budgets: any[]
+    cashRequests: any[]
     expenses: any[]
     summary: any | null
-  }>({ budgets: [], expenses: [], summary: null })
+  }>({ budgets: [], cashRequests: [], expenses: [], summary: null })
 
   const [weeklyLimit, setWeeklyLimit] = React.useState(5000)
   const [isEditingLimit, setIsEditingLimit] = React.useState(false)
@@ -65,13 +66,15 @@ export function LeadershipDashboardView({ period }: { period: string }) {
     async function fetchData() {
       try {
         setLoading(true)
-        const [budgetsRes, expensesRes, summaryRes] = await Promise.all([
+        const [budgetsRes, cashRequestsRes, expensesRes, summaryRes] = await Promise.all([
           fmsApi.getBudgets(),
+          fmsApi.getCashRequests(),
           fmsApi.getExpenses(),
           fmsApi.getBudgetSummary(),
         ])
         setData({
           budgets: normalizeBudgets(budgetsRes),
+          cashRequests: normalizeCashRequests(cashRequestsRes),
           expenses: normalizeExpenses(expensesRes),
           summary: normalizeSummary(summaryRes),
         })
@@ -89,11 +92,17 @@ export function LeadershipDashboardView({ period }: { period: string }) {
     return data.budgets.filter(b => b.period === period)
   }, [data.budgets, period])
 
+  const filteredRequests = React.useMemo(() => {
+    return filterByPeriod(data.cashRequests, period)
+  }, [data.cashRequests, period])
+
   const filteredExpenses = React.useMemo(() => {
     return filterByPeriod(data.expenses, period)
   }, [data.expenses, period])
 
   const operatingExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalCashRequests = filteredRequests.reduce((sum, r) => sum + r.amount, 0)
+  const cashRequestsCount = filteredRequests.length
   
   // High-level metrics for leadership
   const totalBudget = data.summary?.totalBudget ?? filteredBudgets.reduce((sum, b) => sum + b.amount, 0)
@@ -139,8 +148,8 @@ export function LeadershipDashboardView({ period }: { period: string }) {
   if (loading) {
     return (
       <div className="flex flex-col gap-0">
-        <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
-          {[...Array(3)].map((_, i) => (
+        <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
+          {[...Array(4)].map((_, i) => (
             <Card key={i} className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50 first:border-0">
               <CardHeader className="pb-2 space-y-2">
                 <Skeleton className="h-4 w-24" />
@@ -161,7 +170,7 @@ export function LeadershipDashboardView({ period }: { period: string }) {
 
   return (
     <div className="flex flex-col gap-0">
-      <div className="grid gap-0 md:grid-cols-3 border border-b-0 rounded-none overflow-hidden">
+      <div className="grid gap-0 md:grid-cols-4 border border-b-0 rounded-none overflow-hidden">
         <Card className="rounded-none border-0 shadow-none @container/card">
           <CardHeader className="pb-2">
             <CardDescription>Total Budget Allocated</CardDescription>
@@ -210,6 +219,19 @@ export function LeadershipDashboardView({ period }: { period: string }) {
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">Optimized operational performance index</CardContent>
+        </Card>
+        <Card className="rounded-none border-b-0 border-r-0 border-t-0 shadow-none @container/card border-l border-border/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Cash Requests</CardDescription>
+            <CardTitle className="text-3xl font-heading tabular-nums text-slate-50">{cashRequestsCount}</CardTitle>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-emerald-500 flex items-center font-medium">
+                {formatMoney(totalCashRequests)}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase ml-1">requested</span>
+            </div>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Organization-wide cash request volume</CardContent>
         </Card>
       </div>
 
