@@ -142,7 +142,9 @@ export default function CashRequestsPage() {
       const response = await fmsApi.createCashRequest({
         purpose: values.purpose,
         amount: values.amount,
-      })
+        userId: user?.id as string | undefined,
+        department: user?.department as string | undefined,
+      } as any)
       toast.success("Cash request submitted successfully")
       setDialogOpen(false)
       
@@ -252,7 +254,7 @@ export default function CashRequestsPage() {
                   <TableHead className="text-xs text-muted-foreground/50">Request</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Purpose</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Requester</TableHead>
+                  {role !== "employee" && <TableHead className="text-xs text-muted-foreground/50">Requester</TableHead>}
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Actions</TableHead>
                 </TableRow>
@@ -264,7 +266,8 @@ export default function CashRequestsPage() {
                       <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      {role !== "employee" && <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>}
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                       {showActions && <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                     </TableRow>
                   ))
@@ -280,14 +283,17 @@ export default function CashRequestsPage() {
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(req.amount)}
                       </TableCell>
-                      <TableCell>
-                        <button
-                          onClick={() => setSelectedUserProfile(getUserFromCache(req.requestedBy))}
-                          className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
-                        >
-                          {getUserFromCache(req.requestedBy)?.name || "Unknown"}
-                        </button>
-                      </TableCell>
+                      {role !== "employee" && (
+                        <TableCell>
+                          <button
+                            onClick={() => setSelectedUserProfile(getUserFromCache(req.requestedBy))}
+                            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                          >
+                            {getUserFromCache(req.requestedBy)?.name || "Unknown"}
+                            <ArrowUpRight className="size-3" />
+                          </button>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
@@ -375,30 +381,22 @@ export default function CashRequestsPage() {
                   <Separator className="bg-border/50" />
 
                   <div className="grid gap-6">
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">System Role</div>
-                      <div className="text-sm font-medium capitalize text-foreground">
-                        {selectedUserProfile.role}
-                      </div>
-                    </div>
+                    <Info label="System Role" value={<span className="capitalize">{selectedUserProfile.role}</span>} />
 
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Department</div>
-                      <div className="text-sm font-medium text-foreground">
-                        {selectedUserProfile.department || "General"}
-                      </div>
-                    </div>
+                    <Info label="Department" value={selectedUserProfile.department || "General"} />
 
-                    <div className="grid gap-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Status</div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium capitalize text-foreground">{selectedUserProfile.status || "active"}</span>
-                        <div className={cn(
-                          "size-1.5 rounded-full",
-                          (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
-                        )} />
-                      </div>
-                    </div>
+                    <Info 
+                      label="Status" 
+                      value={
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{selectedUserProfile.status || "active"}</span>
+                          <div className={cn(
+                            "size-1.5 rounded-full",
+                            (selectedUserProfile.status || "active") === "active" ? "bg-emerald-500" : "bg-slate-500"
+                          )} />
+                        </div>
+                      }
+                    />
                   </div>
                 </div>
               </div>
@@ -610,5 +608,14 @@ function SummaryCard({
         {description}
       </CardContent>
     </Card>
+  )
+}
+
+function Info({ label, value, labelClassName }: { label: string; value: React.ReactNode; labelClassName?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={cn("text-xs font-heading text-muted-foreground/50", labelClassName)}>{label}</div>
+      <div className="text-sm text-foreground">{value}</div>
+    </div>
   )
 }

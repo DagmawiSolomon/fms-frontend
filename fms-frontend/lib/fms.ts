@@ -176,12 +176,13 @@ export function normalizeBudgets(payload: unknown): FmsBudget[] {
 
     return {
       id: normalizeIdentifier(budget.id ?? budget._id, index),
-      // API has no 'name' field — derive a readable label from department + period
-      name: department
-        ? period
-          ? `${department} (${period})`
-          : department
-        : (budget.name ?? budget.title ?? `Budget ${index + 1}`) as string,
+      name: (budget.name ?? budget.title)
+        ? (budget.name ?? budget.title) as string
+        : department
+          ? period
+            ? `${department} (${period})`
+            : department
+          : `Budget ${index + 1}`,
       department: department || null,
       amount: numberValue(budget.amount ?? budget.totalAmount),
       // API returns spent as 'spent_amount', not 'spent'
@@ -257,18 +258,31 @@ export function normalizeReportPoints(payload: unknown): FmsReportPoint[] {
 export function normalizeCashRequests(payload: unknown): FmsCashRequest[] {
   return unwrapList<FmsCashRequest>(payload).map((item, index) => {
     const request = item as Record<string, unknown>
+    const requestedBy = normalizeIdentifier(
+      request.requestedBy ?? request.requested_by ?? request.createdBy ?? null,
+      null
+    ) as string | null
+
+    let department = (request.department ?? request.departmentName ?? null) as string | null
+
+    // Attempt to derive department from the user if not provided by backend
+    if (!department && requestedBy && typeof window !== "undefined") {
+      const { getUserFromCache } = require("./user-cache")
+      const creator = getUserFromCache(requestedBy)
+      if (creator && creator.department) {
+        department = creator.department
+      }
+    }
+
     return {
       id: normalizeIdentifier(request.id ?? request._id ?? request.request_id, index),
       title: (request.title ?? request.purpose ?? request.name ?? "Cash request") as string,
       amount: numberValue(request.amount ?? request.total ?? 0),
       status: normalizeCashStatus(request.status),
       purpose: (request.purpose ?? request.reason ?? null) as string | null,
-      requestedBy: normalizeIdentifier(
-        request.requestedBy ?? request.requested_by ?? request.createdBy ?? null,
-        null
-      ) as string | null,
+      requestedBy,
       budgetId: (request.budgetId ?? request.budget_id ?? null) as string | number | null,
-      department: (request.department ?? request.departmentName ?? null) as string | null,
+      department,
     }
   })
 }
@@ -357,6 +371,8 @@ export const fmsApi = {
       method: "POST",
       body: {
         id: generateFmsId(),
+        name: payload.name,
+        title: payload.name,
         department: payload.department,
         amount: payload.amount,
         period: payload.period,
@@ -412,17 +428,14 @@ export const fmsApi = {
     }),
   createCashRequest: (payload: CashRequestInput) => {
     const now = new Date().toISOString()
-    // User ID must be a valid 24-char hex ObjectId for the backend
-    const validUserId =
-      payload.userId && /^[a-fA-F0-9]{24}$/.test(payload.userId)
-        ? payload.userId
-        : "000000000000000000000000"
+    const validUserId = payload.userId || "000000000000000000000000"
     return apiRequest<unknown>("/cash-requests/", {
       method: "POST",
       body: {
         id: generateFmsId(),
         purpose: payload.purpose,
         amount: payload.amount,
+        department: (payload as any).department,
         requested_by: validUserId,
         status: "pending",
         created_at: now,
@@ -614,17 +627,24 @@ export function filterByDepartment<T extends { department?: string | null; reque
   return items.filter((item) => {
     // 1. Check department match first
     const itemDept = (item.department ?? "").toLowerCase().trim()
-    if (itemDept && userDept && itemDept === userDept) {
+    
+    // STRICT ISOLATION: If the item has a department and it doesn't match the user's,
+    // hide it immediately. This prevents users from seeing items they created for
+    // other departments before creation was locked down.
+    if (itemDept && userDept) {
+      if (itemDept !== userDept) {
+        return false
+      }
       return true
     }
 
-    // 2. Fallback to personal ownership (crucial for Employees)
-    const ownerId = String(item.requestedBy ?? item.submitter ?? "").toLowerCase()
+    // 2. Fallback to personal ownership (only if department info is missing)
+    const ownerId = String((item as any).owner ?? item.requestedBy ?? item.submitter ?? "").toLowerCase()
     if (ownerId && ownerId === userId) {
       return true
     }
 
-    // 3. If no department info and not the owner, hide it for non-admins
+    // 3. If no department info and not the owner, hide it
     return false
   })
 }
