@@ -8,12 +8,14 @@ import { FinanceDashboardView } from "@/components/finance-dashboard-view"
 import { AdminDashboardView } from "@/components/admin-dashboard-view"
 import { useSession } from "@/hooks/use-session"
 import { useRole } from "@/components/role-provider"
+import { toast } from "sonner"
+import { buildQuarterlyReportHtml } from "@/lib/quarterly-report-export"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Sun, Cloud, CloudRain, CloudLightning } from "lucide-react"
+import { CalendarIcon, Sun, Cloud, CloudRain, CloudLightning, Loader2, Download } from "lucide-react"
 import { format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
@@ -61,6 +63,8 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth())
   const [selectedQuarter, setSelectedQuarter] = React.useState(Math.floor(new Date().getMonth() / 3) + 1)
   const [selectedYear, setSelectedYear] = React.useState(2026)
+  const [isExporting, setIsExporting] = React.useState(false)
+  const [hasDownloaded, setHasDownloaded] = React.useState(false)
 
   const currentPeriod = React.useMemo(() => {
     return `Q${selectedQuarter}-${selectedYear}`
@@ -68,9 +72,47 @@ export default function DashboardPage() {
 
   const userName = session.data?.name ?? "John"
 
-  const exportQuarterlyReport = React.useCallback(() => {
-    router.push(`/reports/quarterly?period=${encodeURIComponent(currentPeriod)}`)
-  }, [currentPeriod, router])
+  const exportQuarterlyReport = React.useCallback(async () => {
+    try {
+      setIsExporting(true)
+      const html = await buildQuarterlyReportHtml(currentPeriod, session.data ?? null, role)
+      
+      // Create a temporary container for the report content
+      const container = document.createElement("div")
+      container.innerHTML = html
+      container.style.position = "fixed"
+      container.style.left = "-9999px"
+      container.style.top = "0"
+      document.body.appendChild(container)
+      
+      const content = container.querySelector("#report-content")
+      if (!content) throw new Error("Report content not found")
+
+      // Dynamically import html2pdf
+      const html2pdf = (await import("html2pdf.js")).default
+
+      const opt = {
+        margin: 0,
+        filename: `Financial_Report_${currentPeriod}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      }
+
+      // Generate and save the PDF
+      await html2pdf().from(content).set(opt).save()
+      
+      // Clean up
+      document.body.removeChild(container)
+      setHasDownloaded(true)
+      toast.success("Financial report downloaded successfully")
+    } catch (err) {
+      console.error(err)
+      toast.error("Could not generate the quarterly report.")
+    } finally {
+      setIsExporting(false)
+    }
+  }, [currentPeriod, role, session.data])
 
   const dashboardActions = (
     <div className="flex items-center gap-2">
@@ -99,11 +141,28 @@ export default function DashboardPage() {
 
       {(role === "finance" || isFinanceLeader) && (
         <Button
-          className="h-9 rounded-[4px] bg-slate-50 hover:bg-slate-50/90 text-black font-medium px-4 flex items-center gap-2"
+          className="h-9 rounded-[4px] bg-slate-50 hover:bg-slate-50/90 text-black font-medium px-4 flex items-center gap-2 min-w-[120px]"
           onClick={exportQuarterlyReport}
+          disabled={isExporting}
         >
-          <HugeiconsIcon icon={GoogleDocIcon} className="size-4" />
-          Export PDF
+          <div className="relative size-4">
+            {isExporting ? (
+              <Loader2 className="absolute inset-0 size-4 animate-spin text-slate-900" />
+            ) : hasDownloaded ? (
+              <Download className="absolute inset-0 size-4 animate-in zoom-in duration-300" />
+            ) : (
+              <HugeiconsIcon 
+                icon={GoogleDocIcon} 
+                className="absolute inset-0 size-4 animate-in fade-in duration-300" 
+              />
+            )}
+          </div>
+          <span className={cn(
+            "transition-all duration-300",
+            isExporting && "animate-pulse"
+          )}>
+            {isExporting ? "Generating..." : hasDownloaded ? "Download Again" : "Export PDF"}
+          </span>
         </Button>
       )}
     </div>
