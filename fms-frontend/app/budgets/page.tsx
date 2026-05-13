@@ -85,6 +85,7 @@ export default function BudgetsPage() {
   }, [config, router])
 
   const canCreateBudgets = hasPermission("budgets.create")
+  const canEditBudgets = hasPermission("budgets.update")
   const canApproveBudgets = hasPermission("budgets.approve")
   const canRejectBudgets = hasPermission("budgets.reject")
 
@@ -285,29 +286,23 @@ export default function BudgetsPage() {
                         <TableCell>
                           <div className="flex justify-end gap-2">
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => {}}
-                            >
-                              <PencilIcon className="size-3.5" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 border-rose-500/20"
-                              onClick={() => {}}
-                            >
-                              <TrashIcon className="size-3.5" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
+                            {canEditBudgets && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                disabled={budget.status !== "pending" && budget.status !== "draft"}
+                                onClick={() => {}}
+                              >
+                                <PencilIcon className="size-3.5" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            )}
                             {canApproveBudgets && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={budget.status === "approved"}
+                                disabled={budget.status !== "pending"}
                                 onClick={() => handleStatusChange(budget.id, "approved")}
                               >
                                 <CheckIcon className="size-4" />
@@ -318,7 +313,7 @@ export default function BudgetsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={budget.status === "rejected"}
+                                disabled={budget.status !== "pending"}
                                 onClick={() => handleStatusChange(budget.id, "rejected")}
                               >
                                 <XIcon className="size-4" />
