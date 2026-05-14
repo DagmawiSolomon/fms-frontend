@@ -1,10 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useForm } from "react-hook-form"
 import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { format, isValid, parseISO } from "date-fns"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -12,7 +15,12 @@ import {
   PlusIcon,
   SearchIcon,
   ArrowUpRight,
+  ExternalLink,
+  Receipt,
+  FileSearch,
+  Maximize2
 } from "lucide-react"
+import { Alert01Icon } from "@hugeicons/core-free-icons"
 
 import { DashboardShell } from "@/components/dashboard-shell"
 import { cn } from "@/lib/utils"
@@ -54,6 +62,8 @@ import { toast } from "sonner"
 import { fmsApi, normalizeExpenses, normalizeBudgets, filterByDepartment, filterByOwnership, enrichExpensesWithBudgetDepartments } from "@/lib/fms"
 import type { FmsExpense, FmsBudget } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Progress } from "@/components/ui/progress"
+import { Spinner } from "@/components/ui/spinner"
 import { getUserFromCache } from "@/lib/user-cache"
 import { isFinanceLeadershipEmail } from "@/lib/auth"
 import {
@@ -103,6 +113,8 @@ export default function ExpensesPage() {
   const [statusFilter, setStatusFilter] = React.useState("all")
   const [departmentFilter, setDepartmentFilter] = React.useState("all")
   const [selectedUserProfile, setSelectedUserProfile] = React.useState<any | null>(null)
+  const [verificationDialogOpen, setVerificationDialogOpen] = React.useState(false)
+  const [selectedExpenseForVerification, setSelectedExpenseForVerification] = React.useState<FmsExpense | null>(null)
 
   // Preload budgets independently so they're ready before the dialog opens
   React.useEffect(() => {
@@ -158,8 +170,6 @@ export default function ExpensesPage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesDept
   })
 
-
-
   const handleCreate = async (values: ExpenseFormValues) => {
     try {
       const response = await fmsApi.createExpense({
@@ -169,17 +179,9 @@ export default function ExpensesPage() {
         budget_id: values.budget_id || null,
       })
 
-      // Upload receipt if provided and we got an ID back
-      const newExpense = response as any
-      if (newExpense?.expense_id && values.receipt) {
-        await fmsApi.uploadReceipt(newExpense.expense_id, values.receipt)
-      } else if (newExpense?.id && values.receipt) {
-        await fmsApi.uploadReceipt(newExpense.id, values.receipt)
-      }
-
       toast.success("Expense submitted successfully")
       setDialogOpen(false)
-      
+
       const newExpenses = normalizeExpenses([response])
       if (newExpenses.length > 0) {
         const budgetDepartment = budgets.find((budget) =>
@@ -193,19 +195,27 @@ export default function ExpensesPage() {
             approved: null,
             verified: null,
             department: newExpenses[0].department ?? budgetDepartment,
+            receiptUrl: values.receipt ? "local" : null,
           },
           ...prev,
         ])
       }
-      
-      // Also fetch in the background to ensure consistency
+
       fetchExpenses()
     } catch (error) {
-      toast.error("Failed to submit expense. Please check your inputs and receipt.")
+      toast.error("Failed to submit expense. Please try again.")
     }
   }
 
-  const handleStatusChange = async (id: string | number) => {
+  const handleOpenVerification = (expense: FmsExpense) => {
+    setSelectedExpenseForVerification(expense)
+    setVerificationDialogOpen(true)
+  }
+
+  const handleConfirmVerification = async () => {
+    if (!selectedExpenseForVerification) return
+
+    const id = selectedExpenseForVerification.id
     try {
       await fmsApi.verifyExpense(id, true)
       setExpenses((prev) =>
@@ -221,6 +231,8 @@ export default function ExpensesPage() {
         )
       )
       toast.success("Expense verified successfully")
+      setVerificationDialogOpen(false)
+      setSelectedExpenseForVerification(null)
     } catch (error) {
       toast.error("Failed to update expense status.")
     }
@@ -367,7 +379,12 @@ export default function ExpensesPage() {
                         )}
                       </TableCell>
                       <TableCell>{expense.category}</TableCell>
-                      <TableCell>{expense.date}</TableCell>
+                      <TableCell className="text-muted-foreground/80">
+                        {(() => {
+                          const d = expense.date ? parseISO(expense.date) : null;
+                          return d && isValid(d) ? format(d, "PPP") : "N/A";
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatMoney(expense.amount)}
                       </TableCell>
@@ -395,7 +412,7 @@ export default function ExpensesPage() {
                             size="sm"
                             className="disabled:cursor-not-allowed"
                             disabled={expense.status !== "pending"}
-                            onClick={() => handleStatusChange(expense.id)}
+                            onClick={() => handleOpenVerification(expense)}
                           >
                               <CheckIcon className="size-4" />
                               <span className="sr-only">Verify</span>
@@ -425,6 +442,13 @@ export default function ExpensesPage() {
         onSubmit={handleCreate}
         budgets={budgets}
         budgetsLoading={budgetsLoading}
+      />
+
+      <VerificationDialog
+        open={verificationDialogOpen}
+        onOpenChange={setVerificationDialogOpen}
+        onConfirm={handleConfirmVerification}
+        expense={selectedExpenseForVerification}
       />
 
       <Sheet open={!!selectedUserProfile} onOpenChange={(open) => !open && setSelectedUserProfile(null)}>
@@ -498,6 +522,103 @@ export default function ExpensesPage() {
   )
 }
 
+function VerificationDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  expense,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: () => void
+  expense: FmsExpense | null
+}) {
+  if (!expense) return null
+
+  const submitter = getUserFromCache(expense.submitter)
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <ScrollArea className="flex-1 px-6 pt-6">
+        <DialogHeader>
+          <DialogTitle className="font-heading text-xl font-normal text-slate-50">
+            Verify Expense Details
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground/60 font-normal">
+            Review the submission details and attached receipt before confirming verification.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-6">
+          <div className="flex flex-col md:flex-row gap-8 items-start px-6">
+            {/* Left Column: Receipt Preview */}
+            <div className="flex flex-col gap-3 w-48 shrink-0">
+              {true ? (
+                <div className="relative group overflow-hidden rounded-[4px] border bg-muted/50 h-48 w-full flex items-center justify-center">
+                  <img 
+                    src="/receipt.png"
+                    alt="Receipt preview" 
+                    className="max-h-full max-w-full object-contain cursor-zoom-in"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://placehold.co/600x400/020617/cbd5e1?text=No+Image"
+                    }}
+                    onClick={() => window.open("/receipt.png", "_blank")}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open("/receipt.png", "_blank")}>
+                      <Maximize2 className="mr-1.5 size-3" />
+                      EXPAND
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10">
+                  <HugeiconsIcon icon={Alert01Icon} className="size-5 text-muted-foreground/20" />
+                  <div className="text-[10px] text-muted-foreground/40 uppercase">Missing</div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Core Info */}
+            <div className="flex-1 space-y-6">
+              <div className="space-y-4">
+                <Info label="Description" value={expense.description} valueClassName="text-lg" />
+                <div className="flex items-baseline gap-4">
+                  <Info label="Amount" value={formatMoney(expense.amount)} valueClassName="text-3xl text-slate-50" />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/40">
+                <Info label="Category" value={expense.category} />
+                <Info 
+                  label="Date" 
+                  value={(() => {
+                    const d = expense.date ? parseISO(expense.date) : null;
+                    return d && isValid(d) ? format(d, "PPP") : "N/A";
+                  })()} 
+                />
+                <Info label="Department" value={expense.department || "General"} />
+                <Info label="Submitted By" value={submitter?.name || "Unknown"} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+
+        <DialogFooter className="p-6 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-[4px]">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className="rounded-[4px]">
+            Confirm Verification
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function ExpenseDialog({
   open,
   onOpenChange,
@@ -521,135 +642,210 @@ function ExpenseDialog({
     },
   })
 
+  const [isFileLoading, setIsFileLoading] = React.useState(false)
+  const [fileProgress, setFileProgress] = React.useState(0)
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
+
   React.useEffect(() => {
     if (!open) {
-      form.reset({
-        description: "",
-        category: "",
-        amount: 0,
-        budget_id: "",
-      })
+      form.reset({ description: "", category: "", amount: 0, budget_id: "" })
+      setIsFileLoading(false)
+      setFileProgress(0)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
     }
   }, [form, open])
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    form.setValue("receipt", file)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(URL.createObjectURL(file))
+
+    // Animate progress bar to simulate "reading" the file
+    setIsFileLoading(true)
+    setFileProgress(0)
+    let progress = 0
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 20) + 10
+      if (progress >= 100) {
+        progress = 100
+        clearInterval(interval)
+        setIsFileLoading(false)
+        toast.success("Receipt ready")
+      }
+      setFileProgress(progress)
+    }, 120)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Submit expense</DialogTitle>
-          <DialogDescription>
-            Record an out-of-pocket or corporate card expense
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={(val) => !isFileLoading && onOpenChange(val)}>
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <ScrollArea className="flex-1 px-6 pt-6">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="font-heading text-xl font-normal text-slate-50">
+              Submit Expense
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground/60 font-normal">
+              Record an out-of-pocket or corporate card expense
+            </DialogDescription>
+          </DialogHeader>
 
-        <form
-          className="grid gap-4"
-          onSubmit={form.handleSubmit((values) =>
-            onSubmit(values as ExpenseFormValues)
-          )}
-        >
-          <Field
-            label="Description"
-            error={form.formState.errors.description?.message}
-            control={
-              <Input placeholder="Office supplies, Travel to NY..." {...form.register("description")} />
-            }
-          />
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Amount"
-              error={form.formState.errors.amount?.message}
-              control={
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  {...form.register("amount", { valueAsNumber: true })}
+          <form
+            id="expense-form"
+            className="grid gap-4"
+            onSubmit={form.handleSubmit((values) => onSubmit(values as ExpenseFormValues))}
+          >
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Receipt Preview on the left */}
+            {(previewUrl || isFileLoading) && (
+              <div className="w-48 shrink-0 flex flex-col gap-2 pt-6">
+                {previewUrl ? (
+                  <div className="relative group overflow-hidden rounded-[4px] border bg-muted/30 h-48 w-full flex items-center justify-center">
+                    <img
+                      src={previewUrl}
+                      alt="Receipt preview"
+                      className="max-h-full max-w-full object-contain cursor-zoom-in"
+                      onClick={() => window.open(previewUrl, "_blank")}
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open(previewUrl, "_blank")}>
+                        <Maximize2 className="mr-1.5 size-3" />
+                        EXPAND
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10 animate-pulse">
+                    <Spinner className="size-4" />
+                  </div>
+                )}
+                
+                {isFileLoading && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-muted-foreground/60">Reading...</span>
+                      <span>{fileProgress}%</span>
+                    </div>
+                    <Progress value={fileProgress} className="h-1" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex-1 space-y-4">
+              <Field
+                label="Description"
+                error={form.formState.errors.description?.message}
+                control={
+                  <Input
+                    placeholder="Office supplies, Travel to NY..."
+                    {...form.register("description")}
+                  />
+                }
+              />
+              <div className="grid gap-4 grid-cols-2">
+                <Field
+                  label="Amount"
+                  error={form.formState.errors.amount?.message}
+                  control={
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      {...form.register("amount", { valueAsNumber: true })}
+                    />
+                  }
                 />
-              }
-            />
-            <Field
-              label="Receipt (Optional)"
-              control={
-                <Input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      form.setValue("receipt", file)
-                      toast.success("Receipt attached")
+                <Field
+                  label="Category"
+                  error={form.formState.errors.category?.message}
+                  control={
+                    <Select
+                      value={form.watch("category")}
+                      onValueChange={(value) =>
+                        form.setValue("category", value, { shouldValidate: true })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Travel">Travel</SelectItem>
+                        <SelectItem value="Meals">Meals</SelectItem>
+                        <SelectItem value="Software">Software</SelectItem>
+                        <SelectItem value="Hardware">Hardware</SelectItem>
+                        <SelectItem value="Stationery">Stationery</SelectItem>
+                        <SelectItem value="Office">Office Supplies</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+              </div>
+
+              <Field
+                label="Linked Budget"
+                error={form.formState.errors.budget_id?.message}
+                control={
+                  <Select
+                    value={form.watch("budget_id")}
+                    onValueChange={(value) =>
+                      form.setValue("budget_id", value, { shouldValidate: true })
                     }
-                  }}
-                />
-              }
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Linked Budget"
-              error={form.formState.errors.budget_id?.message}
-              control={
-                <Select
-                  value={form.watch("budget_id")}
-                  onValueChange={(value) =>
-                    form.setValue("budget_id", value, { shouldValidate: true })
-                  }
-                  disabled={budgetsLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={budgetsLoading ? "Loading budgets…" : "Select a budget"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {budgets.map((budget) => (
-                      <SelectItem key={String(budget.id)} value={String(budget.id)}>
-                        {budget.name || String(budget.id)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              }
-            />
-            <Field
-              label="Category"
-              error={form.formState.errors.category?.message}
-              control={
-                <Select
-                  value={form.watch("category")}
-                  onValueChange={(value) =>
-                    form.setValue("category", value, { shouldValidate: true })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Travel">Travel</SelectItem>
-                    <SelectItem value="Meals">Meals</SelectItem>
-                    <SelectItem value="Software">Software</SelectItem>
-                    <SelectItem value="Hardware">Hardware</SelectItem>
-                    <SelectItem value="Stationery">Stationery</SelectItem>
-                    <SelectItem value="Office">Office Supplies</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              }
-            />
-          </div>
+                    disabled={budgetsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={budgetsLoading ? "Loading…" : "Select a budget"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {budgets.map((budget) => (
+                        <SelectItem key={String(budget.id)} value={String(budget.id)}>
+                          {budget.name || String(budget.id)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
 
+              <Field
+                label="Receipt (Optional)"
+                control={
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    disabled={isFileLoading}
+                    onChange={handleFileChange}
+                  />
+                }
+              />
+            </div>
+          </div>
+          </form>
+        </ScrollArea>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Submit expense</Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter className="p-6 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isFileLoading}
+          >
+            Cancel
+          </Button>
+          <Button form="expense-form" type="submit" disabled={isFileLoading}>
+            {isFileLoading ? (
+              <><Spinner className="mr-2 size-4" />Reading...</>
+            ) : (
+              "Submit expense"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -767,11 +963,11 @@ function SummaryCard({
   )
 }
 
-function Info({ label, value, labelClassName }: { label: string; value: React.ReactNode; labelClassName?: string }) {
+function Info({ label, value, labelClassName, valueClassName }: { label: string; value: React.ReactNode; labelClassName?: string; valueClassName?: string }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className={cn("text-xs font-heading text-muted-foreground/50", labelClassName)}>{label}</div>
-      <div className="text-sm text-foreground">{value}</div>
+    <div className="flex flex-col gap-1">
+      <div className={cn("text-[10px] uppercase tracking-wider font-heading text-muted-foreground/40 font-normal", labelClassName)}>{label}</div>
+      <div className={cn("text-base text-slate-200 font-normal", valueClassName)}>{value}</div>
     </div>
   )
 }
