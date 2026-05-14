@@ -286,10 +286,10 @@ export function ManagerDashboardView({ period }: { period: string }) {
                 />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="status" />} />
-                <Legend 
+                <ChartLegend 
                   verticalAlign="bottom" 
                   height={36} 
-                  content={(props) => <ChartLegendContent {...props} nameKey="status" />}
+                  content={<ChartLegendContent nameKey="status" />}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
                   {approvalPipelineData.map((entry, index) => (
