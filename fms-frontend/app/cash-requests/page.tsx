@@ -86,7 +86,7 @@ export default function CashRequestsPage() {
       router.push("/dashboard")
     }
   }, [config, router])
-  
+
   const canCreateRequest = hasPermission("cash_requests.create")
   const canApproveRequest = hasPermission("cash_requests.approve")
 
@@ -103,7 +103,7 @@ export default function CashRequestsPage() {
       setLoading(true)
       const data = await fmsApi.getCashRequests()
       let normalized = normalizeCashRequests(data)
-      
+
       // Enforce department isolation and ownership
       normalized = role === "employee"
         ? filterByOwnership(normalized, user)
@@ -130,8 +130,8 @@ export default function CashRequestsPage() {
   }, { total: 0, pending: 0, approved: 0, disbursed: 0 })
 
   const filteredRequests = requests.filter(req => {
-    const matchesSearch = (req.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) || 
-                         String(req.id).toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = (req.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      String(req.id).toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || req.status === statusFilter
     const matchesDept = departmentFilter === "all" || req.department === departmentFilter
     return matchesSearch && matchesStatus && matchesDept
@@ -147,12 +147,12 @@ export default function CashRequestsPage() {
       } as any)
       toast.success("Cash request submitted successfully")
       setDialogOpen(false)
-      
+
       const newRequests = normalizeCashRequests([response])
       if (newRequests.length > 0) {
         setRequests((prev) => [newRequests[0], ...prev])
       }
-      
+
       fetchRequests()
     } catch (error) {
       toast.error("Failed to submit cash request. Please try again.")
@@ -213,9 +213,9 @@ export default function CashRequestsPage() {
           label="Pending approval"
           value={totals.pending}
           description="Funds still awaiting approval"
-          trend={{ 
-            value: `${((totals.pending / (totals.total || 1)) * 100).toFixed(1)}%`, 
-            isUp: false 
+          trend={{
+            value: `${((totals.pending / (totals.total || 1)) * 100).toFixed(1)}%`,
+            isUp: false
           }}
           trendLabel="of total volume"
           loading={loading}
@@ -227,8 +227,8 @@ export default function CashRequestsPage() {
           <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-2.5 top-1.5 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search requests..." 
+              <Input
+                placeholder="Search requests..."
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -292,7 +292,7 @@ export default function CashRequestsPage() {
                   ))
                 ) : filteredRequests.length ? (
                   filteredRequests.map((req) => (
-                    <TableRow 
+                    <TableRow
                       key={req.id}
                     >
                       <TableCell className="text-sm font-normal text-foreground">{req.title}</TableCell>
@@ -308,7 +308,7 @@ export default function CashRequestsPage() {
                             onClick={() => setSelectedUserProfile(getUserFromCache(req.requestedBy))}
                             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
                           >
-                            {getUserFromCache(req.requestedBy)?.name || "Unknown"}
+                            {getUserFromCache(req.requestedBy)?.name || `${req.requestedBy}`}
                             <ArrowUpRight className="size-3" />
                           </button>
                         </TableCell>
@@ -396,8 +396,8 @@ export default function CashRequestsPage() {
 
                     <Info label="Department" value={selectedUserProfile.department || "General"} />
 
-                    <Info 
-                      label="Status" 
+                    <Info
+                      label="Status"
                       value={
                         <div className="flex items-center gap-2">
                           <span className="capitalize">{selectedUserProfile.status || "active"}</span>
@@ -412,9 +412,9 @@ export default function CashRequestsPage() {
                 </div>
               </div>
               <div className="p-6 border-t border-border/50 bg-white/[0.01]">
-                <Button 
+                <Button
                   variant="outline"
-                  className="w-full rounded-[4px] h-10" 
+                  className="w-full rounded-[4px] h-10"
                   onClick={() => setSelectedUserProfile(null)}
                 >
                   Close Profile

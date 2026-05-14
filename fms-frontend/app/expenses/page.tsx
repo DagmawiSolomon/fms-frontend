@@ -136,7 +136,7 @@ export default function ExpensesPage() {
       const data = await fmsApi.getExpenses()
       let normalized = normalizeExpenses(data)
       normalized = enrichExpensesWithBudgetDepartments(normalized, budgets)
-      
+
       // Enforce department isolation and ownership
       normalized = role === "employee"
         ? filterByOwnership(normalized, user)
@@ -222,11 +222,11 @@ export default function ExpensesPage() {
         prev.map((expense) =>
           String(expense.id) === String(id)
             ? {
-                ...expense,
-                approved: true,
-                verified: true,
-                status: "verified",
-              }
+              ...expense,
+              approved: true,
+              verified: true,
+              status: "verified",
+            }
             : expense
         )
       )
@@ -369,7 +369,7 @@ export default function ExpensesPage() {
                   ))
                 ) : filteredExpenses.length ? (
                   filteredExpenses.map((expense) => (
-                    <TableRow 
+                    <TableRow
                       key={expense.id}
                     >
                       <TableCell className="">
@@ -394,7 +394,7 @@ export default function ExpensesPage() {
                             onClick={() => setSelectedUserProfile(getUserFromCache(expense.submitter))}
                             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
                           >
-                            {getUserFromCache(expense.submitter)?.name || "Unknown"}
+                            {getUserFromCache(expense.submitter)?.name || `${expense.submitter}`}
                             <ArrowUpRight className="size-3" />
                           </button>
                         </TableCell>
@@ -406,18 +406,18 @@ export default function ExpensesPage() {
                       {showActionColumn && (
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-2">
-                           {canVerifyExpense && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="disabled:cursor-not-allowed"
-                            disabled={expense.status !== "pending"}
-                            onClick={() => handleOpenVerification(expense)}
-                          >
-                              <CheckIcon className="size-4" />
-                              <span className="sr-only">Verify</span>
-                            </Button>
-                          )}
+                            {canVerifyExpense && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="disabled:cursor-not-allowed"
+                                disabled={expense.status !== "pending"}
+                                onClick={() => handleOpenVerification(expense)}
+                              >
+                                <CheckIcon className="size-4" />
+                                <span className="sr-only">Verify</span>
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
@@ -425,7 +425,7 @@ export default function ExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                      <TableCell colSpan={showActionColumn ? (showOwnershipColumns ? 7 : 6) : (showOwnershipColumns ? 6 : 5)} className="h-24 text-center">
+                    <TableCell colSpan={showActionColumn ? (showOwnershipColumns ? 7 : 6) : (showOwnershipColumns ? 6 : 5)} className="h-24 text-center">
                       No expenses found.
                     </TableCell>
                   </TableRow>
@@ -490,8 +490,8 @@ export default function ExpensesPage() {
                       }
                     />
 
-                    <Info 
-                      label="Status" 
+                    <Info
+                      label="Status"
                       value={
                         <div className="flex items-center gap-2">
                           <span className="capitalize">{selectedUserProfile.status || "active"}</span>
@@ -506,9 +506,9 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div className="p-6 border-t border-border/50 bg-white/[0.01]">
-                <Button 
+                <Button
                   variant="outline"
-                  className="w-full rounded-[4px] h-10" 
+                  className="w-full rounded-[4px] h-10"
                   onClick={() => setSelectedUserProfile(null)}
                 >
                   Close Profile
@@ -541,70 +541,70 @@ function VerificationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <ScrollArea className="flex-1 px-6 pt-6">
-        <DialogHeader>
-          <DialogTitle className="font-heading text-xl font-normal text-slate-50">
-            Verify Expense Details
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground/60 font-normal">
-            Review the submission details and attached receipt before confirming verification.
-          </DialogDescription>
-        </DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl font-normal text-slate-50">
+              Verify Expense Details
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground/60 font-normal">
+              Review the submission details and attached receipt before confirming verification.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="py-6">
-          <div className="flex flex-col md:flex-row gap-8 items-start px-6">
-            {/* Left Column: Receipt Preview */}
-            <div className="flex flex-col gap-3 w-48 shrink-0">
-              {true ? (
-                <div className="relative group overflow-hidden rounded-[4px] border bg-muted/50 h-48 w-full flex items-center justify-center">
-                  <img 
-                    src="/receipt.png"
-                    alt="Receipt preview" 
-                    className="max-h-full max-w-full object-contain cursor-zoom-in"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://placehold.co/600x400/020617/cbd5e1?text=No+Image"
-                    }}
-                    onClick={() => window.open("/receipt.png", "_blank")}
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open("/receipt.png", "_blank")}>
-                      <Maximize2 className="mr-1.5 size-3" />
-                      EXPAND
-                    </Button>
+          <div className="py-6">
+            <div className="flex flex-col md:flex-row gap-8 items-start px-6">
+              {/* Left Column: Receipt Preview */}
+              <div className="flex flex-col gap-3 w-48 shrink-0">
+                {true ? (
+                  <div className="relative group overflow-hidden rounded-[4px] border bg-muted/50 h-48 w-full flex items-center justify-center">
+                    <img
+                      src="/receipt.png"
+                      alt="Receipt preview"
+                      className="max-h-full max-w-full object-contain cursor-zoom-in"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://placehold.co/600x400/020617/cbd5e1?text=No+Image"
+                      }}
+                      onClick={() => window.open("/receipt.png", "_blank")}
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open("/receipt.png", "_blank")}>
+                        <Maximize2 className="mr-1.5 size-3" />
+                        EXPAND
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10">
+                    <HugeiconsIcon icon={Alert01Icon} className="size-5 text-muted-foreground/20" />
+                    <div className="text-[10px] text-muted-foreground/40 uppercase">Missing</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Core Info */}
+              <div className="flex-1 space-y-6">
+                <div className="space-y-4">
+                  <Info label="Description" value={expense.description} valueClassName="text-lg" />
+                  <div className="flex items-baseline gap-4">
+                    <Info label="Amount" value={formatMoney(expense.amount)} valueClassName="text-3xl text-slate-50" />
                   </div>
                 </div>
-              ) : (
-                <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10">
-                  <HugeiconsIcon icon={Alert01Icon} className="size-5 text-muted-foreground/20" />
-                  <div className="text-[10px] text-muted-foreground/40 uppercase">Missing</div>
-                </div>
-              )}
-            </div>
 
-            {/* Right Column: Core Info */}
-            <div className="flex-1 space-y-6">
-              <div className="space-y-4">
-                <Info label="Description" value={expense.description} valueClassName="text-lg" />
-                <div className="flex items-baseline gap-4">
-                  <Info label="Amount" value={formatMoney(expense.amount)} valueClassName="text-3xl text-slate-50" />
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/40">
+                  <Info label="Category" value={expense.category} />
+                  <Info
+                    label="Date"
+                    value={(() => {
+                      const d = expense.date ? parseISO(expense.date) : null;
+                      return d && isValid(d) ? format(d, "PPP") : "N/A";
+                    })()}
+                  />
+                  <Info label="Department" value={expense.department || "General"} />
+                  <Info label="Submitted By" value={submitter?.name || `ID: ${expense.submitter}`} />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/40">
-                <Info label="Category" value={expense.category} />
-                <Info 
-                  label="Date" 
-                  value={(() => {
-                    const d = expense.date ? parseISO(expense.date) : null;
-                    return d && isValid(d) ? format(d, "PPP") : "N/A";
-                  })()} 
-                />
-                <Info label="Department" value={expense.department || "General"} />
-                <Info label="Submitted By" value={submitter?.name || "Unknown"} />
               </div>
             </div>
           </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
 
         <DialogFooter className="p-6 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-[4px]">
@@ -700,132 +700,132 @@ function ExpenseDialog({
             className="grid gap-4"
             onSubmit={form.handleSubmit((values) => onSubmit(values as ExpenseFormValues))}
           >
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Receipt Preview on the left */}
-            {(previewUrl || isFileLoading) && (
-              <div className="w-48 shrink-0 flex flex-col gap-2 pt-6">
-                {previewUrl ? (
-                  <div className="relative group overflow-hidden rounded-[4px] border bg-muted/30 h-48 w-full flex items-center justify-center">
-                    <img
-                      src={previewUrl}
-                      alt="Receipt preview"
-                      className="max-h-full max-w-full object-contain cursor-zoom-in"
-                      onClick={() => window.open(previewUrl, "_blank")}
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open(previewUrl, "_blank")}>
-                        <Maximize2 className="mr-1.5 size-3" />
-                        EXPAND
-                      </Button>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Receipt Preview on the left */}
+              {(previewUrl || isFileLoading) && (
+                <div className="w-48 shrink-0 flex flex-col gap-2 pt-6">
+                  {previewUrl ? (
+                    <div className="relative group overflow-hidden rounded-[4px] border bg-muted/30 h-48 w-full flex items-center justify-center">
+                      <img
+                        src={previewUrl}
+                        alt="Receipt preview"
+                        className="max-h-full max-w-full object-contain cursor-zoom-in"
+                        onClick={() => window.open(previewUrl, "_blank")}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button variant="secondary" size="sm" className="rounded-[4px] h-8 px-2 text-[10px]" onClick={() => window.open(previewUrl, "_blank")}>
+                          <Maximize2 className="mr-1.5 size-3" />
+                          EXPAND
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10 animate-pulse">
-                    <Spinner className="size-4" />
-                  </div>
-                )}
-                
-                {isFileLoading && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-muted-foreground/60">Reading...</span>
-                      <span>{fileProgress}%</span>
+                  ) : (
+                    <div className="h-48 w-full border border-dashed rounded-[4px] flex flex-col items-center justify-center text-center gap-2 bg-muted/10 animate-pulse">
+                      <Spinner className="size-4" />
                     </div>
-                    <Progress value={fileProgress} className="h-1" />
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
 
-            <div className="flex-1 space-y-4">
-              <Field
-                label="Description"
-                error={form.formState.errors.description?.message}
-                control={
-                  <Input
-                    placeholder="Office supplies, Travel to NY..."
-                    {...form.register("description")}
-                  />
-                }
-              />
-              <div className="grid gap-4 grid-cols-2">
+                  {isFileLoading && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-muted-foreground/60">Reading...</span>
+                        <span>{fileProgress}%</span>
+                      </div>
+                      <Progress value={fileProgress} className="h-1" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex-1 space-y-4">
                 <Field
-                  label="Amount"
-                  error={form.formState.errors.amount?.message}
+                  label="Description"
+                  error={form.formState.errors.description?.message}
                   control={
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      {...form.register("amount", { valueAsNumber: true })}
+                      placeholder="Office supplies, Travel to NY..."
+                      {...form.register("description")}
                     />
                   }
                 />
+                <div className="grid gap-4 grid-cols-2">
+                  <Field
+                    label="Amount"
+                    error={form.formState.errors.amount?.message}
+                    control={
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...form.register("amount", { valueAsNumber: true })}
+                      />
+                    }
+                  />
+                  <Field
+                    label="Category"
+                    error={form.formState.errors.category?.message}
+                    control={
+                      <Select
+                        value={form.watch("category")}
+                        onValueChange={(value) =>
+                          form.setValue("category", value, { shouldValidate: true })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Travel">Travel</SelectItem>
+                          <SelectItem value="Meals">Meals</SelectItem>
+                          <SelectItem value="Software">Software</SelectItem>
+                          <SelectItem value="Hardware">Hardware</SelectItem>
+                          <SelectItem value="Stationery">Stationery</SelectItem>
+                          <SelectItem value="Office">Office Supplies</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    }
+                  />
+                </div>
+
                 <Field
-                  label="Category"
-                  error={form.formState.errors.category?.message}
+                  label="Linked Budget"
+                  error={form.formState.errors.budget_id?.message}
                   control={
                     <Select
-                      value={form.watch("category")}
+                      value={form.watch("budget_id")}
                       onValueChange={(value) =>
-                        form.setValue("category", value, { shouldValidate: true })
+                        form.setValue("budget_id", value, { shouldValidate: true })
                       }
+                      disabled={budgetsLoading}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select" />
+                        <SelectValue placeholder={budgetsLoading ? "Loading…" : "Select a budget"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Travel">Travel</SelectItem>
-                        <SelectItem value="Meals">Meals</SelectItem>
-                        <SelectItem value="Software">Software</SelectItem>
-                        <SelectItem value="Hardware">Hardware</SelectItem>
-                        <SelectItem value="Stationery">Stationery</SelectItem>
-                        <SelectItem value="Office">Office Supplies</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        {budgets.map((budget) => (
+                          <SelectItem key={String(budget.id)} value={String(budget.id)}>
+                            {budget.name || String(budget.id)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   }
                 />
+
+                <Field
+                  label="Receipt (Optional)"
+                  control={
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      disabled={isFileLoading}
+                      onChange={handleFileChange}
+                    />
+                  }
+                />
               </div>
-
-              <Field
-                label="Linked Budget"
-                error={form.formState.errors.budget_id?.message}
-                control={
-                  <Select
-                    value={form.watch("budget_id")}
-                    onValueChange={(value) =>
-                      form.setValue("budget_id", value, { shouldValidate: true })
-                    }
-                    disabled={budgetsLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={budgetsLoading ? "Loading…" : "Select a budget"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {budgets.map((budget) => (
-                        <SelectItem key={String(budget.id)} value={String(budget.id)}>
-                          {budget.name || String(budget.id)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              />
-
-              <Field
-                label="Receipt (Optional)"
-                control={
-                  <Input
-                    type="file"
-                    accept="image/*,.pdf"
-                    disabled={isFileLoading}
-                    onChange={handleFileChange}
-                  />
-                }
-              />
             </div>
-          </div>
           </form>
         </ScrollArea>
 
@@ -873,8 +873,8 @@ function StatusBadge({ status }: { status: FmsExpense["status"] }) {
   const displayStatus = status === "approved" ? "verified" : status
   const tone =
     displayStatus === "verified"
-        ? "border-emerald-500/20 text-emerald-500"
-        : "border-amber-500/20 text-amber-500"
+      ? "border-emerald-500/20 text-emerald-500"
+      : "border-amber-500/20 text-amber-500"
 
   return (
     <Badge variant="outline" className={cn(tone, "rounded-[4px] bg-black capitalize font-medium")}>
