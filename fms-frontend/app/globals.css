@@ -66,7 +66,7 @@
   --destructive-foreground: #fafafa;
   --border: #18181b;
   --input: #18181b;
-  --ring: #E55812;
+  --ring: #334155;
   --chart-1: hsl(220 70% 50%);
   --chart-2: hsl(160 60% 45%);
   --chart-3: hsl(30 80% 55%);
@@ -75,12 +75,12 @@
   --radius: 0;
   --sidebar: #050505;
   --sidebar-foreground: #a1a1aa;
-  --sidebar-primary: #E55812;
-  --sidebar-primary-foreground: #F8FAFC;
+  --sidebar-primary: #F8FAFC;
+  --sidebar-primary-foreground: #020202;
   --sidebar-accent: #18181b;
   --sidebar-accent-foreground: #F8FAFC;
   --sidebar-border: #18181b;
-  --sidebar-ring: #E55812;
+  --sidebar-ring: #334155;
   color-scheme: dark;
 }
 
