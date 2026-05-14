@@ -432,8 +432,8 @@ export default function BudgetsPage() {
               <div className="flex-1 overflow-y-auto">
                 <div className="grid gap-6 p-6">
                   <div className="flex items-center gap-4 py-2">
-                    <Avatar className="h-12 w-12 rounded-full grayscale border border-border/50">
-                      <AvatarFallback className="rounded-full">{initials(selectedUserProfile.name)}</AvatarFallback>
+                    <Avatar className="h-12 w-12 rounded-full border border-border/50">
+                      <AvatarFallback className="rounded-full" seed={selectedUserProfile.email} name={selectedUserProfile.name} />
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="text-base font-medium text-foreground">{selectedUserProfile.name}</span>

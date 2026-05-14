@@ -40,10 +40,8 @@ export default function ProfilePage() {
           ) : (
             <>
               <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20 rounded-full grayscale border border-border/50">
-                  <AvatarFallback className="rounded-full text-xl">
-                    {initials(session?.name ?? "?")}
-                  </AvatarFallback>
+                <Avatar className="h-20 w-20 rounded-full border border-border/50">
+                  <AvatarFallback className="rounded-full text-xl" seed={session?.email ?? "default"} name={session?.name} />
                 </Avatar>
                 <div className="space-y-1">
                   <div className="text-2xl tracking-tight text-foreground">

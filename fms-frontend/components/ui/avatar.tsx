@@ -41,19 +41,37 @@ function AvatarImage({
   )
 }
 
+import { DitherIdenticon } from "./dither-identicon"
+import { getDeterministicColor } from "@/lib/utils"
+
 function AvatarFallback({
   className,
+  seed,
+  name,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback> & { 
+  seed?: string;
+  name?: string;
+}) {
+  const color = getDeterministicColor(seed || name || "default")
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
+        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs overflow-hidden",
         className
       )}
       {...props}
-    />
+    >
+      {seed ? (
+        <DitherIdenticon 
+          seed={seed} 
+          color={color} 
+          className="size-full opacity-60" 
+        />
+      ) : props.children}
+    </AvatarPrimitive.Fallback>
   )
 }
 

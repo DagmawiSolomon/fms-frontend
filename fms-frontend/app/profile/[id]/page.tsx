@@ -123,8 +123,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24 rounded-full grayscale border border-border/50">
-                  <AvatarFallback className="rounded-full text-2xl bg-muted text-muted-foreground">{initials(name)}</AvatarFallback>
+                <Avatar className="h-24 w-24 rounded-full border border-border/50">
+                  <AvatarFallback className="rounded-full text-2xl bg-muted text-muted-foreground" seed={email} name={name} />
                 </Avatar>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">

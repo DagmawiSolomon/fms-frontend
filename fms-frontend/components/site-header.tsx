@@ -82,15 +82,8 @@ export function SiteHeader({
               variant="ghost"
               className="h-10 gap-2 rounded-[4px] px-2.5 text-sidebar-foreground hover:bg-sidebar-accent/20"
             >
-              <Avatar className="size-7 rounded-full grayscale">
-                <AvatarFallback className="rounded-full">
-                  {user.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase() || "FT"}
-                </AvatarFallback>
+              <Avatar className="size-7 rounded-full">
+                <AvatarFallback className="rounded-full" seed={user.email} name={user.name} />
               </Avatar>
               <span className="hidden max-w-32 truncate text-sm sm:block">
                 {user.name}
@@ -105,15 +98,8 @@ export function SiteHeader({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 p-2">
-                <Avatar className="size-8 rounded-full grayscale">
-                  <AvatarFallback className="rounded-full">
-                    {user.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase() || "FT"}
-                  </AvatarFallback>
+                <Avatar className="size-8 rounded-full">
+                  <AvatarFallback className="rounded-full" seed={user.email} name={user.name} />
                 </Avatar>
                 <div className="min-w-0">
                   <p className="truncate text-sm">{user.name}</p>

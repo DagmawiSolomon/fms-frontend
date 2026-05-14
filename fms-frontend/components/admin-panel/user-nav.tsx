@@ -33,7 +33,7 @@ export function UserNav() {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-transparent">JD</AvatarFallback>
+                  <AvatarFallback className="bg-transparent" seed="johndoe@example.com" name="John Doe" />
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
