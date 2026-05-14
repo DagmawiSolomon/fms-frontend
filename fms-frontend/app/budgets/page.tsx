@@ -99,7 +99,7 @@ export default function BudgetsPage() {
   const isLeadership = isFinanceLeadershipEmail(user?.email)
   const canCreateBudgets = hasPermission("budgets.create")
   const canEditBudgets = hasPermission("budgets.update")
-  const canApproveBudgets = (role === "finance" || isLeadership) && !isLeadership
+  const canApproveBudgets = role === "finance" || isLeadership
   const canRejectBudgets = canApproveBudgets
 
   const [budgets, setBudgets] = React.useState<FmsBudget[]>([])
@@ -146,7 +146,7 @@ export default function BudgetsPage() {
     if (!submitterId) return null
 
     const cachedUser = getUserFromCache(submitterId)
-    return cachedUser ?? { id: submitterId, name: "Unknown user", email: "", role: "employee" }
+    return cachedUser ?? { id: submitterId, name: `ID: ${submitterId}`, email: "", role: "employee" }
   }, [])
 
   const totals = budgets.reduce(
@@ -327,7 +327,7 @@ export default function BudgetsPage() {
                       <TableCell>
                         {(() => {
                           const submitter = getBudgetSubmitter(budget)
-                          if (!submitter) return <span className="text-sm text-muted-foreground">Unknown</span>
+                          if (!submitter) return <span className="text-sm text-muted-foreground">ID: {budget.owner || "N/A"}</span>
                           return (
                             <button
                               type="button"
@@ -594,7 +594,7 @@ function BudgetDialog({
         <DialogHeader>
           <DialogTitle>Create budget proposal</DialogTitle>
           <DialogDescription>
-            Enter the department request, then finance can approve or reject it.
+            Enter the department request, then finance or leadership can approve or reject it.
           </DialogDescription>
         </DialogHeader>
 
