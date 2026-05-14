@@ -100,7 +100,7 @@ export default function DashboardPage() {
       }
 
       // Generate and save the PDF
-      await html2pdf().from(content).set(opt).save()
+      await html2pdf().from(content as HTMLElement).set(opt).save()
       
       // Clean up
       document.body.removeChild(container)
