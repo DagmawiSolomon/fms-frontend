@@ -599,14 +599,13 @@ function normalizeText(value: unknown, fallback: string) {
   if (typeof value === "string" && value.trim()) {
     return value
   }
-
   return fallback
 }
 
 /**
  * Filter items by a standardized quarter string (e.g., 'Q1-2026')
  */
-export function filterByPeriod<T extends { date?: string | null }>(items: T[], period: string): T[] {
+export function filterByPeriod<T extends { date?: string | null; period?: string | null }>(items: T[], period: string): T[] {
   if (!period) return items
 
   // Standardized format: QX-YYYY
@@ -615,6 +614,9 @@ export function filterByPeriod<T extends { date?: string | null }>(items: T[], p
     const quarter = parseInt(match[1])
     const year = match[2]
     return items.filter(item => {
+      // If item already has a matching period string, use it directly
+      if (item.period === period) return true
+
       if (!item.date || !item.date.startsWith(year)) return false
       const monthPart = item.date.split("-")[1]
       if (!monthPart) return false
