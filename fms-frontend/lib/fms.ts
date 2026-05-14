@@ -639,7 +639,7 @@ export function filterByDepartment<T extends { department?: string | null; reque
   if (!items || !user) return items
 
   // Admins and finance leadership have global oversight
-  if (role === "admin" || isFinanceLeadershipEmail(user.email)) {
+  if (role === "admin" || role === "finance" || isFinanceLeadershipEmail(user.email)) {
     return items
   }
 
