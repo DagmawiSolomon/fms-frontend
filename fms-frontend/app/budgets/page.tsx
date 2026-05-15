@@ -280,6 +280,8 @@ export default function BudgetsPage() {
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Operations">Operations</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="test_department">Test Department</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -632,6 +634,8 @@ function BudgetDialog({
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Operations">Operations</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="test_department">Test Department</SelectItem>
                     </>
                   ) : (
                     <SelectItem value={userDept || "General"}>{userDept || "General"}</SelectItem>

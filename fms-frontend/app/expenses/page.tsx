@@ -310,6 +310,8 @@ export default function ExpensesPage() {
                     <SelectItem value="HR">HR</SelectItem>
                     <SelectItem value="Operations">Operations</SelectItem>
                     <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="test_department">Test Department</SelectItem>
                   </SelectContent>
                 </Select>
               )}
