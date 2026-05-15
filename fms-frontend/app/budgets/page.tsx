@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/table"
 import { useRole } from "@/components/role-provider"
 import { toast } from "sonner"
-import { fmsApi, normalizeBudgets, filterByDepartment } from "@/lib/fms"
+import { fmsApi, normalizeBudgets, filterByDepartment, filterByOwnership } from "@/lib/fms"
 import type { FmsBudget, FmsBudgetStatus, FmsSessionUser } from "@/lib/fms"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
@@ -120,7 +120,13 @@ export default function BudgetsPage() {
       const normalizedBudgets = normalizeBudgets(budgetsData)
       
       // Enforce department isolation
-      const visibleBudgets = filterByDepartment(normalizedBudgets, user, role)
+      let visibleBudgets = filterByDepartment(normalizedBudgets, user, role)
+      
+      // Managers should only see budgets they created themselves
+      if (role === "manager" || role === "employee") {
+        visibleBudgets = filterByOwnership(visibleBudgets, user)
+      }
+      
       setBudgets(visibleBudgets)
     } catch (error) {
       console.error("Failed to fetch budgets:", error)
@@ -210,6 +216,7 @@ export default function BudgetsPage() {
   }
 
   const showActions = canEditBudgets || canApproveBudgets || canRejectBudgets
+  const showSubmitterColumn = role !== "manager" && role !== "employee"
 
   return (
     <DashboardShell
@@ -297,7 +304,7 @@ export default function BudgetsPage() {
                 <TableRow>
                   <TableHead className="text-xs text-muted-foreground/50">Budget</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Department</TableHead>
-                  <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>
+                  {showSubmitterColumn && <TableHead className="text-xs text-muted-foreground/50">Submitter</TableHead>}
                   <TableHead className="text-right text-xs text-muted-foreground/50">Amount</TableHead>
                   <TableHead className="text-right text-xs text-muted-foreground/50">Spent</TableHead>
                   <TableHead className="text-xs text-muted-foreground/50">Status</TableHead>
@@ -310,7 +317,7 @@ export default function BudgetsPage() {
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                      {showSubmitterColumn && <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>}
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
@@ -324,22 +331,24 @@ export default function BudgetsPage() {
                         <div className="text-sm font-normal text-foreground">{budget.name}</div>
                       </TableCell>
                       <TableCell>{budget.department || "Unassigned"}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const submitter = getBudgetSubmitter(budget)
-                          if (!submitter) return <span className="text-sm text-muted-foreground">{budget.owner || "N/A"}</span>
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedUserProfile(submitter)}
-                              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
-                            >
-                              {submitter.name}
-                              <ArrowUpRightIcon className="size-3" />
-                            </button>
-                          )
-                        })()}
-                      </TableCell>
+                      {showSubmitterColumn && (
+                        <TableCell>
+                          {(() => {
+                            const submitter = getBudgetSubmitter(budget)
+                            if (!submitter) return <span className="text-sm text-muted-foreground">{budget.owner || "N/A"}</span>
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedUserProfile(submitter)}
+                                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                              >
+                                {submitter.name}
+                                <ArrowUpRightIcon className="size-3" />
+                              </button>
+                            )
+                          })()}
+                        </TableCell>
+                      )}
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(budget.amount)}
                       </TableCell>
@@ -396,7 +405,7 @@ export default function BudgetsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? (showSubmitterColumn ? 7 : 6) : (showSubmitterColumn ? 6 : 5)} className="h-24 text-center">
                       No budgets found.
                     </TableCell>
                   </TableRow>
