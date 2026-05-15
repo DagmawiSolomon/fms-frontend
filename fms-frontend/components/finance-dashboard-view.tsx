@@ -199,12 +199,12 @@ export function FinanceDashboardView({ period }: { period: string }) {
 
   const categories = React.useMemo(() => {
     const cats: Record<string, number> = {}
-    data.expenses.forEach(e => {
+    filteredExpenses.forEach(e => {
       const cat = e.category || "Other"
       cats[cat] = (cats[cat] || 0) + e.amount
     })
     return cats
-  }, [data.expenses])
+  }, [filteredExpenses])
 
   const expenseChartConfig = React.useMemo(() => {
     return Object.entries(categories).reduce((acc, [category, _value], index) => {
@@ -219,7 +219,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
   const cashFlowData = React.useMemo(() => {
     const byMonth: Record<string, { requested: number; disbursed: number }> = {}
 
-    data.cashRequests.forEach((request) => {
+    filteredRequests.forEach((request) => {
       const monthKey = request.date ? new Date(request.date).toLocaleString("en-US", { month: "short" }) : "Unknown"
       if (!byMonth[monthKey]) {
         byMonth[monthKey] = { requested: 0, disbursed: 0 }
@@ -235,7 +235,7 @@ export function FinanceDashboardView({ period }: { period: string }) {
       month,
       ...values,
     }))
-  }, [data.cashRequests])
+  }, [filteredRequests])
 
   // Dynamic Trend Calculations
   const prevPeriod = getPreviousPeriod(period)
