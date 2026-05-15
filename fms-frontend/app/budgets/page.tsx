@@ -146,7 +146,7 @@ export default function BudgetsPage() {
     if (!submitterId) return null
 
     const cachedUser = getUserFromCache(submitterId)
-    return cachedUser ?? { id: submitterId, name: `ID: ${submitterId}`, email: "", role: "employee" }
+    return cachedUser ?? { id: submitterId, name: `${submitterId}`, email: "", role: "employee" }
   }, [])
 
   const totals = budgets.reduce(
@@ -327,7 +327,7 @@ export default function BudgetsPage() {
                       <TableCell>
                         {(() => {
                           const submitter = getBudgetSubmitter(budget)
-                          if (!submitter) return <span className="text-sm text-muted-foreground">ID: {budget.owner || "N/A"}</span>
+                          if (!submitter) return <span className="text-sm text-muted-foreground">{budget.owner || "N/A"}</span>
                           return (
                             <button
                               type="button"
@@ -446,10 +446,6 @@ export default function BudgetsPage() {
                   <div className="grid gap-6">
                     <Info label="System Role" value={<span className="capitalize">{selectedUserProfile.role}</span>} />
                     <Info label="Department" value={selectedUserProfile.department || "General"} />
-                    <Info
-                      label="Source"
-                      value={selectedUserProfile?.email ? selectedUserProfile.email : "Local cache record"}
-                    />
                     <Info
                       label="Status"
                       value={

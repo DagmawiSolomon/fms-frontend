@@ -482,15 +482,6 @@ export default function ExpensesPage() {
                     <Info label="Department" value={selectedUserProfile.department || "General"} />
 
                     <Info
-                      label="Source"
-                      value={
-                        selectedUserProfile?.email
-                          ? selectedUserProfile.email
-                          : "Local cache record"
-                      }
-                    />
-
-                    <Info
                       label="Status"
                       value={
                         <div className="flex items-center gap-2">
@@ -599,7 +590,7 @@ function VerificationDialog({
                     })()}
                   />
                   <Info label="Department" value={expense.department || "General"} />
-                  <Info label="Submitted By" value={submitter?.name || `ID: ${expense.submitter}`} />
+                  <Info label="Submitted By" value={submitter?.name || `${expense.submitter}`} />
                 </div>
               </div>
             </div>
